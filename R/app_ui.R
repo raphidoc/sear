@@ -2,15 +2,33 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @import shiny
+#' @import shiny shinydashboard plotly
 #' @noRd
 app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
     # Your application UI logic
-    fluidPage(
-      h1("sear")
+    dashboardPage(
+      dashboardHeader(),
+      dashboardSidebar(
+        mod_load_mtelog_ui("load_mtelog"),
+        mod_select_instrument_ui("select_instrument"),
+        mod_process_L1L2_ui("process_L1L2")
+      ),
+      dashboardBody(
+        mod_parse_mtelog_ui("parse_mtelog"),
+        fluidRow(
+          column(
+            width = 6,
+            mod_selection_display_ui("selection_display")
+          ),
+          column(
+            width = 6,
+            mod_L1L2_station_ui("L1L2_station")
+          )
+        )
+      )
     )
   )
 }

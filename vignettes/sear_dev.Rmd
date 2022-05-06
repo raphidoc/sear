@@ -1,0 +1,29 @@
+---
+title: "sear_dev"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{sear_dev}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette intend to document the development and the functionality of the 
+`sear_view()` function. This function is the top level function that call the
+shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
+
+```{r setup}
+library(sear)
+```
+
+# UI
+
+# Server
+
+# SQL backend
