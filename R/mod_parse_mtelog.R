@@ -46,7 +46,7 @@ mod_parse_mtelog_server <- function(id, DataFiles){
 
     # HOCR binary read --------------------------------------------------------
 
-    RawHOCR <- reactive({
+    HOCR <- reactive({
       req(DataFiles)
 
       read_hocr(DataFiles()$bin)
@@ -64,7 +64,7 @@ mod_parse_mtelog_server <- function(id, DataFiles){
 
       # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
       # Computation time arround 2/3 minutes
-      purrr::map(.x = RawHOCR(), ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
+      purrr::map(.x = HOCR(), ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
     })
 
     # Force TimeIndexHOCR computation on loading of data (repartition of waiting time...)
@@ -85,7 +85,7 @@ mod_parse_mtelog_server <- function(id, DataFiles){
     list(
       MainLog = MainLog,
       Apla = Apla,
-      RawHOCR = RawHOCR,
+      HOCR = HOCR,
       TimeIndexHOCR = TimeIndexHOCR
       )
 

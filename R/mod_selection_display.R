@@ -68,7 +68,7 @@ mod_selection_display_server <- function(id, Apla){
     Selected <- reactiveVal({})
 
     observeEvent(event_data("plotly_selected", source = "map"),{
-      Selected(event_data("plotly_selected", source = "map"))
+      Selected(event_data("plotly_selected", source = "map")$customdata)
     })
 
     # Global map for the entire dataset ---------------------------------------

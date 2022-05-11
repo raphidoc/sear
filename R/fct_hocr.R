@@ -199,8 +199,9 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
         .,
         cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
         values_to = "Channels",
-        names_to = "Wavelength",
-        names_prefix = "[[:alpha:]]{2}_",
+        names_to = c("Type", "Wavelength"),
+        names_sep = "_",
+        #names_prefix = "[[:alpha:]]{2}_",
         names_transform = list(Wavelength = as.numeric)
       ) %>%
         group_by(ID)

@@ -2,6 +2,8 @@
 kaitaistruct <- NULL
 
 .onLoad <- function(lib, pkg) {
+  reticulate::use_condaenv(condaenv = "py_sear", conda = "auto", required = NULL)
+
 	# use superassignment to update global reference to kaitaistruct
 	kaitaistruct <<- reticulate::import("kaitaistruct", delay_load = TRUE)
 

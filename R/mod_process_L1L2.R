@@ -14,7 +14,7 @@ mod_process_L1L2_ui <- function(id){
     waiter::use_waiter(),
     selectInput(ns("ObsType"), "ObsType", choices = list("Transit","Transect","Station"), selected = NULL, multiple = F),
     textInput(ns("ObsName"), "ObsName", value = NA, placeholder = "Enter an observation name"),
-    actionButton(ns("ProcessObs"), "ProcessObs")
+    actionButton(ns("ProcessL1b"), "ProcessL1b")
   )
 
 }
@@ -34,7 +34,7 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    L2Data <- eventReactive(input$ProcessObs, {
+    Data <- eventReactive(input$ProcessL1b, {
 
       # Nice display to indicate that processing is happening
       waiter <- waiter::Waiter$new()
@@ -45,19 +45,19 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
       tmp <- UpApla()
 
       # Update values in place
-      tmp$ObsType[tmp$ID %in% Selected()$customdata] <- input$ObsType
-      tmp$ObsName[tmp$ID %in% Selected()$customdata] <- input$ObsName
+      tmp$ObsType[tmp$ID %in% Selected()] <- input$ObsType
+      tmp$ObsName[tmp$ID %in% Selected()] <- input$ObsName
 
       # Update the UpApla reactiveVal
       UpApla(tmp)
 
       # Filter data point before processing to optimize execution time
-      SelDateTime <- UpApla()$DateTime[UpApla()$ID %in% Selected()$customdata]
+      SelDateTime <- UpApla()$DateTime[UpApla()$ID %in% Selected()]
       TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 
       FiltRawHOCR <- filter_hocr(RawHOCR(), TimeIndexHOCR(), TimeInt)
 
-      L2Data <- process_station(FiltRawHOCR = FiltRawHOCR, CalData = CalData(), Apla = Apla())
+      Data <- process_station(FiltRawHOCR = FiltRawHOCR, CalData = CalData(), Apla = Apla())
 
 
 
@@ -83,6 +83,16 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
 
       #invalidateLater(500)
     })
+
+    ObsType <- reactive({
+      input$ObsType
+    })
+
+    list(
+      Data = Data,
+      ObsType = ObsType
+      )
+
 
   })
 }
