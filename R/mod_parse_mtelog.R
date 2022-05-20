@@ -47,7 +47,7 @@ mod_parse_mtelog_server <- function(id, DataFiles){
     # HOCR binary read --------------------------------------------------------
 
     HOCR <- reactive({
-      req(DataFiles)
+      req(DataFiles())
 
       read_hocr(DataFiles()$bin)
     })
@@ -72,15 +72,15 @@ mod_parse_mtelog_server <- function(id, DataFiles){
       TimeIndexHOCR()
     })
 
-    # Aplanix data ------------------------------------------------------------
 
-    Apla <- reactiveVal({})
+    # filter MTE bulk data to L1 ----------------------------------------------
+    # observe({
+    #   req(DataFiles())
+    #
+    #   Apla(Apla() %>% filter(Speed_N < 4))
+    #
+    # })
 
-    # Initial tibble created on datalogger file upload
-    observe({
-      req(input$DataLogger)
-      Apla(read_apla(MainLog()))
-    })
 
     list(
       MainLog = MainLog,

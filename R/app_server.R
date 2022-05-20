@@ -7,10 +7,12 @@
 app_server <- function(input, output, session) {
   # Your application server logic
 
-  # Max download size allowed in bytes
-  options(shiny.maxRequestSize = 10000*1024^2)
+  # Max download size allowed in bytes (For filesInput, not needed anymore)
+  # options(shiny.maxRequestSize = 10000*1024^2)
 
-  DataFiles <- mod_load_mtelog_server("load_mtelog")
+  SearTbl <- mod_project_manager_server("project_manager")
+
+  DataFiles <- mod_load_mtelog_server("load_mtelog", SearTbl)
 
   L1 <- mod_parse_mtelog_server("parse_mtelog", DataFiles)
 

@@ -12,7 +12,6 @@ mod_L1L2_station_ui <- function(id){
   tagList(
 
     uiOutput(outputId = ns("HOCRL1b")),
-    actionButton(ns("ProcessL2"), "ProcessL2"),
     plotlyOutput(ns("AOPs"), height = 500)
 
   )
@@ -33,7 +32,8 @@ mod_L1L2_station_server <- function(id, L1bDataLong){
       req(L1bDataLong())
 
         tagList(
-          plotlyOutput(ns("HOCRL1bplot"), height = 500)#,
+          plotlyOutput(ns("HOCRL1bplot"), height = 500),
+          actionButton(ns("ProcessL2"), "ProcessL2")#,
           #DT::dataTableOutput(ns("DataTable"))
         )
 

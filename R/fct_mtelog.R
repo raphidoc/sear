@@ -40,7 +40,10 @@ read_apla <- function(MainLog){
       into = c("Trame", "Data"),
       extra = "merge"
     ) %>%
-    mutate(Trame = str_extract(Trame, "[[:alpha:]]+"))
+    mutate(
+      Trame = str_extract(Trame, "[[:alpha:]]+"),
+      Time = str_remove(Time, ".{4}$") # Take Time to second
+      )
 
   RawGPGGA <- Apla %>%
     filter(Trame %in% c("GPGGA")
@@ -79,9 +82,46 @@ read_apla <- function(MainLog){
   GPGGA <- GPGGA %>% mutate(
     ID = seq_along(DateTime),
     ObsType = "Unknown",
-    ObsName = NA)
+    ObsName = NA) %>% select(Time, ID, DateTime, Lat_DD, Lon_DD, HorizontalDilution, ObsType, ObsName)
 
-  GPGGA %>% select(ID, DateTime, Lat_DD, Lon_DD, HorizontalDilution, ObsType, ObsName)
+  # Extract GPVTG info, course and speed
+
+  RawGPVTG <- Apla %>%
+    filter(Trame %in% c("GPVTG")
+    ) %>%
+    pivot_wider(
+      names_from = Trame,
+      values_from = Data
+    ) %>%
+    separate(
+      col = GPVTG,
+      sep = ",",
+      convert = T,
+      into =  c(
+        "Course_TN", # Degrees
+        "Reference_TN", # True north
+        "Course_MN", # Degrees
+        "Reference_MN", # Magnetic
+        "Speed_N", # Measured horizontal speed (in knots)
+        "Unit_N", # Knots (N)
+        "Speed_kmh", # Measured horizontal speed (in km/h)
+        "Unit_kmh", # km/h
+        "Mode_Checksum" # A = Autonomous, D = DGPS, E = DR
+        )
+    ) %>%
+    select(!DateTime) # Avoid duplication in join
+
+  GPVTG <- RawGPVTG %>%
+    mutate(
+      Course_TN = as.numeric(Course_TN),
+      Course_MN = as.numeric(Course_MN),
+      Speed_N = as.numeric(Speed_N),
+      Speed_kmh = as.numeric(Speed_kmh)
+      )
+
+  # Join with Time at the second
+  left_join(GPGGA, GPVTG, by = c("Time"))
+
 }
 
 read_hocr <- function(BinFile){

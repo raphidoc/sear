@@ -12,16 +12,22 @@ app_ui <- function(request) {
     dashboardPage(
       dashboardHeader(),
       dashboardSidebar(
-        mod_load_mtelog_ui("load_mtelog"),
-        mod_select_instrument_ui("select_instrument"),
-        mod_process_L1L2_ui("process_L1L2")
+        mod_project_manager_ui("project_manager"),
+        dropdownButton(
+          mod_load_mtelog_ui("load_mtelog"),
+          circle = F,
+          label = "Load data",
+          tootltip = "path to go here"
+        )
       ),
       dashboardBody(
         mod_parse_mtelog_ui("parse_mtelog"),
         fluidRow(
           column(
             width = 6,
-            mod_selection_display_ui("selection_display")
+            mod_selection_display_ui("selection_display"),
+            mod_select_instrument_ui("select_instrument"),
+            mod_process_L1L2_ui("process_L1L2")
           ),
           column(
             width = 6,

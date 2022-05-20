@@ -7,11 +7,13 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
+#' @import lubridate
+
 mod_selection_display_ui <- function(id){
   ns <- NS(id)
   tagList(
 
-    uiOutput(ns("TimeFilter")),
+    uiOutput(ns("Filters")),
     plotlyOutput(ns("Map"), width = NULL, height = 500)#,
     #DT::DTOutput(ns("DataTable"), width = NULL, height = 100)
 
@@ -30,7 +32,7 @@ mod_selection_display_server <- function(id, Apla){
 
 
     # Add time filtering when the Apla reactive dataframe is created
-    output$TimeFilter <- renderUI({
+    output$Filters <- renderUI({
 
       req(Apla())
 
@@ -41,6 +43,8 @@ mod_selection_display_server <- function(id, Apla){
                   timezone = "+0000",
                   width = NULL,
                   step = 1)
+
+      numericInput(ns("SpeedLimit"), "SpeedLimit", 4)
     })
 
     TimeInterval <- reactive({
@@ -50,9 +54,9 @@ mod_selection_display_server <- function(id, Apla){
     SubUpApla <- reactiveVal({})
 
     observe({
-      req(TimeInterval())
+      req(TimeInterval(), input$SpeedLimit)
       AplaTime <- UpApla() %>%
-        filter(DateTime %within% TimeInterval())
+        filter(DateTime %within% TimeInterval() && Speed_N <= input$SpeedLimit)
 
       SubUpApla(AplaTime)
     })
@@ -74,6 +78,7 @@ mod_selection_display_server <- function(id, Apla){
     # Global map for the entire dataset ---------------------------------------
 
     output$Map <- renderPlotly({
+
       req(SubUpApla())
 
       ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
@@ -91,18 +96,23 @@ mod_selection_display_server <- function(id, Apla){
                        alpha = 1,
                        source = "map",
                        customdata = ~ID,
-                       text = ~DateTime,
-                       hovertemplate = paste(
-                         "Time: %{text|%H:%M:%S}"
-                       )) %>%
+                       text = ~paste0(
+                         '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+                         '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+                         '<b>Course (TN)</b>: ', Course_TN, '<br>'
+                         )#,
+                       # hovertemplate = paste(
+                       #   "Time: %{text|%H:%M:%S}"
+                       # )
+                       ) %>%
         layout(plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
                mapbox = list(style = "satellite",
                              zoom = zoom,
                              center = list(
                                lat = center[[1]],
                                lon = center[[2]]))
-        )
-      event_register(p, "plotly_selected")
+        ) %>%
+      event_register("plotly_selected")
     })
 
     # DataTable used to visualize the state of the (subset of) DataSynthesis.csv file

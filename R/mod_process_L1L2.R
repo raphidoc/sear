@@ -11,10 +11,8 @@ mod_process_L1L2_ui <- function(id){
   ns <- NS(id)
   tagList(
 
-    waiter::use_waiter(),
-    selectInput(ns("ObsType"), "ObsType", choices = list("Transit","Transect","Station"), selected = NULL, multiple = F),
-    textInput(ns("ObsName"), "ObsName", value = NA, placeholder = "Enter an observation name"),
-    actionButton(ns("ProcessL1b"), "ProcessL1b")
+    uiOutput(outputId = ns("L1b"))
+
   )
 
 }
@@ -33,6 +31,18 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
 
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+
+    output$L1b <- renderUI({
+
+      req(UpApla)
+
+      tagList(
+        waiter::use_waiter(),
+        selectInput(ns("ObsType"), "ObsType", choices = list("Transit","Transect","Station"), selected = NULL, multiple = F),
+        textInput(ns("ObsName"), "ObsName", value = NA, placeholder = "Enter an observation name"),
+        actionButton(ns("ProcessL1b"), "ProcessL1b")
+      )
+    })
 
     Data <- eventReactive(input$ProcessL1b, {
 
