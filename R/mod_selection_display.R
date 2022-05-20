@@ -36,15 +36,18 @@ mod_selection_display_server <- function(id, Apla){
 
       req(Apla())
 
-      sliderInput(ns("TimeFilter"), "Time filter",
-                  min = min(Apla()$DateTime), max = max(Apla()$DateTime),
-                  value = c(min(Apla()$DateTime), max = max(Apla()$DateTime)),
-                  timeFormat = "%T",
-                  timezone = "+0000",
-                  width = NULL,
-                  step = 1)
+      tagList(
+        sliderInput(ns("TimeFilter"), "Time filter",
+                    min = min(Apla()$DateTime), max = max(Apla()$DateTime),
+                    value = c(min(Apla()$DateTime), max = max(Apla()$DateTime)),
+                    timeFormat = "%T",
+                    timezone = "+0000",
+                    width = NULL,
+                    step = 1),
+        numericInput(ns("SpeedLimit"), "SpeedLimit", 4, step = 0.1)
+      )
 
-      numericInput(ns("SpeedLimit"), "SpeedLimit", 4)
+
     })
 
     TimeInterval <- reactive({
@@ -55,8 +58,9 @@ mod_selection_display_server <- function(id, Apla){
 
     observe({
       req(TimeInterval(), input$SpeedLimit)
+
       AplaTime <- UpApla() %>%
-        filter(DateTime %within% TimeInterval() && Speed_N <= input$SpeedLimit)
+        filter(DateTime %within% TimeInterval() & Speed_N <= input$SpeedLimit)
 
       SubUpApla(AplaTime)
     })

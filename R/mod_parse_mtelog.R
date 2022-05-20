@@ -19,8 +19,9 @@ mod_parse_mtelog_ui <- function(id){
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, DataFiles){
+mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
+  stopifnot(is.reactive(SearTbl))
   stopifnot(is.reactive(DataFiles))
 
   moduleServer( id, function(input, output, session){
@@ -39,47 +40,106 @@ mod_parse_mtelog_server <- function(id, DataFiles){
 
     Apla <- reactiveVal({})
 
-    # Initial tibble created on datalogger file upload
+    # Initial tibble
     observe({
-      Apla(read_apla(MainLog()))
+
+      # Try to read parsed and filtered applanix data
+
+      #Potential filtered File
+      PotApla <- file.path(SearTbl()$ProjPath,"L1",paste0("filtered_apla_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+
+      if (file.exists(PotApla)) {
+
+        Apla(read_csv(PotApla))
+
+      } else {
+
+        validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
+
+        Apla(read_apla(MainLog()))
+
+        Apla(Apla() %>% filter(Speed_N <= 4))
+
+        dir.create(file.path(SearTbl()$ProjPath,"L1"))
+
+        write_csv(Apla(), PotApla)
+      }
+
     })
 
     # HOCR binary read --------------------------------------------------------
 
-    HOCR <- reactive({
-      req(DataFiles())
+    HOCR <- reactiveVal()
 
-      read_hocr(DataFiles()$bin)
-    })
+      observe({
+        req(DataFiles())
 
-    TimeIndexHOCR <- reactive({
+        waiter <- waiter::Waiter$new()
+        waiter$show()
+        on.exit(waiter$hide())
+
+        PotHocr <- file.path(SearTbl()$ProjPath, "L1", paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+
+        if (file.exists(PotHocr)) {
+
+          HOCR(read_rds(PotHocr))
+
+        } else {
+
+          validate(need(DataFiles()$bin, label = "Need raw HOCR"))
+
+          Hocr <- read_hocr(DataFiles()$bin)
+
+          Hocr <- isolate(Hocr[TimeIndexHOCR() %in% Apla()$DateTime])
+
+          HOCR(Hocr)
+
+          write_rds(Hocr, file = PotHocr)
+        }
+
+
+      })
+
+    TimeIndexHOCR <- reactiveVal()
+
+    observe({
       req(Apla())
 
       waiter <- waiter::Waiter$new()
       waiter$show()
       on.exit(waiter$hide())
 
-      # Dont know the logger date format so quick and dirty fix with Apla date
-      AplaDate <- unique(date(Apla()$DateTime))
+      PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, "L1",
+                                    paste0("filtered_time_index_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
-      # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
-      # Computation time arround 2/3 minutes
-      purrr::map(.x = HOCR(), ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
+      if (file.exists(PotTimeIndexHocr)) {
+
+        TimeIndexHOCR(read_rds(PotTimeIndexHocr))
+
+      } else {
+
+        # Dont know the logger date format so quick and dirty fix with Apla date
+        AplaDate <- unique(date(Apla()$DateTime))
+
+        # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
+        # Computation time arround 2/3 minutes
+        TimeIndex <- purrr::map(.x = HOCR(), ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
+
+        TimeIndex <- TimeIndex[TimeIndex %in% Apla()$DateTime]
+
+        TimeIndexHOCR(TimeIndex)
+
+        write_rds(TimeIndex, PotTimeIndexHocr)
+
+      }
+
     })
 
     # Force TimeIndexHOCR computation on loading of data (repartition of waiting time...)
-    observe({
-      TimeIndexHOCR()
-    })
-
-
-    # filter MTE bulk data to L1 ----------------------------------------------
     # observe({
-    #   req(DataFiles())
-    #
-    #   Apla(Apla() %>% filter(Speed_N < 4))
-    #
+    #   HOCR()
     # })
+
 
 
     list(

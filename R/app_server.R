@@ -14,7 +14,7 @@ app_server <- function(input, output, session) {
 
   DataFiles <- mod_load_mtelog_server("load_mtelog", SearTbl)
 
-  L1 <- mod_parse_mtelog_server("parse_mtelog", DataFiles)
+  L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles)
 
   SelDisplay <- mod_selection_display_server("selection_display", L1$Apla)
 
