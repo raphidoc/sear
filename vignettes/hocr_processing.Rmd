@@ -53,9 +53,29 @@ To code live in python use `reticulate::repl_python()`, to get object from pytho
 ConFile <- system.file("extdata", "DATA_20211111_171729.bin", package = "sear", mustWork = T)
 
 # Python function
-RawHOCR <- Hocr$from_file(ConFile)
+RawHOCR <- reticulate::py_to_r(Hocr$from_file(ConFile))
 
-RawHOCR <- RawHOCR$packets
+# With reticulate, if a python custom class object is returned then a reference to that object is returned
+# Object reference are not persistent therefore we cannot save such an reference list ...
+# It return null pointer.
+RawHOCR <- purrr::map(RawHOCR$packets, ~ list(
+  "channel" = .$channel,
+  "checksum" = .$checksum,
+  "darkaverage" = .$darkaverage,
+  "darksample" = .$darksample,
+  "frame" = .$frame,
+  "gpstime" = .$gpstime,
+  "instrument" = as.character(.$instrument, errors="ignore"),
+  "inttime" = .$inttime,
+  "loggerport" = .$loggerport,
+  "mysterydate" = .$mysterydate,
+  "sampledelay" = .$sampledelay,
+  "sn" = as.character(.$sn, errors="ignore"),
+  "spectemp" = as.character(.$spectemp, errors="ignore"),
+  "timer" = as.character(.$timer, errors="ignore")
+  ))
+
+#write_rds(RawHOCR, "~/test.rds")
 
 # Filter invalid HOCR packets
 # For now the only check is made on instrument name, could be more thorough
@@ -288,7 +308,7 @@ read_cal <- function(CalFiles){
 # 			str_detect(text, "POLYU") ~ "POLYU"
 # 	))
 
-CalList <- map(CalFiles, read_cal)
+CalList <- purrr::map(CalFiles, read_cal)
 
 FlatCal <- unlist(CalList, recursive = F)
 
@@ -324,7 +344,7 @@ tidy_hocr <- function(Packets){
   )
 }
 
-RawData <- map_df(FiltRawHOCR, tidy_hocr)
+RawData <- purrr::map_df(FiltRawHOCR, tidy_hocr)
 ```
 
 Add wavelength and calibration data to RawData from the calibration file, join by {Instrument, SN, subquerry(rownumber)}. This assume that each packet have 180 `Channels` sorted from short to long wavelength.

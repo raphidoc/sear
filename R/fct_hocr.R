@@ -16,6 +16,24 @@ read_hocr <- function(BinFile){
 
   RawHOCR <- unlist(purrr::map(RawHOCR , ~ .x$packets))
 
+  # Unefficent way of removing custom class python object dependencies resulting in null pointer
+  RawHOCR <- purrr::map(RawHOCR, ~ list(
+    "channel" = .$channel,
+    "checksum" = .$checksum,
+    "darkaverage" = .$darkaverage,
+    "darksample" = .$darksample,
+    "frame" = .$frame,
+    "gpstime" = .$gpstime,
+    "instrument" = as.character(.$instrument, errors="ignore"),
+    "inttime" = .$inttime,
+    "loggerport" = .$loggerport,
+    "mysterydate" = .$mysterydate,
+    "sampledelay" = .$sampledelay,
+    "sn" = as.character(.$sn, errors="ignore"),
+    "spectemp" = as.character(.$spectemp, errors="ignore"),
+    "timer" = as.character(.$timer, errors="ignore")
+  ))
+
   # check for invalid packet
   ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors="ignore"), "SAT(HPL|HSE|HED|PLD)"))
 
@@ -41,6 +59,7 @@ filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
 }
 
 tidy_hocr <- function(Packets, AplaDate){
+
   tibble::tibble(
     # Applanix time added by the DataLogger in millisecond
     # Unkown Date format in the binary file, so take the one in the txt file

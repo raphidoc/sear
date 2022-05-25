@@ -20,7 +20,7 @@ mod_process_L1L2_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData){
+mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData, L1){
 
   stopifnot(is.reactive(Apla))
   stopifnot(is.reactive(UpApla))

@@ -7,6 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
+#' @import readr
 mod_parse_mtelog_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -70,6 +71,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
     # HOCR binary read --------------------------------------------------------
 
     HOCR <- reactiveVal()
+    TimeIndexHOCR <- reactiveVal()
 
       observe({
         req(DataFiles())
@@ -80,9 +82,14 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
         PotHocr <- file.path(SearTbl()$ProjPath, "L1", paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
-        if (file.exists(PotHocr)) {
+        PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, "L1",
+                                      paste0("filtered_time_index_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+
+        if (file.exists(PotHocr) & file.exists(PotTimeIndexHocr)) {
 
           HOCR(read_rds(PotHocr))
+
+          TimeIndexHOCR(read_rds(PotTimeIndexHocr))
 
         } else {
 
@@ -90,57 +97,29 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
           Hocr <- read_hocr(DataFiles()$bin)
 
-          Hocr <- isolate(Hocr[TimeIndexHOCR() %in% Apla()$DateTime])
+          # Dont know the logger date format so quick and dirty fix with Apla date
+          AplaDate <- unique(date(Apla()$DateTime))
+
+          # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
+          # Computation time arround 2/3 minutes
+          TimeIndex <- purrr::map(.x = Hocr, ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
+
+          # Apla()$DateTime is filtered for speed < 4 knt
+          Hocr <- Hocr[TimeIndex %in% Apla()$DateTime]
+
+          TimeIndex <- TimeIndex[TimeIndex %in% Apla()$DateTime]
 
           HOCR(Hocr)
 
-          write_rds(Hocr, file = PotHocr)
+          TimeIndexHOCR(TimeIndex)
+
+          write_rds(Hocr, PotHocr)
+
+          write_rds(TimeIndex, PotTimeIndexHocr)
         }
 
 
       })
-
-    TimeIndexHOCR <- reactiveVal()
-
-    observe({
-      req(Apla())
-
-      waiter <- waiter::Waiter$new()
-      waiter$show()
-      on.exit(waiter$hide())
-
-      PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, "L1",
-                                    paste0("filtered_time_index_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
-
-      if (file.exists(PotTimeIndexHocr)) {
-
-        TimeIndexHOCR(read_rds(PotTimeIndexHocr))
-
-      } else {
-
-        # Dont know the logger date format so quick and dirty fix with Apla date
-        AplaDate <- unique(date(Apla()$DateTime))
-
-        # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
-        # Computation time arround 2/3 minutes
-        TimeIndex <- purrr::map(.x = HOCR(), ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
-
-        TimeIndex <- TimeIndex[TimeIndex %in% Apla()$DateTime]
-
-        TimeIndexHOCR(TimeIndex)
-
-        write_rds(TimeIndex, PotTimeIndexHocr)
-
-      }
-
-    })
-
-    # Force TimeIndexHOCR computation on loading of data (repartition of waiting time...)
-    # observe({
-    #   HOCR()
-    # })
-
-
 
     list(
       MainLog = MainLog,

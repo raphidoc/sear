@@ -123,26 +123,3 @@ read_apla <- function(MainLog){
   left_join(GPGGA, GPVTG, by = c("Time"))
 
 }
-
-read_hocr <- function(BinFile){
-
-  # now source python onload
-  reticulate::source_python(system.file("py","hocr.py", package = "sear", mustWork = T))
-
-  RawHOCR <- purrr::map(BinFile, Hocr$from_file)
-
-  RawHOCR <- unlist(purrr::map(RawHOCR , ~ .x$packets))
-
-  # check for invalid packet
-  ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors="ignore"), "SAT(HPL|HSE|HED|PLD)"))
-
-  if (any(!ValidInd)){
-
-    warning("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)))
-
-    RawHOCR[ValidInd]
-
-  } else {
-    RawHOCR
-  }
-}

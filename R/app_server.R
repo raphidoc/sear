@@ -22,7 +22,7 @@ app_server <- function(input, output, session) {
 
   CalData <- mod_load_cal_server("HOCRCal")
 
-  L1b <- mod_process_L1L2_server("process_L1L2", L1$Apla, SelDisplay$UpApla, SelDisplay$Selected, L1$HOCR, L1$TimeIndexHOCR, CalData)
+  L1b <- mod_process_L1L2_server("process_L1L2", L1$Apla, SelDisplay$UpApla, SelDisplay$Selected, L1$HOCR, L1$TimeIndexHOCR, CalData, L1)
 
   observe({
 
