@@ -12,8 +12,14 @@
 mod_selection_display_ui <- function(id){
   ns <- NS(id)
   tagList(
-
-    uiOutput(ns("Filters")),
+    fluidRow(
+      column(width = 6,
+             uiOutput(ns("Filters"))
+             ),
+      column(width = 6,
+             plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100)
+             )
+    ),
     plotlyOutput(ns("Map"), width = NULL, height = 500)#,
     #DT::DTOutput(ns("DataTable"), width = NULL, height = 100)
 
@@ -73,10 +79,10 @@ mod_selection_display_server <- function(id, Apla){
     })
 
     # Get the ID of plotly_mapbox selected point in: selected()$customdata
-    Selected <- reactiveVal({})
+    #Selected <- reactiveVal({})
 
-    observeEvent(event_data("plotly_selected", source = "map"),{
-      Selected(event_data("plotly_selected", source = "map")$customdata)
+    Selected <- eventReactive(event_data("plotly_selected", source = "map"),{
+      event_data("plotly_selected", source = "map")$customdata
     })
 
     # Global map for the entire dataset ---------------------------------------
@@ -103,7 +109,8 @@ mod_selection_display_server <- function(id, Apla){
                        text = ~paste0(
                          '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
                          '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-                         '<b>Course (TN)</b>: ', Course_TN, '<br>'
+                         '<b>Course (TN)</b>: ', Course_TN, '<br>',
+                         '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
                          )#,
                        # hovertemplate = paste(
                        #   "Time: %{text|%H:%M:%S}"
@@ -117,6 +124,42 @@ mod_selection_display_server <- function(id, Apla){
                                lon = center[[2]]))
         ) %>%
       event_register("plotly_selected")
+    })
+
+    output$BoatSolAzm <- renderPlotly({
+
+      req(Selected())
+
+      m <- list(
+        l = 40,
+        r = 30,
+        b = 30,
+        t = 30,
+        pad = 0
+      )
+
+      SubUpApla()[SubUpApla()$ID %in% Selected(), ] %>%
+        plot_ly(
+
+        type = 'scatterpolar',
+        r = ~Speed_N,
+        theta = ~BoatSolAzm,
+
+        mode = 'markers'
+
+        ) %>%
+        layout(
+          autosize = F,
+          width = 250,
+          height = 250,
+          margin = m,
+          polar = list(
+            angularaxis  = list(
+              rotation = 90,
+              direction = "clockwise"
+            )
+          ))
+
     })
 
     # DataTable used to visualize the state of the (subset of) DataSynthesis.csv file

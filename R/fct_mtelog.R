@@ -120,6 +120,19 @@ read_apla <- function(MainLog){
       )
 
   # Join with Time at the second
-  left_join(GPGGA, GPVTG, by = c("Time"))
+  Apla <- left_join(GPGGA, GPVTG, by = c("Time"))
+
+  Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
+
+  # Solar altitude above the horizon in radian and azimuth in radian from south to west
+  PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
+
+  Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
+    rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
+    mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
+           SolAlt = SolAlt * 180/pi,
+           BoatSolAzm = SolAzm-Course_TN)
+
+  Apla
 
 }

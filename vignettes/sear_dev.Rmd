@@ -15,14 +15,90 @@ knitr::opts_chunk$set(
 ```
 
 This vignette intend to document the development and the functionality of the 
-`sear_view()` function. This function is the top level function that call the
+`sear_app()` function. This function is the top level function that call the
 shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
 
 ```{r setup}
+golem::document_and_reload()
+
 library(sear)
+library(dplyr)
+library(lubridate)
+library(purrr)
+library(plotly)
+library(readr)
+library(stringr)
+library(tidyr)
+library(suncalc)
 ```
 
+```{r}
+ConFile <- system.file("extdata", "DATA_20211111_171729.txt", package = "sear", mustWork = T)
+
+MTELog <- sear:::read_mtelog(ConFile)
+
+Apla <- sear:::read_apla(MTELog)
+```
+
+
 # UI
+
+## Project workflow
+
+The first step to work with `sear` is to select a project folder. A project folder is identified by the presence of a `.searproj` file, this file additionally contain relevant metadata such as the project path, date of creation and last update. Other useful information could be added.
+If the selected folder does not contains `.searproj` file, one is created. The root of the project is set as the folder in which this file live.
+
+The app will also look for folder and data files to re-initiate the app state as it was in the last processing save. 
+
+## Load Data
+
+If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw bulk MTE files are saved in `project/bulk`. On load, the app will parse and filter data (speed < 4 knt) and save the resulting applanix data, HOCR packet list and HOCR Time index in `project/L1`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time.
+
+## Selection display
+
+When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second ?) data point with the observation type, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot exposing the azimuth of point selected on the map. 
+An observation type `ObsType` (Station, Transect) and an observation name `ObsName` can be attributed to the selected point which will be processed with the `Process to L1b` button.
+
+### Azimuth polar plot
+
+First compute the sun azimuth.
+
+```{r}
+# Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
+# 
+# # Solar altitude above the horizon in radian and azimuth in radian from south to west
+# PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
+# 
+# Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
+#   rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
+#   mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
+#          SolAlt = SolAlt * 180/pi)
+
+```
+
+Take the boat azimuth (relative to true north) from the applanix, then subtract one by the other to find boat azimuth from the sun.
+
+```{r}
+Station1PaP <- interval(ymd_hms("2021-11-11 18:49:16"), ymd_hms("2021-11-11 18:50:25"))
+
+Apla <- Apla %>% filter(DateTime %within% Station1PaP)
+
+# Apla <- Apla %>% mutate(
+#   BoatSolAzm = SolAzm-Course_TN
+# )
+
+Apla %>% plot_ly(
+
+  type = 'scatterpolar',
+  r = ~Speed_N,
+  theta = ~BoatSolAzm,
+
+  mode = 'markers'
+
+)
+
+```
+
 
 # Server
 
