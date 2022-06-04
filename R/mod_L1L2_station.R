@@ -47,7 +47,7 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
       req(L1bDataLong())
 
         tagList(
-          plotlyOutput(ns("HOCRL1bplot"), height = 320),
+          plotlyOutput(ns("HOCRL1b"), height = 320),
           actionButton(ns("ProcessL2"), "ProcessL2"),
           plotlyOutput(ns("AOPs"), height = 250)
         )
@@ -90,7 +90,7 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
         mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
     })
 
-    output$HOCRL1bplot <- renderPlotly({
+    output$HOCRL1b <- renderPlotly({
 
       req(L1bDataLong())
       req(QCData())
@@ -135,8 +135,7 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
                            #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
               ),
               xaxis = list(rangemode = "nonnegative")
-            ) %>%
-            event_register('plotly_selected')
+            )
         ))
 
       Lu <- ply %>%

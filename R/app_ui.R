@@ -20,14 +20,14 @@ app_ui <- function(request) {
           tootltip = "path to go here"
         ),
         mod_select_instrument_ui("select_instrument"),
-        mod_process_L1L2_ui("process_L1L2")
+        mod_process_L1L2_ui("process_L1b")
       ),
       dashboardBody(
         mod_parse_mtelog_ui("parse_mtelog"),
         fluidRow(
           column(
             width = 6,
-            mod_selection_display_ui("selection_display")
+            mod_select_data_ui("select_data")
           ),
           column(
             width = 6,

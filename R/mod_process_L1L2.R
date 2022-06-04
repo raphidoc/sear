@@ -20,9 +20,8 @@ mod_process_L1L2_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData){
+mod_process_L1L2_server <- function(id, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData){
 
-  stopifnot(is.reactive(Apla))
   stopifnot(is.reactive(UpApla))
   stopifnot(is.reactive(Selected))
   stopifnot(is.reactive(RawHOCR))
@@ -71,7 +70,7 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
 
       FiltRawHOCR <- filter_hocr(RawHOCR(), TimeIndexHOCR(), TimeInt)
 
-      Data <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(Apla()$DateTime)))
+      Data <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(UpApla()$DateTime)))
 
     })
 

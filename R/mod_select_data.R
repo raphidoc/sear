@@ -9,7 +9,7 @@
 #' @importFrom shiny NS tagList
 #' @import lubridate
 
-mod_selection_display_ui <- function(id){
+mod_select_data_ui <- function(id){
   ns <- NS(id)
   tagList(
     fluidRow(
@@ -29,7 +29,7 @@ mod_selection_display_ui <- function(id){
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_selection_display_server <- function(id, Apla){
+mod_select_data_server <- function(id, Apla){
 
   stopifnot(is.reactive(Apla))
 
@@ -53,8 +53,6 @@ mod_selection_display_server <- function(id, Apla){
         sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(0, 180), min = 0, max = 360),
         numericInput(ns("SpeedLimit"), "Speed", 4, step = 0.1)
       )
-
-
     })
 
     TimeInterval <- reactive({
