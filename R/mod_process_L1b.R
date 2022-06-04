@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_process_L1L2_ui <- function(id){
+mod_process_L1b_ui <- function(id){
   ns <- NS(id)
   tagList(
 
@@ -20,7 +20,7 @@ mod_process_L1L2_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1L2_server <- function(id, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData){
+mod_process_L1b_server <- function(id, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData){
 
   stopifnot(is.reactive(UpApla))
   stopifnot(is.reactive(Selected))
