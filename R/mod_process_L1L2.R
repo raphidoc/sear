@@ -20,7 +20,7 @@ mod_process_L1L2_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData, L1){
+mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData, MainLog){
 
   stopifnot(is.reactive(Apla))
   stopifnot(is.reactive(UpApla))
@@ -34,12 +34,18 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
 
     output$L1b <- renderUI({
 
-      req(UpApla)
+      req(MainLog)
 
       tagList(
         waiter::use_waiter(),
-        selectInput(ns("ObsType"), "ObsType", choices = list("Transit","Transect","Station"), selected = NULL, multiple = F),
-        textInput(ns("ObsName"), "ObsName", value = NA, placeholder = "Enter an observation name"),
+        fluidRow(
+          column(6,
+                 selectInput(ns("ObsType"), "ObsType", choices = list("Station","Transect"), selected = NULL, multiple = F)
+                 ),
+          column(6,
+                 textInput(ns("ObsName"), "ObsName", value = NA, placeholder = "Prefix")
+                 )
+        ),
         actionButton(ns("ProcessL1b"), "ProcessL1b")
       )
     })
@@ -100,7 +106,8 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
 
     list(
       Data = Data,
-      ObsType = ObsType
+      ObsType = ObsType,
+      ProcessL1b = reactive(input$ProcessL1b)
       )
 
 

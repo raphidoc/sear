@@ -10,34 +10,41 @@
 mod_L1L2_station_ui <- function(id){
   ns <- NS(id)
   tagList(
-
-    uiOutput(outputId = ns("HOCRL1b")),
-    plotlyOutput(ns("AOPs"), height = 250)
-
+    tabsetPanel(
+      type = "pills",
+      tabPanel(
+        "Station",
+        textOutput(ns("ObsName"))
+      ),
+      tabPanel(
+        "HOCR",
+        uiOutput(outputId = ns("HOCR")),
+      )
+    )
   )
 }
 
 #' L1L2_station Server Functions
 #'
 #' @noRd
-mod_L1L2_station_server <- function(id, L1bDataLong){
+mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
 
   stopifnot(is.reactive(L1bDataLong))
 
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    output$HOCRL1b <- renderUI({
+    output$ObsName <- renderText(ObsName())
+
+    output$HOCR <- renderUI({
 
       req(L1bDataLong())
 
         tagList(
           plotlyOutput(ns("HOCRL1bplot"), height = 250),
-          actionButton(ns("ProcessL2"), "ProcessL2")#,
-          #DT::dataTableOutput(ns("DataTable"))
+          actionButton(ns("ProcessL2"), "ProcessL2"),
+          plotlyOutput(ns("AOPs"), height = 250)
         )
-
-
     })
 
     # Tibble for storing QC value initiated with 1 = good
@@ -89,8 +96,19 @@ mod_L1L2_station_server <- function(id, L1bDataLong){
       ply <- L1bData() %>%
         #filter(str_detect(Instrument, "HPL")) %>%
         mutate(Plot = purrr::map2(.x = AproxData, .y = SN, ~
-                                    plot_ly(.x, text = ~ID, customdata = ~ID) %>%
-                                    add_lines(x = ~Wavelength, y = ~Channels , name = ~QC, showlegend = F, color = ~QC, colors = c("1" = "seagreen", "0" = "red")) %>%
+                                    plot_ly(
+                                      .x,
+                                      text = ~ID,
+                                      customdata = ~ID
+                                      ) %>%
+                                    add_lines(
+                                      x = ~Wavelength,
+                                      y = ~Channels ,
+                                      name = ~QC,
+                                      showlegend = F,
+                                      color = ~QC,
+                                      colors = c("1" = "seagreen", "0" = "red")
+                                      ) %>%
                                     add_annotations(
                                       text = ~.y,
                                       x = 0.5,
@@ -108,8 +126,8 @@ mod_L1L2_station_server <- function(id, L1bDataLong){
                                                    #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
                                       ),
                                       xaxis = list(rangemode = "nonnegative")
-                                    )# %>%
-                                    #event_register('plotly_selected')
+                                    ) %>%
+                                    event_register('plotly_selected')
         ))
 
       Lu <- ply %>%
@@ -296,40 +314,6 @@ mod_L1L2_station_server <- function(id, L1bDataLong){
 
       })
 
-
-
-    #output$HOCRL2plot <- render
-
-
-    # DataTable
-  #   output$DataTable <- DT::renderDataTable(
-  #     DT::datatable(SelectedData(),
-  #                   extensions = c("Buttons", "Scroller", "Select"),
-  #                   filter = "top",
-  #                   escape = TRUE, rownames = FALSE,
-  #                   style = "bootstrap",
-  #                   class = "compact",
-  #                   options = list(
-  #                     dom = "Brtip",
-  #                     select = list(style = 'os', items = 'row'),
-  #                     buttons = list(I("colvis"),"selectNone","csv"),
-  #                     columnDefs = list(
-  #                       list(
-  #                         visible = FALSE,
-  #                         targets = c(0,2,3)
-  #                       )),
-  #                     deferRender = TRUE,
-  #                     scrollY = 100,
-  #                     pageLength = 10,
-  #                     scroller = TRUE
-  #                   ),
-  #                   selection = "none",
-  #                   editable = F
-  #     ),
-  #     server=FALSE,
-  #     editable=T
-  #   )
-  #
    })
 }
 

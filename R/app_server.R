@@ -22,15 +22,15 @@ app_server <- function(input, output, session) {
 
   CalData <- mod_load_cal_server("HOCRCal")
 
-  L1b <- mod_process_L1L2_server("process_L1L2", L1$Apla, SelDisplay$UpApla, SelDisplay$Selected, L1$HOCR, L1$TimeIndexHOCR, CalData, L1)
+  L1b <- mod_process_L1L2_server("process_L1L2", L1$Apla, SelDisplay$UpApla, SelDisplay$Selected, L1$HOCR, L1$TimeIndexHOCR, CalData, L1$MainLog)
 
-  observe({
+  observeEvent( L1b$ProcessL1b(), {
 
     req(L1b$Data())
 
     if (L1b$ObsType() == "Station") {
 
-      mod_L1L2_station_server("L1L2_station", L1b$Data)
+      mod_L1L2_station_server("L1L2_station", L1b$Data, L1b$ObsName)
 
     } else {
 

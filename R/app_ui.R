@@ -11,23 +11,23 @@ app_ui <- function(request) {
     # Your application UI logic
     dashboardPage(
       dashboardHeader(),
-      dashboardSidebar(
+      dashboardSidebar(width = 200,
         mod_project_manager_ui("project_manager"),
         dropdownButton(
           mod_load_mtelog_ui("load_mtelog"),
           circle = F,
           label = "Load data",
           tootltip = "path to go here"
-        )
+        ),
+        mod_select_instrument_ui("select_instrument"),
+        mod_process_L1L2_ui("process_L1L2")
       ),
       dashboardBody(
         mod_parse_mtelog_ui("parse_mtelog"),
         fluidRow(
           column(
             width = 6,
-            mod_selection_display_ui("selection_display"),
-            mod_select_instrument_ui("select_instrument"),
-            mod_process_L1L2_ui("process_L1L2")
+            mod_selection_display_ui("selection_display")
           ),
           column(
             width = 6,

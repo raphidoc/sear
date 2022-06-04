@@ -97,33 +97,37 @@ mod_selection_display_server <- function(id, Apla){
       zoom <- zc[[1]]
       center <- zc[[2]]
 
-      p <- plot_mapbox(SubUpApla(),
-                       lon = ~Lon_DD,
-                       lat = ~Lat_DD,
-                       mode = 'scattermapbox',
-                       color = ~ObsType,
-                       colors= ObsTypeColor,
-                       alpha = 1,
-                       source = "map",
-                       customdata = ~ID,
-                       text = ~paste0(
-                         '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
-                         '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-                         '<b>Course (TN)</b>: ', Course_TN, '<br>',
-                         '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
-                         )#,
-                       # hovertemplate = paste(
-                       #   "Time: %{text|%H:%M:%S}"
-                       # )
-                       ) %>%
-        layout(plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
-               mapbox = list(style = "satellite",
-                             zoom = zoom,
-                             center = list(
-                               lat = center[[1]],
-                               lon = center[[2]]))
+      p <- plot_mapbox(
+        SubUpApla(),
+        lon = ~Lon_DD,
+        lat = ~Lat_DD,
+        mode = 'scattermapbox',
+        color = ~ObsType,
+        colors= ObsTypeColor,
+        alpha = 1,
+        source = "map",
+        customdata = ~ID,
+        text = ~paste0(
+          '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+          '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+          '<b>Course (TN)</b>: ', Course_TN, '<br>',
+          '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+        )#,
+        # hovertemplate = paste(
+        #   "Time: %{text|%H:%M:%S}"
+        # )
+      ) %>%
+        layout(
+          plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
+          mapbox = list(style = "satellite",
+                        zoom = zoom,
+                        center = list(
+                          lat = center[[1]],
+                          lon = center[[2]]
+                        )
+          )
         ) %>%
-      event_register("plotly_selected")
+        event_register("plotly_selected")
     })
 
     output$BoatSolAzm <- renderPlotly({
@@ -140,22 +144,19 @@ mod_selection_display_server <- function(id, Apla){
 
       SubUpApla()[SubUpApla()$ID %in% Selected(), ] %>%
         plot_ly(
-
-        type = 'scatterpolar',
-        r = ~Speed_N,
-        theta = ~BoatSolAzm,
-
-        mode = 'markers'
-
+          width = 250,
+          height = 250,
+          type = 'scatterpolar',
+          r = ~Speed_N,
+          theta = ~BoatSolAzm,
+          mode = 'markers'
         ) %>%
         layout(
           autosize = F,
-          width = 250,
-          height = 250,
           margin = m,
           polar = list(
             angularaxis  = list(
-              rotation = 90,
+              #rotation = ~mean(Course_TN, na.rm = T),
               direction = "clockwise"
             )
           ))

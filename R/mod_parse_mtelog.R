@@ -59,7 +59,10 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
         Apla(read_apla(MainLog()))
 
-        Apla(Apla() %>% filter(Speed_N <= 4))
+        Apla(Apla() %>% filter(
+          Speed_N <= 4,
+          BoatSolAzm > 0 & BoatSolAzm < 180
+          ))
 
         dir.create(file.path(SearTbl()$ProjPath,"L1"))
 
@@ -74,6 +77,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
     TimeIndexHOCR <- reactiveVal()
 
       observe({
+
         req(DataFiles())
 
         waiter <- waiter::Waiter$new()
@@ -105,9 +109,9 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
           TimeIndex <- purrr::map(.x = Hocr, ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
 
           # Apla()$DateTime is filtered for speed < 4 knt
-          Hocr <- Hocr[TimeIndex %in% Apla()$DateTime]
+          #Hocr <- Hocr[TimeIndex %in% Apla()$DateTime]
 
-          TimeIndex <- TimeIndex[TimeIndex %in% Apla()$DateTime]
+          #TimeIndex <- TimeIndex[TimeIndex %in% Apla()$DateTime]
 
           HOCR(Hocr)
 

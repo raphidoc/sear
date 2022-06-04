@@ -79,23 +79,40 @@ First compute the sun azimuth.
 Take the boat azimuth (relative to true north) from the applanix, then subtract one by the other to find boat azimuth from the sun.
 
 ```{r}
-Station1PaP <- interval(ymd_hms("2021-11-11 18:49:16"), ymd_hms("2021-11-11 18:50:25"))
+Station1PaP <- interval(ymd_hms("2021-11-11 17:50:31"), ymd_hms("2021-11-11 17:50:40"))
 
-Apla <- Apla %>% filter(DateTime %within% Station1PaP)
+temp <- Apla %>% filter(DateTime %within% Station1PaP)
 
 # Apla <- Apla %>% mutate(
 #   BoatSolAzm = SolAzm-Course_TN
 # )
 
-Apla %>% plot_ly(
-
-  type = 'scatterpolar',
-  r = ~Speed_N,
-  theta = ~BoatSolAzm,
-
-  mode = 'markers'
-
+m <- list(
+  l = 40,
+  r = 30,
+  b = 30,
+  t = 30,
+  pad = 0
 )
+
+temp %>%
+  plot_ly(
+    type = 'scatterpolar',
+    r = ~Speed_N,
+    theta = ~BoatSolAzm,
+    
+    mode = 'markers'
+    
+  ) %>%
+  layout(
+    autosize = F,
+    margin = m,
+    polar = list(
+      angularaxis  = list(
+        #rotation = ~mean(Course_TN, na.rm = T)+90,
+        direction = "clockwise"
+      )
+    ))
 
 ```
 
