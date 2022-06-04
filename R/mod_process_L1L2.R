@@ -20,7 +20,7 @@ mod_process_L1L2_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData, MainLog){
+mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeIndexHOCR, CalData){
 
   stopifnot(is.reactive(Apla))
   stopifnot(is.reactive(UpApla))
@@ -33,8 +33,6 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
     ns <- session$ns
 
     output$L1b <- renderUI({
-
-      req(MainLog)
 
       tagList(
         waiter::use_waiter(),
@@ -73,43 +71,16 @@ mod_process_L1L2_server <- function(id, Apla, UpApla, Selected, RawHOCR, TimeInd
 
       FiltRawHOCR <- filter_hocr(RawHOCR(), TimeIndexHOCR(), TimeInt)
 
-      Data <- process_station(FiltRawHOCR = FiltRawHOCR, CalData = CalData(), Apla = Apla())
+      Data <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(Apla()$DateTime)))
 
-
-
-      # Process selected data point according to ObsType
-      # if (input$ObsType %in% c("Unkown","Transit")) {
-      #   message("Nothing to process")
-      # } else if (input$ObsType == "Station") {
-      #
-      #   FiltRawHOCR <- filter_hocr(RawHOCR(), TimeIndexHOCR(), TimeInt)
-      #
-      #   Station <- reactive({
-      #     process_station(FiltRawHOCR = FiltRawHOCR, CalData = CalData(), Apla = Apla())
-      #   })
-      #
-      #
-      # } else if (input$ObsType == "Transect") {
-      #
-      #   #Transect <- process_transect(CalHOCR = CalHOCR())
-      #
-      # } else {
-      #   error("ObsType has a problem ...")
-      # }
-
-      #invalidateLater(500)
-    })
-
-    ObsType <- reactive({
-      input$ObsType
     })
 
     list(
       Data = Data,
-      ObsType = ObsType,
+      ObsType = reactive(input$ObsType),
+      ObsName = reactive(input$ObsName),
       ProcessL1b = reactive(input$ProcessL1b)
       )
-
 
   })
 }

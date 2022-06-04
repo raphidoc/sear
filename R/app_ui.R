@@ -11,7 +11,7 @@ app_ui <- function(request) {
     # Your application UI logic
     dashboardPage(
       dashboardHeader(),
-      dashboardSidebar(width = 200,
+      dashboardSidebar(
         mod_project_manager_ui("project_manager"),
         dropdownButton(
           mod_load_mtelog_ui("load_mtelog"),

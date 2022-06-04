@@ -10,17 +10,7 @@
 mod_L1L2_station_ui <- function(id){
   ns <- NS(id)
   tagList(
-    tabsetPanel(
-      type = "pills",
-      tabPanel(
-        "Station",
-        textOutput(ns("ObsName"))
-      ),
-      tabPanel(
-        "HOCR",
-        uiOutput(outputId = ns("HOCR")),
-      )
-    )
+    uiOutput(outputId = ns("Station"))
   )
 }
 
@@ -34,14 +24,30 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    output$ObsName <- renderText(ObsName())
+    output$ObsName <- renderText(paste0("Name: ",ObsName()))
+
+    output$Station <- renderUI({
+      req(L1bDataLong())
+
+      tabsetPanel(
+        type = "pills",
+        tabPanel(
+          "Station",
+          textOutput(ns("ObsName"))
+        ),
+        tabPanel(
+          "HOCR",
+          uiOutput(outputId = ns("HOCR"))
+        )
+      )
+    })
 
     output$HOCR <- renderUI({
 
       req(L1bDataLong())
 
         tagList(
-          plotlyOutput(ns("HOCRL1bplot"), height = 250),
+          plotlyOutput(ns("HOCRL1bplot"), height = 320),
           actionButton(ns("ProcessL2"), "ProcessL2"),
           plotlyOutput(ns("AOPs"), height = 250)
         )
@@ -60,18 +66,19 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
     })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
-    Selected <- reactiveVal({})
 
     observeEvent(event_data('plotly_click', source = "HOCRL1b"), {
-      Selected(event_data('plotly_click', source = "HOCRL1b")$customdata)
+      Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
+
+      browser()
 
       tmp <- QCData()
 
       # Change value for selected spectrum ID
-      if (tmp$QC[tmp$ID %in% Selected()] == "1") {
-        tmp$QC[tmp$ID %in% Selected()] <- 0
-      } else if (tmp$QC[tmp$ID %in% Selected()] == "0") {
-        tmp$QC[tmp$ID %in% Selected()] <- 1
+      if (tmp$QC[tmp$ID %in% Selected] == "1") {
+        tmp$QC[tmp$ID %in% Selected] <- 0
+      } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
+        tmp$QC[tmp$ID %in% Selected] <- 1
       }
 
       QCData(tmp)
@@ -95,39 +102,41 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
 
       ply <- L1bData() %>%
         #filter(str_detect(Instrument, "HPL")) %>%
-        mutate(Plot = purrr::map2(.x = AproxData, .y = SN, ~
-                                    plot_ly(
-                                      .x,
-                                      text = ~ID,
-                                      customdata = ~ID
-                                      ) %>%
-                                    add_lines(
-                                      x = ~Wavelength,
-                                      y = ~Channels ,
-                                      name = ~QC,
-                                      showlegend = F,
-                                      color = ~QC,
-                                      colors = c("1" = "seagreen", "0" = "red")
-                                      ) %>%
-                                    add_annotations(
-                                      text = ~.y,
-                                      x = 0.5,
-                                      y = 1,
-                                      yref = "paper",
-                                      xref = "paper",
-                                      xanchor = "middle",
-                                      yanchor = "top",
-                                      showarrow = FALSE,
-                                      font = list(size = 15)
-                                    ) %>%
-                                    layout(
-                                      shapes = BlackSquare,
-                                      yaxis = list(rangemode = "nonnegative"
-                                                   #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
-                                      ),
-                                      xaxis = list(rangemode = "nonnegative")
-                                    ) %>%
-                                    event_register('plotly_selected')
+        mutate(Plot = purrr::map2(
+          .x = AproxData,
+          .y = SN,
+          ~plot_ly(
+            .x,
+            text = ~ID,
+            customdata = ~ID
+          ) %>%
+            add_lines(
+              x = ~Wavelength,
+              y = ~Channels ,
+              name = ~QC,
+              showlegend = F,
+              color = ~QC,
+              colors = c("1" = "seagreen", "0" = "red")
+            ) %>%
+            add_annotations(
+              text = ~.y,
+              x = 0.5,
+              y = 1,
+              yref = "paper",
+              xref = "paper",
+              xanchor = "middle",
+              yanchor = "top",
+              showarrow = FALSE,
+              font = list(size = 15)
+            ) %>%
+            layout(
+              shapes = BlackSquare,
+              yaxis = list(rangemode = "nonnegative"
+                           #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
+              ),
+              xaxis = list(rangemode = "nonnegative")
+            ) %>%
+            event_register('plotly_selected')
         ))
 
       Lu <- ply %>%

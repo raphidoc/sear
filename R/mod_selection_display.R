@@ -43,14 +43,15 @@ mod_selection_display_server <- function(id, Apla){
       req(Apla())
 
       tagList(
-        sliderInput(ns("TimeFilter"), "Time filter",
+        sliderInput(ns("TimeFilter"), "Time",
                     min = min(Apla()$DateTime), max = max(Apla()$DateTime),
                     value = c(min(Apla()$DateTime), max = max(Apla()$DateTime)),
                     timeFormat = "%T",
                     timezone = "+0000",
                     width = NULL,
                     step = 1),
-        numericInput(ns("SpeedLimit"), "SpeedLimit", 4, step = 0.1)
+        sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(0, 180), min = 0, max = 360),
+        numericInput(ns("SpeedLimit"), "Speed", 4, step = 0.1)
       )
 
 
@@ -66,7 +67,9 @@ mod_selection_display_server <- function(id, Apla){
       req(TimeInterval(), input$SpeedLimit)
 
       AplaTime <- UpApla() %>%
-        filter(DateTime %within% TimeInterval() & Speed_N <= input$SpeedLimit)
+        filter(DateTime %within% TimeInterval(),
+               BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
+               Speed_N <= input$SpeedLimit)
 
       SubUpApla(AplaTime)
     })

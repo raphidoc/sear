@@ -230,6 +230,3 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
 
 }
 
-process_station <- function(Apla = NULL, FiltRawHOCR = NULL, CalData = NULL){
-  CalHocr <- cal_hocr(FiltRawHOCR, CalData$HOCR, AplaDate = unique(date(Apla$DateTime)))
-}
