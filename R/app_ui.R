@@ -20,7 +20,7 @@ app_ui <- function(request) {
           tootltip = "path to go here"
         ),
         mod_select_instrument_ui("select_instrument"),
-        mod_process_L1L2_ui("process_L1b")
+        mod_process_L1b_ui("process_L1b")
       ),
       dashboardBody(
         mod_parse_mtelog_ui("parse_mtelog"),
