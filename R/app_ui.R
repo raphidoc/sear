@@ -19,7 +19,6 @@ app_ui <- function(request) {
           label = "Load data",
           tootltip = "path to go here"
         ),
-        mod_select_instrument_ui("select_instrument"),
         mod_process_L1b_ui("process_L1b")
       ),
       dashboardBody(

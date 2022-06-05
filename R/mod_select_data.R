@@ -37,7 +37,7 @@ mod_select_data_server <- function(id, Apla){
     ns <- session$ns
 
 
-    # Add time filtering when the Apla reactive dataframe is created
+# Filters for data selection ----------------------------------------------
     output$Filters <- renderUI({
 
       req(Apla())
@@ -82,12 +82,24 @@ mod_select_data_server <- function(id, Apla){
     # Get the ID of plotly_mapbox selected point in: selected()$customdata
     #Selected <- reactiveVal({})
 
-    Selected <- eventReactive(event_data("plotly_selected", source = "map"),{
-      event_data("plotly_selected", source = "map")$customdata
+    SelID <- eventReactive(
+      event_data("plotly_selected", source = "map"),
+      label = "Select data",
+      ignoreInit = T, {
+        event_data("plotly_selected", source = "map")$customdata
+      })
+
+    SelApla <- reactive({
+      req(SelID())
+
+      # Should not be recomputed when processing to L1b ...
+      #browser()
+
+      UpApla()[UpApla()$ID %in% SelID(), ]
     })
 
-    # Global map for the entire dataset ---------------------------------------
 
+# Map for data selection --------------------------------------------------
     output$Map <- renderPlotly({
 
       req(SubUpApla())
@@ -131,9 +143,10 @@ mod_select_data_server <- function(id, Apla){
         event_register("plotly_selected")
     })
 
+# BoatSolAzm polar plot ---------------------------------------------------
     output$BoatSolAzm <- renderPlotly({
 
-      req(Selected())
+      req(SelApla())
 
       m <- list(
         l = 40,
@@ -143,7 +156,7 @@ mod_select_data_server <- function(id, Apla){
         pad = 0
       )
 
-      SubUpApla()[SubUpApla()$ID %in% Selected(), ] %>%
+      SelApla() %>%
         plot_ly(
           width = 250,
           height = 250,
@@ -164,38 +177,10 @@ mod_select_data_server <- function(id, Apla){
 
     })
 
-    # DataTable used to visualize the state of the (subset of) DataSynthesis.csv file
-    # output$DataTable <- DT::renderDataTable(
-    #   DT::datatable(UpApla()[UpApla()$ID %in% selected()$customdata,],
-    #                 extensions = c("Buttons", "Scroller", "Select"),
-    #                 filter = "top",
-    #                 escape = TRUE, rownames = FALSE,
-    #                 style = "bootstrap",
-    #                 class = "compact",
-    #                 options = list(
-    #                   dom = "Brtip",
-    #                   select = list(style = 'os', items = 'row'),
-    #                   buttons = list(I("colvis"),"selectNone","csv"),
-    #                   columnDefs = list(
-    #                     list(
-    #                       visible = FALSE,
-    #                       targets = c(0,2,3)
-    #                     )),
-    #                   deferRender = TRUE,
-    #                   scrollY = 100,
-    #                   pageLength = 10,
-    #                   scroller = TRUE
-    #                 ),
-    #                 selection = "none",
-    #                 editable = F
-    #   ),
-    #   server=FALSE,
-    #   editable=T
-    # )
-
     list(
       UpApla = UpApla,
-      Selected = Selected
+      SelApla = SelApla,
+      SelID = SelID
     )
 
   })
@@ -206,3 +191,32 @@ mod_select_data_server <- function(id, Apla){
 
 ## To be copied in the server
 # mod_selection_display_server("selection_display_1")
+
+# DataTable used to visualize the state of the (subset of) DataSynthesis.csv file
+# output$DataTable <- DT::renderDataTable(
+#   DT::datatable(UpApla()[UpApla()$ID %in% selected()$customdata,],
+#                 extensions = c("Buttons", "Scroller", "Select"),
+#                 filter = "top",
+#                 escape = TRUE, rownames = FALSE,
+#                 style = "bootstrap",
+#                 class = "compact",
+#                 options = list(
+#                   dom = "Brtip",
+#                   select = list(style = 'os', items = 'row'),
+#                   buttons = list(I("colvis"),"selectNone","csv"),
+#                   columnDefs = list(
+#                     list(
+#                       visible = FALSE,
+#                       targets = c(0,2,3)
+#                     )),
+#                   deferRender = TRUE,
+#                   scrollY = 100,
+#                   pageLength = 10,
+#                   scroller = TRUE
+#                 ),
+#                 selection = "none",
+#                 editable = F
+#   ),
+#   server=FALSE,
+#   editable=T
+# )

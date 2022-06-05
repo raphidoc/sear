@@ -10,7 +10,7 @@
 mod_L1L2_station_ui <- function(id){
   ns <- NS(id)
   tagList(
-    uiOutput(outputId = ns("Station"))
+    uiOutput(outputId = ns("StationTabPanel"))
   )
 }
 
@@ -24,22 +24,26 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    output$ObsName <- renderText(paste0("Name: ",ObsName()))
-
-    output$Station <- renderUI({
+    output$StationTabPanel <- renderUI({
       req(L1bDataLong())
 
       tabsetPanel(
         type = "pills",
         tabPanel(
           "Station",
-          textOutput(ns("ObsName"))
+          uiOutput(ns("Station"))
         ),
         tabPanel(
           "HOCR",
           uiOutput(outputId = ns("HOCR"))
         )
       )
+    })
+
+    output$ObsName <- renderText(paste0("Name: ",ObsName()))
+
+    output$Station <- renderUI({
+      renderText(ns("ObsName"))
     })
 
     output$HOCR <- renderUI({
@@ -53,7 +57,8 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
         )
     })
 
-    # Tibble for storing QC value initiated with 1 = good
+
+# QC flag for HOCR --------------------------------------------------------
     QCData <- reactiveVal({
 
       L1bDataLong()$AproxData[[1]] %>%
@@ -67,7 +72,9 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
 
-    observeEvent(event_data('plotly_click', source = "HOCRL1b"), {
+    observeEvent(event_data('plotly_click', source = "HOCRL1b"),
+                 label = "QC HOCR",
+                 ignoreInit = TRUE, {
       Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
 
       browser()
@@ -90,6 +97,8 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
         mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
     })
 
+
+# HOCR Es and Lu plot -----------------------------------------------------
     output$HOCRL1b <- renderPlotly({
 
       req(L1bDataLong())
@@ -175,135 +184,9 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
       widgetframe::frameableWidget(p)
     })
 
+# HOCR AOPs computation ---------------------------------------------------
     L2Data <- eventReactive(input$ProcessL2, {
-
-
-
-      L1bDataWide <- L1bData() %>%
-        mutate(AproxData = purrr::map(
-          AproxData,
-          ~ pivot_wider(
-            .,
-            names_from = all_of(c("Type", "Wavelength")),
-            names_sep = "_",
-            values_from = Channels
-          ) %>%
-          ungroup())) %>%
-        ungroup()
-
-      L1bDataWide <- L1bDataWide %>%
-        mutate(AproxData = purrr::map(AproxData, ~filter(., QC == "1")))
-
-      L1bDataWide <- L1bDataWide %>%
-        mutate(AproxData = purrr::map(AproxData, ~summarise(.x, across(.cols = !matches("ID|QC"), ~ mean(.x, na.rm =T)))))
-
-      ### Approx wavelength
-      L1bAverageLong <- L1bDataWide %>%
-        mutate(AproxData = purrr::map(
-          AproxData,
-          ~pivot_longer(
-            .,
-            cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-            values_to = "Channels",
-            names_to = c("Type","Wavelength"),
-            names_sep = "_",
-            #names_prefix = "[[:alpha:]]{2}_",
-            names_transform = list(Wavelength = as.numeric)
-          )
-        ))
-
-      WaveSeq <- seq(353,800,3)
-
-      approx_wave <- function(., WaveSeq) {
-
-        tbl <- tibble(
-          DateTime = unique(.$DateTime),
-          Type = unique(.$Type),
-          Wavelength = WaveSeq
-        )
-
-        for (i in seq_along(colnames(.))[-1:-3]) {
-
-          coord <- approx(x = .[[3]], y = .[[i]], xout = WaveSeq, method = "linear")
-
-          tbl <- bind_cols(tbl, x = coord[[2]])
-          colnames(tbl)[i] <- colnames(.)[i]
-        }
-
-        tbl
-
-        #tbl %>% mutate(ID = seq_along(TimeSeq))
-      }
-
-      L1bAproxLong <- L1bAverageLong %>%
-        mutate(IntData = purrr::map(AproxData, ~ approx_wave(., WaveSeq)))
-
-      L1bAproxWide <- L1bAproxLong %>%
-        mutate(IntData = purrr::map(
-          IntData,
-          ~ pivot_wider(
-            .,
-            names_from = all_of(c("Type", "Wavelength")),
-            names_sep = "_",
-            values_from = Channels
-          ))) %>%
-        ungroup()
-
-      Es <- L1bAproxWide %>%
-        select(!AproxData) %>%
-        filter(SN == "1397") %>%
-        unnest(cols = c(IntData)) %>%
-        select(!matches("Instrument|SN|DateTime"))
-
-      LuZ1 <- L1bAproxWide %>%
-        select(!AproxData) %>%
-        filter(SN == "1416") %>%
-        unnest(cols = c(IntData))%>%
-        select(!matches("Instrument|SN|DateTime"))
-
-      LuZ2 <- L1bAproxWide %>%
-        select(!AproxData) %>%
-        filter(SN == "1415") %>%
-        unnest(cols = c(IntData))%>%
-        select(!matches("Instrument|SN|DateTime"))
-
-      DeltaDepth <- 0.30 # 30 cm
-
-      KLuWide <- (log(LuZ1)-log(LuZ2))/DeltaDepth
-
-      KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu"))
-
-      KLuLong <- KLuWide %>%
-        pivot_longer(
-          .,
-          cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-          values_to = "KLu",
-          names_to = c("Wavelength"),
-          #names_sep = "_",
-          names_prefix = "[[:alpha:]]{3}_",
-          names_transform = list(Wavelength = as.numeric)
-        )
-
-      LuZ1Depth <- 0.10 # 10 cm
-
-      Lw <- 0.54 * LuZ1 / exp(-LuZ1Depth*KLuWide)
-      RrsWide <- Lw / Es
-
-      RrsLong <- RrsWide %>%
-        pivot_longer(
-          .,
-          cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-          values_to = "Rrs",
-          names_to = c("Wavelength"),
-          #names_sep = "_",
-          names_prefix = "[[:alpha:]]{2}_",
-          names_transform = list(Wavelength = as.numeric)
-        )
-
-      L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
-
-      L2Data
-
+      L2Data <- L2_hocr(L1bData())
     })
 
     output$AOPs <- renderPlotly({
@@ -319,7 +202,6 @@ mod_L1L2_station_server <- function(id, L1bDataLong, ObsName){
         add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 
       subplot(Rrsplot, KLuplot)
-
       })
 
    })
