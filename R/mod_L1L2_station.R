@@ -61,21 +61,21 @@ mod_L1L2_station_server <- function(id, L1b){
                     style = "bootstrap",
                     class = "compact",
                     options = list(
-                      dom = "Brtip",
-                      select = list(style = 'os', items = 'row'),
-                      buttons = list(I("colvis"),"selectNone","csv"),
-                      columnDefs = list(
-                        list(
+                      #dom = "Brtip",
+                      #select = list(style = 'os', items = 'row'),
+                      #buttons = list(I("colvis"),"selectNone","csv"),
+                      #columnDefs = list(
+                       # list(
                           #visible = FALSE,
                           #targets = c(0,2,3)
-                        )),
+                        #)),
                       deferRender = TRUE,
                       scrollY = 100,
                       pageLength = 10,
                       scroller = TRUE
                     ),
                     selection = "none",
-                    editable = T
+                    editable = F
       ),
       server=FALSE,
       editable=T
@@ -115,8 +115,6 @@ mod_L1L2_station_server <- function(id, L1b){
                  label = "QC HOCR",
                  ignoreInit = TRUE, {
       Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
-
-      browser()
 
       tmp <- QCData()
 
