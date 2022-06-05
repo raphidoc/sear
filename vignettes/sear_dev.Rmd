@@ -40,7 +40,6 @@ MTELog <- sear:::read_mtelog(ConFile)
 Apla <- sear:::read_apla(MTELog)
 ```
 
-
 # UI
 
 ## Project workflow
