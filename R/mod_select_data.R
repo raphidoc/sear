@@ -92,7 +92,7 @@ mod_select_data_server <- function(id, Apla){
         # Check that all ID form a continuous sequence with increment of one
         if (!all(abs(diff(ID)) == 1)) {
           showModal(modalDialog(
-            title = "Discontinous data",
+            title = "Invalid selection",
             "You selected discontinous data, please select only contiguous points")
           )
           invalidateLater(1)
