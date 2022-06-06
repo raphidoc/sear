@@ -7,24 +7,25 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_L1L2_station_ui <- function(id){
+mod_station_L1L2_ui <- function(id){
   ns <- NS(id)
   tagList(
-    uiOutput(outputId = ns("StationTabPanel"))
+    uiOutput(outputId = ns("TabPanel"))
   )
 }
 
 #' L1L2_station Server Functions
 #'
 #' @noRd
-mod_L1L2_station_server <- function(id, L1b){
+mod_station_L1L2_server <- function(id, L1b){
 
   stopifnot(is.reactive(L1b$Data))
 
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    output$StationTabPanel <- renderUI({
+# Tab panel ---------------------------------------------------------------
+    output$TabPanel <- renderUI({
       req(L1b$Data())
 
       tabsetPanel(
@@ -40,17 +41,23 @@ mod_L1L2_station_server <- function(id, L1b){
       )
     })
 
-    StationTbl <- eventReactive(
+# Station tab -------------------------------------------------------------
+    StationTbl <- reactiveVal({})
+
+    observeEvent(
       L1b$ProcessL1b(),
       {
-        tibble(
-          ObsName = L1b$ObsName(),
-          ObsType = L1b$ObsType(), # Obviously should be "Station"
-          DateTime = mean(L1b$SelApla()$DateTime, na.rm = T),
-          Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
-          Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T)
+        StationTbl(
+          tibble(
+            ObsName = L1b$ObsName(),
+            ObsType = L1b$ObsType(), # Obviously should be "Station"
+            DateTime = mean(L1b$SelApla()$DateTime, na.rm = T),
+            Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
+            Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T)
+          )
         )
-      })
+      }
+    )
 
     #DataTable used to display Station information
     output$DataTable <- DT::renderDataTable(
@@ -82,9 +89,35 @@ mod_L1L2_station_server <- function(id, L1b){
     )
 
     output$Station <- renderUI({
-      DT::DTOutput(ns("DataTable"))
+
+      tagList(
+        DT::DTOutput(ns("DataTable")),
+        textAreaInput(
+          ns("Comment"),
+          "Comment",
+          value = "No comment",
+          width = NULL,
+          height = NULL,
+          cols = NULL,
+          rows = NULL,
+          placeholder = NULL,
+          resize = NULL
+        ),
+
+        actionButton(ns("Delete"), "Delete", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
+        actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
+      )
     })
 
+    observeEvent(
+      input$Save,
+      {
+        StationTbl(StationTbl() %>% mutate(Comment = input$Comment))
+      })
+
+
+
+# HOCR tab ----------------------------------------------------------------
     output$HOCR <- renderUI({
 
       req(L1b$Data())
@@ -96,11 +129,12 @@ mod_L1L2_station_server <- function(id, L1b){
         )
     })
 
-
 # QC flag for HOCR --------------------------------------------------------
     QCData <- reactiveVal({
 
-      L1b$Data()$AproxData[[1]] %>%
+      browser()
+
+      L1b$Data()$HOCR$AproxData[[1]] %>%
         select(DateTime, ID) %>%
         unique() %>%
         mutate(QC = "1")
@@ -129,7 +163,7 @@ mod_L1L2_station_server <- function(id, L1b){
     })
 
     L1bData <- reactive({
-      L1b$Data() %>%
+      L1b$Data()$HOCR %>%
         select(Instrument, SN, AproxData) %>%
         mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
     })
@@ -240,6 +274,11 @@ mod_L1L2_station_server <- function(id, L1b){
 
       subplot(Rrsplot, KLuplot)
       })
+
+
+# BB3 tab -----------------------------------------------------------------
+
+
 
    })
 }

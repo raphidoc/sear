@@ -20,7 +20,7 @@ mod_process_L1b_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1b_server <- function(id, SelData, L1, CalData){
+mod_process_L1b_server <- function(id, L1, SelData, CalData){
 
   # stopifnot(is.reactive(UpApla))
   # stopifnot(is.reactive(SelID))
@@ -40,7 +40,7 @@ mod_process_L1b_server <- function(id, SelData, L1, CalData){
                  selectInput(ns("ObsType"), "ObsType", choices = list("Station","Transect"), selected = NULL, multiple = F)
                  ),
           column(6,
-                 textInput(ns("ObsName"), "ObsName", value = NA, placeholder = "Prefix")
+                 textInput(ns("ObsName"), "ObsName", value = "NA", placeholder = "Prefix")
                  )
         ),
         mod_select_instrument_ui(ns("select_instrument")),
@@ -48,7 +48,7 @@ mod_process_L1b_server <- function(id, SelData, L1, CalData){
       )
     })
 
-    mod_select_instrument_server(ns("select_instrument"), L1$MainLog)
+    Instrument <- mod_select_instrument_server("select_instrument", L1$MainLog)
 
     Data <- eventReactive(input$ProcessL1b, {
 
@@ -56,6 +56,32 @@ mod_process_L1b_server <- function(id, SelData, L1, CalData){
       waiter <- waiter::Waiter$new()
       waiter$show()
       on.exit(waiter$hide())
+
+      Data <- list()
+
+      if (is.null(Instrument$ToProcess())) {
+
+        showModal(modalDialog(
+          title = "No instrument selected",
+          "Please select at least one instrument to process")
+        )
+        invalidateLater(1)
+
+      }
+
+      if (str_detect(Instrument$ToProcess(), "HOCR")) {
+
+        # Filter data point before processing to optimize execution time
+        SelDateTime <- SelData$UpApla()$DateTime[SelData$UpApla()$ID %in% SelData$SelApla()$ID]
+        TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
+
+        FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
+
+        Data$HOCR <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime)))
+
+      }
+
+      return(Data)
 
       # # Create a temporary copy of the current UpApla tibble
       # tmp <- UpApla()
@@ -66,22 +92,16 @@ mod_process_L1b_server <- function(id, SelData, L1, CalData){
       #
       # # Update the UpApla reactiveVal
       # UpApla(tmp)
-
-      # Filter data point before processing to optimize execution time
-      SelDateTime <- SelData$UpApla()$DateTime[SelData$UpApla()$ID %in% SelData$SelApla()$ID]
-      TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
-
-      FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
-
-      Data <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime)))
-
     })
 
+# Module output -----------------------------------------------------------
     list(
       Data = Data,
       ObsType = reactive(input$ObsType),
       ObsName = reactive(input$ObsName),
+      Instrument = Instrument$ToProcess,
       SelApla = SelData$SelApla,
+      Map = SelData$Map,
       ProcessL1b = reactive(input$ProcessL1b)
       )
 

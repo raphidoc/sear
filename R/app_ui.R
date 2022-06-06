@@ -30,7 +30,7 @@ app_ui <- function(request) {
           ),
           column(
             width = 6,
-            mod_L1L2_station_ui("L1L2_station")
+            mod_station_L1L2_ui("station_L1L2")
           )
         )
       )

@@ -64,8 +64,11 @@ mod_select_instrument_server <- function(id, MainLog){
         choiceNames = NULL,
         choiceValues = NULL
       )
-
     })
+
+    list(
+      ToProcess = reactive({input$InstrumentList})
+    )
 
   })
 }

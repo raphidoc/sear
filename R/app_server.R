@@ -20,25 +20,22 @@ app_server <- function(input, output, session) {
 
   CalData <- mod_load_cal_server("HOCRCal")
 
-  L1b <- mod_process_L1b_server("process_L1b", SelData, L1, CalData)
+  L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData)
 
-  observeEvent( L1b$ProcessL1b(), {
+  observeEvent(
+    L1b$ProcessL1b(),
+    {
 
-    req(L1b$Data())
+      req(L1b$Data())
 
-    if (L1b$ObsType() == "Station") {
+      if (L1b$ObsType() == "Station") {
 
-      mod_L1L2_station_server("L1L2_station", L1b)
+        mod_station_L1L2_server("station_L1L2", L1b)
 
-    } else {
+      } else {
 
-      stop(L1b$ObsType()," not implemented")
+        stop(L1b$ObsType()," not implemented")
 
-    }
-  })
-
-
-
-
-
+      }
+    })
 }

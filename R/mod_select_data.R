@@ -36,6 +36,12 @@ mod_select_data_server <- function(id, Apla){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
+    # Update tibble ObsType and ObsName on ApplyObs button click event
+    UpApla <- reactiveVal({})
+
+    observe({
+      UpApla(Apla())
+    })
 
 # Filters for data selection ----------------------------------------------
     output$Filters <- renderUI({
@@ -72,13 +78,7 @@ mod_select_data_server <- function(id, Apla){
       SubUpApla(AplaTime)
     })
 
-    # Update tibble ObsType and ObsName on ApplyObs button click event
-    UpApla <- reactiveVal({})
-
-    observe({
-      UpApla(Apla())
-    })
-
+# Selected data points ----------------------------------------------------
     # Get the ID of plotly_mapbox selected point in: selected()$customdata
     #Selected <- reactiveVal({})
 
@@ -113,47 +113,60 @@ mod_select_data_server <- function(id, Apla){
 
 
 # Map for data selection --------------------------------------------------
-    output$Map <- renderPlotly({
 
+    Map <- reactiveValues(
+      Apla = {
+        reactive({
+          req(SubUpApla())
+
+          ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
+
+          zc <- zoom_center(SubUpApla()$Lat_DD, SubUpApla()$Lon_DD)
+          zoom <- zc[[1]]
+          center <- zc[[2]]
+
+          p <- plot_mapbox(
+            SubUpApla(),
+            lon = ~Lon_DD,
+            lat = ~Lat_DD,
+            mode = 'scattermapbox',
+            color = ~ObsType,
+            colors= ObsTypeColor,
+            alpha = 1,
+            source = "map",
+            customdata = ~ID,
+            text = ~paste0(
+              '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+              '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+              '<b>Course (TN)</b>: ', Course_TN, '<br>',
+              '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+            )#,
+            # hovertemplate = paste(
+            #   "Time: %{text|%H:%M:%S}"
+            # )
+          ) %>%
+            layout(
+              plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
+              mapbox = list(style = "satellite",
+                            zoom = zoom,
+                            center = list(
+                              lat = center[[1]],
+                              lon = center[[2]]
+                            )
+              )
+            ) %>%
+            event_register("plotly_selected")
+        })
+      },
+      Obs = {reactive(add_trace)})
+
+    output$Map <- renderPlotly({
       req(SubUpApla())
 
-      ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
+      Apla <- Map$Apla()
+      Obs <- Map$Obs()
 
-      zc <- zoom_center(SubUpApla()$Lat_DD, SubUpApla()$Lon_DD)
-      zoom <- zc[[1]]
-      center <- zc[[2]]
-
-      p <- plot_mapbox(
-        SubUpApla(),
-        lon = ~Lon_DD,
-        lat = ~Lat_DD,
-        mode = 'scattermapbox',
-        color = ~ObsType,
-        colors= ObsTypeColor,
-        alpha = 1,
-        source = "map",
-        customdata = ~ID,
-        text = ~paste0(
-          '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
-          '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-          '<b>Course (TN)</b>: ', Course_TN, '<br>',
-          '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
-        )#,
-        # hovertemplate = paste(
-        #   "Time: %{text|%H:%M:%S}"
-        # )
-      ) %>%
-        layout(
-          plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
-          mapbox = list(style = "satellite",
-                        zoom = zoom,
-                        center = list(
-                          lat = center[[1]],
-                          lon = center[[2]]
-                        )
-          )
-        ) %>%
-        event_register("plotly_selected")
+      Apla %>% Obs
     })
 
 # BoatSolAzm polar plot ---------------------------------------------------
@@ -190,10 +203,12 @@ mod_select_data_server <- function(id, Apla){
 
     })
 
+# Module output -----------------------------------------------------------
     list(
       UpApla = UpApla,
       SelApla = SelApla,
-      SelID = SelID
+      SelID = SelID,
+      Map = Map
     )
 
   })
