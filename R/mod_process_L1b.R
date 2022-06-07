@@ -99,7 +99,6 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData){
       Data = Data,
       ObsType = reactive(input$ObsType),
       ObsName = reactive(input$ObsName),
-      Instrument = Instrument$ToProcess,
       SelApla = SelData$SelApla,
       Map = SelData$Map,
       ProcessL1b = reactive(input$ProcessL1b)
