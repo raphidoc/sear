@@ -68,6 +68,7 @@ mod_station_hocr_server <- function(id, L1bData){
                  })
 
     L1bHOCR <- reactive({
+
       L1bData()$HOCR %>%
         select(Instrument, SN, AproxData) %>%
         mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
@@ -78,7 +79,7 @@ mod_station_hocr_server <- function(id, L1bData){
     output$HOCRL1b <- renderPlotly({
 
       req(L1bHOCR())
-      req(QCData())
+      #req(QCData())
 
 
       PlyFont <- list(family="Times New Roman", size = 18)
@@ -163,6 +164,7 @@ mod_station_hocr_server <- function(id, L1bData){
     # HOCR AOPs computation ---------------------------------------------------
     L2Data <- eventReactive(input$ProcessL2, {
       L2Data <- L2_hocr(L1bHOCR())
+
     })
 
     output$AOPs <- renderPlotly({
@@ -179,6 +181,13 @@ mod_station_hocr_server <- function(id, L1bData){
 
       subplot(Rrsplot, KLuplot)
     })
+
+# Module output -----------------------------------------------------------
+
+  list(
+    L1bHOCR = L1bHOCR,
+    AOPs = L2Data
+  )
 
   })
 }

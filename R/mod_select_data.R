@@ -29,7 +29,7 @@ mod_select_data_ui <- function(id){
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, Apla){
+mod_select_data_server <- function(id, Apla, DB){
 
   stopifnot(is.reactive(Apla))
 
@@ -85,9 +85,17 @@ mod_select_data_server <- function(id, Apla){
     SelID <- eventReactive(
       event_data("plotly_selected", source = "map"),
       label = "Select data",
-      ignoreInit = T, {
+      ignoreInit = T,
+      {
 
-        ID <- event_data("plotly_selected", source = "map")$customdata
+        browser()
+
+        # curvenumber 0 is the Applanix trace
+        ID <- event_data("plotly_selected", source = "map") %>%
+          filter(curveNumber == 0)
+
+        # When Obs trace is selected, UUID make custom data as character
+        ID <- as.numeric(ID$customdata)
 
         # Check that all ID form a continuous sequence with increment of one
         if (!all(abs(diff(ID)) == 1)) {
@@ -102,11 +110,36 @@ mod_select_data_server <- function(id, Apla){
         }
       })
 
+    SelUUID <- eventReactive(
+      event_data("plotly_click", source = "map"),
+      label = "Select Obs",
+      ignoreInit = F,
+      {
+
+        browser()
+
+        UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
+
+        if (!uuid::UUIDvalidate(UUID)) {
+          showModal(modalDialog(
+            title = "Invalid click",
+            "You didn't click on an Obs feature (Station/Transect), no UUID attatched")
+          )
+          invalidateLater(1)
+
+        } else {
+          UUID
+        }
+
+      }
+    )
+
+    observe(SelUUID())
+
     SelApla <- reactive({
       req(SelID())
 
       # Should not be recomputed when processing to L1b ...
-      #browser()
 
       UpApla()[UpApla()$ID %in% SelID(), ]
     })
@@ -114,59 +147,64 @@ mod_select_data_server <- function(id, Apla){
 
 # Map for data selection --------------------------------------------------
 
-    Map <- reactiveValues(
-      Apla = {
-        reactive({
-          req(SubUpApla())
-
-          ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
-
-          zc <- zoom_center(SubUpApla()$Lat_DD, SubUpApla()$Lon_DD)
-          zoom <- zc[[1]]
-          center <- zc[[2]]
-
-          p <- plot_mapbox(
-            SubUpApla(),
-            lon = ~Lon_DD,
-            lat = ~Lat_DD,
-            mode = 'scattermapbox',
-            color = ~ObsType,
-            colors= ObsTypeColor,
-            alpha = 1,
-            source = "map",
-            customdata = ~ID,
-            text = ~paste0(
-              '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
-              '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-              '<b>Course (TN)</b>: ', Course_TN, '<br>',
-              '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
-            )#,
-            # hovertemplate = paste(
-            #   "Time: %{text|%H:%M:%S}"
-            # )
-          ) %>%
-            layout(
-              plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
-              mapbox = list(style = "satellite",
-                            zoom = zoom,
-                            center = list(
-                              lat = center[[1]],
-                              lon = center[[2]]
-                            )
-              )
-            ) %>%
-            event_register("plotly_selected")
-        })
-      },
-      Obs = {reactive(add_trace)})
-
     output$Map <- renderPlotly({
       req(SubUpApla())
 
-      Apla <- Map$Apla()
-      Obs <- Map$Obs()
 
-      Apla %>% Obs
+      #ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
+
+      zc <- zoom_center(SubUpApla()$Lat_DD, SubUpApla()$Lon_DD)
+      zoom <- zc[[1]]
+      center <- zc[[2]]
+
+      p <- plot_mapbox(
+        mode = 'scattermapbox',
+        source = "map"
+        ) %>%
+        add_markers(
+          name = "Raw",
+          data = SubUpApla(),
+          x = ~Lon_DD,
+          y = ~Lat_DD,
+          customdata = ~ID,
+          colors = 'rgb(224, 17, 95)',
+          text = ~paste0(
+            '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+            '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+            '<b>Course (TN)</b>: ', Course_TN, '<br>',
+            '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+          )
+        ) %>%
+        add_markers(
+          name = "Stations",
+          data = DB$ObsMeta() %>%
+            filter(ObsType == "Station"),
+          x = ~Lon,
+          y = ~Lat,
+          customdata = ~UUID,
+          colors = 'rgb(15, 82, 186)',
+          text = ~paste0(
+            #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+            '<b>ObsName</b>: ', ObsName, '<br>',
+            '<b>ObsType</b>: ', ObsType, '<br>'
+            #'<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+            #'<b>Course (TN)</b>: ', Course_TN, '<br>',
+            #'<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+          )
+        ) %>%
+        layout(
+          plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
+          mapbox = list(style = "satellite",
+                        zoom = zoom,
+                        center = list(
+                          lat = center[[1]],
+                          lon = center[[2]]
+                        )
+          )
+        ) %>%
+        event_register("plotly_click") %>%
+        event_register("plotly_selected")
+
     })
 
 # BoatSolAzm polar plot ---------------------------------------------------
@@ -208,6 +246,7 @@ mod_select_data_server <- function(id, Apla){
       UpApla = UpApla,
       SelApla = SelApla,
       SelID = SelID,
+      SelUUID = SelUUID,
       Map = Map
     )
 

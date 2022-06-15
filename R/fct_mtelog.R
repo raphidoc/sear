@@ -79,10 +79,7 @@ read_apla <- function(MainLog){
            Lon_DD = ifelse(EW == "W", -Lon_DD, Lon_DD))
 
   # Add default NA value to ObsType for initial map plot
-  GPGGA <- GPGGA %>% mutate(
-    ID = seq_along(DateTime),
-    ObsType = "Unknown",
-    ObsName = NA) %>% select(Time, ID, DateTime, Lat_DD, Lon_DD, HorizontalDilution, ObsType, ObsName)
+  GPGGA <- GPGGA %>% select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution)
 
   # Extract GPVTG info, course and speed
 
@@ -133,6 +130,14 @@ read_apla <- function(MainLog){
            SolAlt = SolAlt * 180/pi,
            BoatSolAzm = SolAzm-Course_TN)
 
-  Apla
+  Apla %>%
+    filter(
+      Speed_N <= 4,
+      BoatSolAzm > 0 & BoatSolAzm < 180
+    ) %>%
+    mutate(
+      ID = seq_along(DateTime),
+      ObsType = "Unknown",
+      ObsName = NA)
 
 }

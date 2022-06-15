@@ -10,7 +10,7 @@
 #' @import shinyFiles
 #' @import shinyWidgets
 #'
-mod_project_manager_ui <- function(id){
+mod_manage_project_ui <- function(id){
   ns <- NS(id)
   tagList(
 
@@ -27,12 +27,12 @@ mod_project_manager_ui <- function(id){
 #' project_manager Server Functions
 #'
 #' @noRd
-mod_project_manager_server <- function(id){
+mod_manage_project_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     # Server side function of shinyDirButton
-    shinyDirChoose(input, id = 'Select', allowDirCreate = T, roots=c(Data='/D/Data'))
+    shinyDirChoose(input, id = 'Select', allowDirCreate = T, roots=c(Data='/D/Data',root='/'))
 
     # Store project Name and path in a reactive value
     Project <- reactive({
@@ -41,7 +41,7 @@ mod_project_manager_server <- function(id){
       # this early computation leed to error as input$Select is first an integer then a list.
       req(is.list(input$Select))
 
-      Path <- parseDirPath(roots=c(Data='/D/Data'), input$Select)
+      Path <- parseDirPath(roots=c(Data='/D/Data',root='/'), input$Select)
 
       Name <- str_extract(Path, "(?<=/)[^/]*$")
 
@@ -91,6 +91,7 @@ mod_project_manager_server <- function(id){
         message("Creating ", searproj)
 
         SearTbl <- tibble::tibble(
+          ProjName = Project()$Name,
           Created = Sys.time(),
           ProjPath = Project()$Path
         )

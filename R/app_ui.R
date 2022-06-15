@@ -10,16 +10,24 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     # Your application UI logic
     dashboardPage(
-      dashboardHeader(),
+      dashboardHeader(
+        title = tags$a(href='https://github.com/raphidoc/sear',
+                       favicon(
+                         ico = "hex_sear",
+                         ext = "png"
+                       ),
+                       'sear')
+      ),
       dashboardSidebar(
-        mod_project_manager_ui("project_manager"),
+        mod_manage_project_ui("manage_project"),
         dropdownButton(
           mod_load_mtelog_ui("load_mtelog"),
           circle = F,
           label = "Load data",
           tootltip = "path to go here"
         ),
-        mod_process_L1b_ui("process_L1b")
+        mod_process_L1b_ui("process_L1b"),
+        mod_manage_DB_ui("manage_DB")
       ),
       dashboardBody(
         mod_parse_mtelog_ui("parse_mtelog"),
@@ -53,7 +61,10 @@ golem_add_external_resources <- function() {
   )
 
   tags$head(
-    favicon(),
+    favicon(
+      ico = "hex_sear",
+      ext = "png"
+    ),
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "sear"

@@ -142,6 +142,7 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
     df[rep(1:nrow(df), times = n),]
   }
 
+
   GlobCal <- GlobCal %>% mutate(RawData = purrr::map2(RawData, OPTIC3, ~ bind_cols(.x, row_rep(.y, nrow(.x)/nrow(.y)))))
 
   # Calibrate time ----------------------------------------------------------

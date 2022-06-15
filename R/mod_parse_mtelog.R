@@ -59,10 +59,10 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
         Apla(read_apla(MainLog()))
 
-        Apla(Apla() %>% filter(
-          Speed_N <= 4,
-          BoatSolAzm > 0 & BoatSolAzm < 180
-          ))
+        # Apla(Apla() %>% filter(
+        #   Speed_N <= 4,
+        #   BoatSolAzm > 0 & BoatSolAzm < 180
+        #   ))
 
         dir.create(file.path(SearTbl()$ProjPath,"L1"))
 

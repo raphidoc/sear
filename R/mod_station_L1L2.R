@@ -58,7 +58,6 @@ mod_station_L1L2_server <- function(id, L1b){
     # observeEvent(
     #   req(str_detect(names(L1b$Data()), "HOCR")),
     #   {
-    #     browser()
     #     appendTab(inputId ="Tabset", tabPanel("HOCR", mod_station_hocr_ui(ns("station_hocr"))))
     #   })
 
@@ -138,11 +137,19 @@ mod_station_L1L2_server <- function(id, L1b){
 
 # HOCR tab ----------------------------------------------------------------
 
-    mod_station_hocr_server("station_hocr", L1b$Data)
+    HOCRL2 <- mod_station_hocr_server("station_hocr", L1b$Data)
 
 # BB3 tab -----------------------------------------------------------------
 
 
+# Module output -----------------------------------------------------------
+
+  list(
+    Save = reactive(input$Save),
+    Delete = reactive(input$Delete),
+    StationTbl = StationTbl,
+    HOCR = HOCRL2
+  )
 
    })
 }
