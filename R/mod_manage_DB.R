@@ -70,7 +70,28 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
     ObsMeta <- reactive({
       req(Con())
 
-      tibble(DBI::dbGetQuery(Con(), "SELECT * FROM ObsMeta"))
+      # if DB is not empty list UUID and get current index
+      if (
+        !identical(DBI::dbListTables(Con()), character(0)) #&
+        #str_detect(DBI::dbListTables(Con), "ObsMeta")
+      ) {
+        message("Listing Obs")
+
+
+        tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
+      } else {
+        tibble(
+          ObsType = NA,
+          ObsName = NA,
+          UUID = NA,
+          Lat = NA,
+          Lon = NA,
+          DateTime = NA
+        )
+      }
+
+
+
 
     })
 

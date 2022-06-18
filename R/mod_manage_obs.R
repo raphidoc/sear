@@ -26,10 +26,22 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
 # by populating the reactive data table needed
 
     observeEvent(
-      req(uuid::UUIDvalidate(SelData$SelUUID())),
+      req(SelData$SelUUID()),
       {
         browser()
         SelData$SelUUID()
+
+        Metadata <- DBI::dbReadTable(DB$Con(), "Metadata")
+        HOCRL1b <- DBI::dbReadTable(DB$Con(), "HOCRL1b")
+        HOCRL2 <- DBI::dbReadTable(DB$Con(), "HOCRL2")
+
+
+        # L2$StationTbl(Metadata)
+        #
+        # L2$HOCR()$L1bHOCR(HOCRL1b)
+        #
+        # L2$HOCR()$AOPs(HOCRL2)
+
       })
 
 # Save button send data to SQLite -----------------------------------------
@@ -65,10 +77,9 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
         DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
         DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
 
+        DB$ObsMeta(tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata")))
+
       })
-
-
-
 
   })
 }

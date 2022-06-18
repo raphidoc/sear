@@ -29,6 +29,12 @@ app_server <- function(input, output, session) {
   Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData)
 
   # observeEvent(
+  #   req(L1b$ProcessL1b() & L1b$ObsType() == "Station"),
+  #   {
+  #     L2 <- mod_station_L1L2_server("station_L1L2", L1b)
+  #   })
+
+  # observeEvent(
   #   L1b$ProcessL1b(),
   #   {
   #
