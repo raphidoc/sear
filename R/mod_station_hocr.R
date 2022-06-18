@@ -50,22 +50,25 @@ mod_station_hocr_server <- function(id, L1bData){
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
 
-    observeEvent(event_data('plotly_click', source = "HOCRL1b"),
-                 label = "QC HOCR",
-                 ignoreInit = TRUE, {
-                   Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
+    observeEvent(
+      event_data('plotly_click', source = "HOCRL1b"),
+      label = "QC HOCR",
+      ignoreInit = TRUE,
+      {
+        Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
 
-                   tmp <- QCData()
+        tmp <- QCData()
 
-                   # Change value for selected spectrum ID
-                   if (tmp$QC[tmp$ID %in% Selected] == "1") {
-                     tmp$QC[tmp$ID %in% Selected] <- 0
-                   } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
-                     tmp$QC[tmp$ID %in% Selected] <- 1
-                   }
+        # Change value for selected spectrum ID
+        if (tmp$QC[tmp$ID %in% Selected] == "1") {
+          tmp$QC[tmp$ID %in% Selected] <- 0
+        } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
+          tmp$QC[tmp$ID %in% Selected] <- 1
+        }
 
-                   QCData(tmp)
-                 })
+        QCData(tmp)
+      }
+    )
 
     L1bHOCR <- reactive({
 
@@ -73,7 +76,6 @@ mod_station_hocr_server <- function(id, L1bData){
         select(Instrument, SN, AproxData) %>%
         mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
     })
-
 
     # HOCR Es and Lu plot -----------------------------------------------------
     output$HOCRL1b <- renderPlotly({
@@ -83,8 +85,17 @@ mod_station_hocr_server <- function(id, L1bData){
 
 
       PlyFont <- list(family="Times New Roman", size = 18)
-      BlackSquare <- list(type = "rect", fillcolor = "transparent",line = list(width = 0.5), xref = "paper", yref = "paper", x0 = 0, x1 = 1, y0 = 0, y1 = 1 )
-
+      BlackSquare <- list(
+        type = "rect",
+        fillcolor = "transparent",
+        line = list(width = 0.5),
+        xref = "paper",
+        yref = "paper",
+        x0 = 0,
+        x1 = 1,
+        y0 = 0,
+        y1 = 1
+      )
 
       ply <- L1bHOCR() %>%
         #filter(str_detect(Instrument, "HPL")) %>%
@@ -162,10 +173,12 @@ mod_station_hocr_server <- function(id, L1bData){
     })
 
     # HOCR AOPs computation ---------------------------------------------------
-    L2Data <- eventReactive(input$ProcessL2, {
-      L2Data <- L2_hocr(L1bHOCR())
-
-    })
+    L2Data <- eventReactive(
+      input$ProcessL2,
+      {
+        L2Data <- L2_hocr(L1bHOCR())
+      }
+    )
 
     output$AOPs <- renderPlotly({
 

@@ -17,12 +17,22 @@ mod_manage_obs_ui <- function(id){
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2){
+mod_manage_obs_server <- function(id, DB, L2, SelData){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
 
+# UUID selection event trigger data display -------------------------------
+# by populating the reactive data table needed
 
+    observeEvent(
+      req(uuid::UUIDvalidate(SelData$SelUUID())),
+      {
+        browser()
+      })
+
+# Save button send data to SQLite -----------------------------------------
+# If UUID already exist, update SQLite
     observeEvent(
       req(L2$Save()),
       {

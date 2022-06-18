@@ -30,8 +30,6 @@ mod_station_L1L2_server <- function(id, L1b){
     output$TabPanel <- renderUI({
       req(L1b$Data())
 
-
-
       tabsetPanel(
         id = ns("Tabset"),
         type = "pills",
@@ -42,10 +40,7 @@ mod_station_L1L2_server <- function(id, L1b){
         tabPanel("HOCR", mod_station_hocr_ui(ns("station_hocr")))
       )
 
-
-
     })
-
 
     # Keep that for dev purpose
 
@@ -137,7 +132,8 @@ mod_station_L1L2_server <- function(id, L1b){
 
 # HOCR tab ----------------------------------------------------------------
 
-    HOCRL2 <- mod_station_hocr_server("station_hocr", L1b$Data)
+    # Have to call this module inside a reactive consumer, why ?
+    HOCRL2 <- reactive(mod_station_hocr_server(ns("station_hocr"), L1b$Data))
 
 # BB3 tab -----------------------------------------------------------------
 

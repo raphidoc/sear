@@ -88,8 +88,6 @@ mod_select_data_server <- function(id, Apla, DB){
       ignoreInit = T,
       {
 
-        browser()
-
         # curvenumber 0 is the Applanix trace
         ID <- event_data("plotly_selected", source = "map") %>%
           filter(curveNumber == 0)
@@ -113,10 +111,8 @@ mod_select_data_server <- function(id, Apla, DB){
     SelUUID <- eventReactive(
       event_data("plotly_click", source = "map"),
       label = "Select Obs",
-      ignoreInit = F,
+      ignoreInit = T,
       {
-
-        browser()
 
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
 
@@ -167,7 +163,7 @@ mod_select_data_server <- function(id, Apla, DB){
           x = ~Lon_DD,
           y = ~Lat_DD,
           customdata = ~ID,
-          colors = 'rgb(224, 17, 95)',
+          marker = list(color = 'rgb(154, 42, 42)'),
           text = ~paste0(
             '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
             '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
@@ -182,7 +178,7 @@ mod_select_data_server <- function(id, Apla, DB){
           x = ~Lon,
           y = ~Lat,
           customdata = ~UUID,
-          colors = 'rgb(15, 82, 186)',
+          marker = list(color = 'rgb(127, 255, 212)'),
           text = ~paste0(
             #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
             '<b>ObsName</b>: ', ObsName, '<br>',
@@ -204,6 +200,8 @@ mod_select_data_server <- function(id, Apla, DB){
         ) %>%
         event_register("plotly_click") %>%
         event_register("plotly_selected")
+
+      # for transect rgb(228, 208, 10)
 
     })
 

@@ -76,9 +76,6 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
     #Obs = {reactive(add_trace)}
 
-
-
-
     output$ObsList <- renderUI({
 
       validate(need(ObsMeta, label = "Empty DB"))
