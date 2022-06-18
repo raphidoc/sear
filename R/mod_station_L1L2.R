@@ -133,7 +133,14 @@ mod_station_L1L2_server <- function(id, L1b){
 # HOCR tab ----------------------------------------------------------------
 
     # Have to call this module inside a reactive consumer, why ?
-    HOCRL2 <- reactive(mod_station_hocr_server(ns("station_hocr"), L1b$Data))
+    HOCRL2 <- reactive(mod_station_hocr_server("station_hocr", L1b$Data))
+
+    # Then have to force computation of HOCRL2 ...
+    observe({
+      req(HOCRL2())
+      browser()
+      HOCRL2()
+    })
 
 # BB3 tab -----------------------------------------------------------------
 

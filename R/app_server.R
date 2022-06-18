@@ -46,4 +46,13 @@ app_server <- function(input, output, session) {
   #
   #     }
   #   })
+
+  # Station <- reactiveValues(
+  #   Metadata = reactive(tibble()),
+  #   HOCR = reactiveValues(
+  #     L1b = reactive(),
+  #     L2 = reactive()
+  #   )
+  # )
+  #
 }

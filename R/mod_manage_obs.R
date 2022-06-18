@@ -29,6 +29,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
       req(uuid::UUIDvalidate(SelData$SelUUID())),
       {
         browser()
+        SelData$SelUUID()
       })
 
 # Save button send data to SQLite -----------------------------------------
@@ -43,14 +44,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
           output = "string"
           )
 
-        ObsMeta <- L2$StationTbl() %>%
+        Metadata <- L2$StationTbl() %>%
           mutate(UUID = ObsUUID)
 
-        HOCRL1b <- L2$HOCR$L1bHOCR() %>%
+        HOCRL1b <- L2$HOCR()$L1bHOCR() %>%
           unnest(cols = c(AproxData)) %>%
           mutate(UUID = ObsUUID)
 
-        AOPs <- L2$HOCR$AOPs() %>%
+        HOCRL2 <- L2$HOCR()$AOPs() %>%
           mutate(UUID = ObsUUID)
 
         # Good explanation of the difference between UUID and hash,
@@ -60,9 +61,9 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
         #                     as.character(AOPs),
         #                     collapse = ""))
 
-        DBI::dbWriteTable(DB$Con(), "ObsMeta", ObsMeta, append = TRUE)
+        DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
         DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
-        DBI::dbWriteTable(DB$Con(), "AOPs", AOPs, append = TRUE)
+        DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
 
       })
 

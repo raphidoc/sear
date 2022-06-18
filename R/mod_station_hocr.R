@@ -21,7 +21,7 @@ mod_station_hocr_ui <- function(id){
 #' @noRd
 mod_station_hocr_server <- function(id, L1bData){
 
-  stopifnot(is.reactive(L1bData))
+  #stopifnot(is.reactive(L1bData))
 
   moduleServer( id, function(input, output, session){
     ns <- session$ns
