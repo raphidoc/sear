@@ -70,7 +70,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
     ObsMeta <- reactive({
       req(Con())
 
-      tibble(DBI::dbGetQuery(Con(), "SELECT * FROM ObsMeta"))
+      tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
 
     })
 
