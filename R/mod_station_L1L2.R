@@ -17,7 +17,7 @@ mod_station_L1L2_ui <- function(id){
 #' L1L2_station Server Functions
 #'
 #' @noRd
-mod_station_L1L2_server <- function(id, L1b){
+mod_station_L1L2_server <- function(id, L1b, Station){
 
   stopifnot(is.reactive(L1b$Data))
 
@@ -62,21 +62,20 @@ mod_station_L1L2_server <- function(id, L1b){
     observeEvent(
       L1b$ProcessL1b(),
       {
-        StationTbl(
-          tibble(
+          Station$Metadata <- tibble(
             ObsName = L1b$ObsName(),
             ObsType = L1b$ObsType(), # Obviously should be "Station"
             DateTime = mean(L1b$SelApla()$DateTime, na.rm = T),
             Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
             Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T)
           )
-        )
+
       }
     )
 
     #DataTable used to display Station information
     output$DataTable <- DT::renderDataTable(
-      DT::datatable(StationTbl(),
+      DT::datatable(Station$Metadata(),
                     #extensions = c("Buttons", "Scroller", "Select"),
                     #filter = "top",
                     escape = TRUE, rownames = FALSE,
@@ -127,13 +126,13 @@ mod_station_L1L2_server <- function(id, L1b){
     observeEvent(
       input$Save,
       {
-        StationTbl(StationTbl() %>% mutate(Comment = input$Comment))
+        Station$Metadata <- Station$Metadata() %>% mutate(Comment = input$Comment)
       })
 
 # HOCR tab ----------------------------------------------------------------
 
     # Have to call this module inside a reactive consumer, why ?
-    HOCRL2 <- reactive(mod_station_hocr_server("station_hocr", L1b$Data))
+    HOCRL2 <- reactive(mod_station_hocr_server("station_hocr", L1b$Data, Station))
 
     # Then have to force computation of HOCRL2 ...
     observe({
@@ -150,7 +149,7 @@ mod_station_L1L2_server <- function(id, L1b){
   list(
     Save = reactive(input$Save),
     Delete = reactive(input$Delete),
-    StationTbl = StationTbl,
+    #StationTbl = StationTbl,
     HOCR = HOCRL2
   )
 

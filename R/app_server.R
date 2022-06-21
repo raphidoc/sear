@@ -28,6 +28,15 @@ app_server <- function(input, output, session) {
 
   Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData)
 
+  Station <- reactiveValues(
+    Metadata = reactive(tibble()),
+    HOCR = reactiveValues(
+      L1b = reactive(),
+      L2 = reactive()
+    )
+  )
+
+
   # observeEvent(
   #   req(L1b$ProcessL1b() & L1b$ObsType() == "Station"),
   #   {
@@ -53,12 +62,4 @@ app_server <- function(input, output, session) {
   #     }
   #   })
 
-  # Station <- reactiveValues(
-  #   Metadata = reactive(tibble()),
-  #   HOCR = reactiveValues(
-  #     L1b = reactive(),
-  #     L2 = reactive()
-  #   )
-  # )
-  #
 }
