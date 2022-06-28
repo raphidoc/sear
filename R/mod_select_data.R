@@ -154,53 +154,113 @@ mod_select_data_server <- function(id, Apla, DB){
       zoom <- zc[[1]]
       center <- zc[[2]]
 
-      p <- plot_mapbox(
-        mode = 'scattermapbox',
-        source = "map"
+      if (curl::has_internet() #& curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
+          ) {
+
+        p <- plot_mapbox(
+          mode = 'scattermapbox',
+          source = "map"
         ) %>%
-        add_markers(
-          name = "Raw",
-          data = SubUpApla(),
-          x = ~Lon_DD,
-          y = ~Lat_DD,
-          customdata = ~ID,
-          marker = list(color = 'rgb(154, 42, 42)'),
-          text = ~paste0(
-            '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
-            '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-            '<b>Course (TN)</b>: ', Course_TN, '<br>',
-            '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
-          )
+          add_markers(
+            name = "Raw",
+            data = SubUpApla(),
+            x = ~Lon_DD,
+            y = ~Lat_DD,
+            customdata = ~ID,
+            marker = list(color = 'rgb(154, 42, 42)'),
+            text = ~paste0(
+              '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+              '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+              '<b>Course (TN)</b>: ', Course_TN, '<br>',
+              '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+            )
+          ) %>%
+          add_markers(
+            name = "Stations",
+            data = DB$ObsMeta() %>%
+              filter(ObsType == "Station"),
+            x = ~Lon,
+            y = ~Lat,
+            customdata = ~UUID,
+            marker = list(color = 'rgb(127, 255, 212)'),
+            text = ~paste0(
+              #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+              '<b>ObsName</b>: ', ObsName, '<br>',
+              '<b>ObsType</b>: ', ObsType, '<br>'
+              #'<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+              #'<b>Course (TN)</b>: ', Course_TN, '<br>',
+              #'<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+            )
+          ) %>%
+          layout(
+            plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
+            mapbox = list(style = "satellite",
+                          zoom = zoom,
+                          center = list(
+                            lat = center[[1]],
+                            lon = center[[2]]
+                          )
+            )
+          ) %>%
+          event_register("plotly_click") %>%
+          event_register("plotly_selected")
+
+      } else {
+
+        p <- plot_geo(
+          #mode = 'scattermapbox',
+          source = "map",
+          offline = TRUE
         ) %>%
-        add_markers(
-          name = "Stations",
-          data = DB$ObsMeta() %>%
-            filter(ObsType == "Station"),
-          x = ~Lon,
-          y = ~Lat,
-          customdata = ~UUID,
-          marker = list(color = 'rgb(127, 255, 212)'),
-          text = ~paste0(
-            #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
-            '<b>ObsName</b>: ', ObsName, '<br>',
-            '<b>ObsType</b>: ', ObsType, '<br>'
-            #'<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-            #'<b>Course (TN)</b>: ', Course_TN, '<br>',
-            #'<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
-          )
-        ) %>%
-        layout(
-          plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
-          mapbox = list(style = "satellite",
-                        zoom = zoom,
-                        center = list(
-                          lat = center[[1]],
-                          lon = center[[2]]
-                        )
-          )
-        ) %>%
-        event_register("plotly_click") %>%
-        event_register("plotly_selected")
+          add_markers(
+            name = "Raw",
+            data = SubUpApla(),
+            x = ~Lon_DD,
+            y = ~Lat_DD,
+            customdata = ~ID,
+            marker = list(color = 'rgb(154, 42, 42)'),
+            text = ~paste0(
+              '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+              '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+              '<b>Course (TN)</b>: ', Course_TN, '<br>',
+              '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+            )
+          ) %>%
+          add_markers(
+            name = "Stations",
+            data = DB$ObsMeta() %>%
+              filter(ObsType == "Station"),
+            x = ~Lon,
+            y = ~Lat,
+            customdata = ~UUID,
+            marker = list(color = 'rgb(127, 255, 212)'),
+            text = ~paste0(
+              #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
+              '<b>ObsName</b>: ', ObsName, '<br>',
+              '<b>ObsType</b>: ', ObsType, '<br>'
+              #'<b>Speed (Knt)</b>: ', Speed_N, '<br>',
+              #'<b>Course (TN)</b>: ', Course_TN, '<br>',
+              #'<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+            )
+          ) %>%
+          layout(
+            plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
+            geo = list(style = "satellite",
+                       resolution = 50,
+                       projection = list(
+                         scale = zoom
+                       ),
+                       center = list(
+                         lat = center[[1]],
+                         lon = center[[2]]
+                       )
+            )
+          ) %>%
+          event_register("plotly_click") %>%
+          event_register("plotly_selected")
+      }
+
+      p
 
       # for transect rgb(228, 208, 10)
 

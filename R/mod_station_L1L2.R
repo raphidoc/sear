@@ -75,7 +75,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 
     #DataTable used to display Station information
     output$DataTable <- DT::renderDataTable(
-      DT::datatable(Station$Metadata(),
+      DT::datatable(Station$Metadata,
                     #extensions = c("Buttons", "Scroller", "Select"),
                     #filter = "top",
                     escape = TRUE, rownames = FALSE,
