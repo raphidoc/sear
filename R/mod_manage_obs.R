@@ -17,7 +17,7 @@ mod_manage_obs_ui <- function(id){
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, SelData){
+mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -31,9 +31,30 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
         browser()
         SelData$SelUUID()
 
-        Metadata <- DBI::dbReadTable(DB$Con(), "Metadata")
-        HOCRL1b <- DBI::dbReadTable(DB$Con(), "HOCRL1b")
-        HOCRL2 <- DBI::dbReadTable(DB$Con(), "HOCRL2")
+        # Have to query data based on UUID
+
+        qry <- paste0("SELECT * FROM Metadata WHERE UUID='",SelData$SelUUID(),"';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Station$Metadata <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='",SelData$SelUUID(),"';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Station$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
+          group_by(ID) %>%
+          nest(AproxData = !matches("Instrument|SN"))
+        DBI::dbClearResult(res)
+
+        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='",SelData$SelUUID(),"';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Station$HOCR$L2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        #dbDisconnect(con)
+
+        # Station$Metadata <- tibble(DBI::dbReadTable(DB$Con(), "Metadata"))
+        # Station$HOCR$L1b <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL1b"))
+        # Station$HOCR$L2 <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL2"))
 
 
         # L2$StationTbl(Metadata)
@@ -56,14 +77,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData){
           output = "string"
           )
 
-        Metadata <- L2$StationTbl() %>%
+        Metadata <- Station$Metadata %>%
           mutate(UUID = ObsUUID)
 
-        HOCRL1b <- L2$HOCR()$L1bHOCR() %>%
+        HOCRL1b <- Station$HOCR$L1b %>%
           unnest(cols = c(AproxData)) %>%
           mutate(UUID = ObsUUID)
 
-        HOCRL2 <- L2$HOCR()$AOPs() %>%
+        HOCRL2 <- Station$HOCR$L2 %>%
           mutate(UUID = ObsUUID)
 
         # Good explanation of the difference between UUID and hash,

@@ -114,7 +114,6 @@ mod_select_data_server <- function(id, Apla, DB){
       ignoreInit = T,
       {
 
-        browser()
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
 
         if (!uuid::UUIDvalidate(UUID)) {
@@ -146,7 +145,6 @@ mod_select_data_server <- function(id, Apla, DB){
 
     output$Map <- renderPlotly({
       req(SubUpApla())
-
 
       #ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
 

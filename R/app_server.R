@@ -26,10 +26,10 @@ app_server <- function(input, output, session) {
 
   L2 <- mod_station_L1L2_server("station_L1L2", L1b, Station)
 
-  Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData)
+  Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Station)
 
   Station <- reactiveValues(
-    Metadata = reactive(tibble()),
+    Metadata = reactive(tibble(NA)),
     HOCR = reactiveValues(
       L1b = reactive(tibble()),
       L2 = reactive(tibble())
