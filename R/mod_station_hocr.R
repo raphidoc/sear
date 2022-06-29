@@ -108,7 +108,7 @@ mod_station_hocr_server <- function(id, L1bData, Station){
             .x = AproxData,
             .y = SN,
             ~plot_ly(
-              .x %>% group_by(ID),
+              .x,
               text = ~ID,
               customdata = ~ID
             ) %>%

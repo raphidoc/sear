@@ -148,16 +148,13 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     # })
 
 
-    # QCData <- reactiveVal({
-    #
-    #   reactive({
-    #     L1b$Data()$HOCR$AproxData[[1]] %>%
-    #       select(DateTime, ID) %>%
-    #       unique() %>%
-    #       mutate(QC = "1")
-    #
-    #   })
-    # })
+    # QC flag for HOCR --------------------------------------------------------
+    QCData <- reactive({
+      Station$HOCR$L1b$AproxData[[1]] %>%
+        select(DateTime, ID) %>%
+        unique() %>%
+        mutate(QC = "1")
+    })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
 
@@ -168,36 +165,55 @@ mod_station_L1L2_server <- function(id, L1b, Station){
       {
         Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
 
-        #tmp <- QCData()
+        browser()
+
+        # tmp <- QCData()
+        #
+        # # Change value for selected spectrum ID
+        # if (tmp$QC[tmp$ID %in% Selected] == "1") {
+        #   tmp$QC[tmp$ID %in% Selected] <- 0
+        # } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
+        #   tmp$QC[tmp$ID %in% Selected] <- 1
+        # }
+        #
+        # #QCData <- reactive(tmp)
+        #
+        # Station$HOCR$L1b <- Station$HOCR$L1b %>%
+        #   select(Instrument, SN, AproxData) %>%
+        #   mutate(AproxData = purrr::map(AproxData, ~ left_join(., tmp, by = c("DateTime", "ID"))))
 
 
+        qc_shift <- function(df, Selected){
 
-        tmp <- L1b$Data()$HOCR$AproxData[[1]] %>%
-              select(DateTime, ID) %>%
-              unique() %>%
-              mutate(QC = "1")
+          df %>%
+            filter(ID == Selected) %>%
+            mutate(QC = if_else(QC == "1", "0", "1")) %>%
+            bind_rows(df %>% filter(ID != Selected))
 
-        # Change value for selected spectrum ID
-        if (tmp$QC[tmp$ID %in% Selected] == "1") {
-          tmp$QC[tmp$ID %in% Selected] <- 0
-        } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
-          tmp$QC[tmp$ID %in% Selected] <- 1
+          # . %>% mutate(QC = case_when(
+          #   QC == "1" ~ "0",
+          #   QC == "0" ~ "1"
+          # ))
+
+          # if (.$QC[.$ID %in% Selected] == "1") {
+          #   .$QC[.$ID %in% Selected] <- 0
+          # } else if (.$QC[.$ID %in% Selected] == "0") {
+          #   .$QC[.$ID %in% Selected] <- 1
+          # }
+
         }
 
-        QCData(tmp)
-
-        Station$HOCR$L1b <- reactive({
-
-          L1bData()$HOCR %>%
-            select(Instrument, SN, AproxData) %>%
-            mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
-
-        })
-
+        Station$HOCR$L1b <- Station$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
       }
     )
 
-
+    # L1bHOCR <- reactive({
+    #
+    #   Station$HOCR$L1b %>%
+    #     select(Instrument, SN, AproxData) %>%
+    #     mutate(AproxData = purrr::map(AproxData, ~ left_join(., QCData(), by = c("DateTime", "ID"))))
+    #
+    # })
 
     # HOCR Es and Lu plot -----------------------------------------------------
     output$HOCRL1b <- renderPlotly({
