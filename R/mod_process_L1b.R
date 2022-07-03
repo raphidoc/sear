@@ -79,6 +79,8 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData){
 
         Data$HOCR <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime)))
 
+        browser()
+
       }
 
       return(Data)
