@@ -43,6 +43,17 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
         Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite)
 
+        # Create DB schema
+
+        DBI::dbGetQuery(
+          Con, "CREATE TABLE IF NOT EXISTS Metadata (
+
+          );"
+          )
+
+        # Return Con
+        Con
+
         # if DB is not empty list UUID and get current index
         # if (
         #   !identical(DBI::dbListTables(Con()), character(0)) #&
