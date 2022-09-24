@@ -124,17 +124,20 @@ read_apla <- function(MainLog){
   # Solar altitude above the horizon in radian and azimuth in radian from south to west
   PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
 
+  browser()
+
   Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
     rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
     mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
            SolAlt = SolAlt * 180/pi,
-           BoatSolAzm = SolAzm-Course_TN)
+           BoatSolAzm = SolAzm-Course_TN,
+           BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm))
 
   Apla %>%
-    filter(
-      Speed_N <= 4,
-      BoatSolAzm > 0 & BoatSolAzm < 180
-    ) %>%
+    # filter(
+    #   Speed_N <= 7,
+    #   BoatSolAzm > 0 & BoatSolAzm < 360
+    # ) %>%
     mutate(
       ID = seq_along(DateTime),
       ObsType = "Unknown",

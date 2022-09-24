@@ -53,7 +53,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
             DateTime TEXT NOT NULL,
             Lat DOUBLE NOT NULL,
             Lon DOUBLE NOT NULL,
-            Comment NOT NULL,
+            Comment TEXT,
             UUID TEXT PRIMARY KEY
           );"
         )

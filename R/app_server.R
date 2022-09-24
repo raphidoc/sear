@@ -22,7 +22,7 @@ app_server <- function(input, output, session) {
 
   CalData <- mod_load_cal_server("HOCRCal")
 
-  L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData)
+  L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData, Station)
 
   L2 <- mod_station_L1L2_server("station_L1L2", L1b, Station)
 

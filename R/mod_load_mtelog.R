@@ -38,7 +38,7 @@ mod_load_mtelog_server <- function(id, SearTbl){
     reactive({
       req(SearTbl())
 
-      MTEbulkLoc <- file.path(SearTbl()$ProjPath, "bulk")
+      MTEbulkLoc <- file.path(SearTbl()$ProjPath, "L1")
 
       if (dir.exists(MTEbulkLoc) && length(list.files(MTEbulkLoc)) >= 2) {
 

@@ -20,7 +20,7 @@ mod_process_L1b_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1b_server <- function(id, L1, SelData, CalData){
+mod_process_L1b_server <- function(id, L1, SelData, CalData, Station){
 
   # stopifnot(is.reactive(UpApla))
   # stopifnot(is.reactive(SelID))
@@ -50,14 +50,15 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData){
 
     Instrument <- mod_select_instrument_server("select_instrument", L1$MainLog)
 
-    Data <- eventReactive(input$ProcessL1b, {
+    observeEvent(
+      input$ProcessL1b,
+      label = "processL1b",
+      {
 
       # Nice display to indicate that processing is happening
       waiter <- waiter::Waiter$new()
       waiter$show()
       on.exit(waiter$hide())
-
-      Data <- list()
 
       if (is.null(Instrument$ToProcess())) {
 
@@ -77,13 +78,9 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData){
 
         FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
 
-        Data$HOCR <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime)))
-
-        browser()
+        Station$HOCR$L1b <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime)))
 
       }
-
-      return(Data)
 
       # # Create a temporary copy of the current UpApla tibble
       # tmp <- UpApla()
@@ -98,7 +95,6 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData){
 
 # Module output -----------------------------------------------------------
     list(
-      Data = Data,
       ObsType = reactive(input$ObsType),
       ObsName = reactive(input$ObsName),
       SelApla = SelData$SelApla,

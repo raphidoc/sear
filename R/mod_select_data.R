@@ -56,7 +56,7 @@ mod_select_data_server <- function(id, Apla, DB){
                     timezone = "+0000",
                     width = NULL,
                     step = 1),
-        sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(0, 180), min = 0, max = 360),
+        sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(90, 180), min = 0, max = 360),
         numericInput(ns("SpeedLimit"), "Speed", 4, step = 0.1)
       )
     })
@@ -68,7 +68,7 @@ mod_select_data_server <- function(id, Apla, DB){
     SubUpApla <- reactiveVal({})
 
     observe({
-      req(TimeInterval(), input$SpeedLimit)
+      req(TimeInterval(), input$SpeedLimit, input$SolAzmLimit)
 
       AplaTime <- UpApla() %>%
         filter(DateTime %within% TimeInterval(),
@@ -101,7 +101,8 @@ mod_select_data_server <- function(id, Apla, DB){
             title = "Invalid selection",
             "You selected discontinous data, please select only contiguous points")
           )
-          invalidateLater(1)
+          #invalidateLater(1)
+          ID
 
         } else {
           ID

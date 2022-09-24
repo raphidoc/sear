@@ -20,22 +20,29 @@ read_hocr <- function(BinFile){
   RawHOCR <- unlist(purrr::map(RawHOCR , ~ .x$packets))
 
   # Unefficent way of removing custom class python object dependencies resulting in null pointer
-  RawHOCR <- purrr::map(RawHOCR, ~ list(
-    "channel" = .$channel,
-    "checksum" = .$checksum,
-    "darkaverage" = .$darkaverage,
-    "darksample" = .$darksample,
-    "frame" = .$frame,
-    "gpstime" = .$gpstime,
-    "instrument" = as.character(.$instrument, errors="ignore"),
-    "inttime" = .$inttime,
-    "loggerport" = .$loggerport,
-    "mysterydate" = .$mysterydate,
-    "sampledelay" = .$sampledelay,
-    "sn" = as.character(.$sn, errors="ignore"),
-    "spectemp" = as.character(.$spectemp, errors="ignore"),
-    "timer" = as.character(.$timer, errors="ignore")
+  # How to avoid: Error in py_ref_to_r(x) : Embedded NUL in string ? (packet 27281 of AlgaeValidation (2022/07/05))
+
+  RawHOCR <- purrr::imap(RawHOCR, ~ tryCatch(
+    list(
+      "channel" = .$channel,
+      "checksum" = .$checksum,
+      "darkaverage" = .$darkaverage,
+      "darksample" = .$darksample,
+      "frame" = .$frame,
+      "gpstime" = .$gpstime,
+      "instrument" = as.character(.$instrument, errors="ignore"),
+      "inttime" = .$inttime,
+      "loggerport" = .$loggerport,
+      "mysterydate" = .$mysterydate,
+      "sampledelay" = .$sampledelay,
+      "sn" = as.character(.$sn, errors="ignore"),
+      "spectemp" = as.character(.$spectemp, errors="ignore"),
+      "timer" = as.character(.$timer, errors="ignore")
+    ),
+    error = function(...) NA
   ))
+
+  RawHOCR <- RawHOCR[-which(is.na(RawHOCR))]
 
   # check for invalid packet
   ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors="ignore"), "SAT(HPL|HSE|HED|PLD)"))
@@ -238,11 +245,17 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
       colnames(tbl)[i] <- colnames(.)[i]
     }
 
-    tbl %>% mutate(ID = seq_along(TimeSeq))
+    tbl %>% mutate(
+      ID = seq_along(TimeSeq),
+      QC = "1"
+      )
   }
 
+  # Debug for NA values in interpolation
+  browser()
+
   HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
+    mutate(AproxData = purrr::map(CalData, ~ try(approx_tbl(., TimeSeq))))
 
   # Transform back to long format
 
@@ -347,23 +360,23 @@ L2_hocr <- function(L1bData){
 
   Es <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1397") %>%
+    filter(SN == "1397" | SN == "1396") %>%
     unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime"))
+    select(!matches("Instrument|SN|DateTime|CalData"))
 
   LuZ1 <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1416") %>%
+    filter(SN == "1416" | SN == "1413") %>%
     unnest(cols = c(IntData))%>%
-    select(!matches("Instrument|SN|DateTime"))
+    select(!matches("Instrument|SN|DateTime|CalData"))
 
   LuZ2 <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1415") %>%
+    filter(SN == "1415" | SN == "1414") %>%
     unnest(cols = c(IntData))%>%
-    select(!matches("Instrument|SN|DateTime"))
+    select(!matches("Instrument|SN|DateTime|CalData"))
 
-  DeltaDepth <- 0.30 # 30 cm
+  DeltaDepth <- 0.15 # Algae Wise 2022
 
   KLuWide <- (log(LuZ1)-log(LuZ2))/DeltaDepth
 

@@ -19,7 +19,7 @@ mod_station_L1L2_ui <- function(id){
 #' @noRd
 mod_station_L1L2_server <- function(id, L1b, Station){
 
-  stopifnot(is.reactive(L1b$Data))
+  #stopifnot(is.reactive(L1b$Data))
 
   moduleServer( id, function(input, output, session){
     ns <- session$ns
@@ -150,6 +150,8 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 
     # QC flag for HOCR --------------------------------------------------------
     QCData <- reactive({
+
+      browser()
       Station$HOCR$L1b$AproxData[[1]] %>%
         select(DateTime, ID) %>%
         unique() %>%
@@ -164,8 +166,6 @@ mod_station_L1L2_server <- function(id, L1b, Station){
       ignoreInit = TRUE,
       {
         Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
-
-        browser()
 
         # tmp <- QCData()
         #
@@ -316,7 +316,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     observeEvent(
       input$ProcessL2,
       {
-        Station$HOCR$L2 <- L2_hocr(L1bHOCR())
+        Station$HOCR$L2 <- L2_hocr(Station$HOCR$L1b)
       }
     )
 
