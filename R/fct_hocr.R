@@ -124,6 +124,8 @@ tidy_hocr <- function(Packets, AplaDate){
 #' @noRd
 cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
 
+  #browser()
+
   RawData <- purrr::map_df(FiltRawHOCR, ~ tidy_hocr(., AplaDate))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
@@ -252,10 +254,13 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
   }
 
   # Debug for NA values in interpolation
-  browser()
+  #browser()
+
+  # Need to test if two non-NA values are available to interpolate
+  # This is handled by wrapping cal_hocr in spsComps::shinyCatch
 
   HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map(CalData, ~ try(approx_tbl(., TimeSeq))))
+    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
 
   # Transform back to long format
 

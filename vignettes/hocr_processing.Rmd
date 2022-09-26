@@ -99,9 +99,9 @@ So the DataLogger is likely the source of the problem ... Not the HOCR(s) nor th
 
 If this is confirmed might be a major problem for operational deployment. Also little data appear to be contaminated by this bug.
 
-### Time filtering
+## Time filtering
 
-The HOCR data is quite large and mainly compose of bad data, acuiered in transit, that we don´t want to loose time to process. Therfore, only the selected point designing a transect or a station will enter the processing chain. For that we use a time filter on the `RawHOCR` list of HOCR packets.
+The HOCR data is quite large and mainly compose of bad data, aquiered in transit, that we don´t want to loose time to process. Therfore, only the selected point designing a transect or a station need to enter the processing chain. For that we use filters on the `RawHOCR` list of HOCR packets.
 
 Ideally for this time filter, we should use the datalogger binary packet added before every HOCR packets, for now we only have determine the time format (in ms), the date format remain unknown. The quick fix is to use date from the Applanix.
 
@@ -118,7 +118,7 @@ Station1PaP <- interval(ymd_hms("2021-11-11 18:49:16"), ymd_hms("2021-11-11 18:5
 AplaDate <- "2021-11-11"
 ```
 
-## Benchmark to optimize time filtering
+### Benchmark to optimize time filtering
 
 ```{r}
 # # Small test data with invalid packet: DATA_20211111_160607.bin
@@ -198,6 +198,12 @@ filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
 
 FiltRawHOCR <- filter_hocr(RawHOCR, TimeIndexHOCR, TimeInt = Station1PaP)
 ```
+
+### Note regarding HOCR acquisition rate and boat speed
+
+The acquisition rate of the HOCR is dependent on the light level to optimized the S/N. In water the integration time is about 0.512 second, in air it is about 0.063 second. Considering that dark frame are acquired with the same integration time and that the `Shutter frame output` parameter seems to be set to 5. This can diminish the number of light frame acquired in a second to 2 or apparently even less. When less than one is available the interpolation fail. 4 kts (speed defined as optimal for multibeam acquisition) is equal to 2 m/s meaning that we can end up with not enought points to discretize on a 2 meter distance. 
+
+Should think about the optimal HOCR parameters and/or acquisition speed.
 
 ## Construct a tidyr fonction
 

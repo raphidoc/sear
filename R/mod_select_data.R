@@ -171,7 +171,7 @@ mod_select_data_server <- function(id, Apla, DB){
               '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
               '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
               '<b>Course (TN)</b>: ', Course_TN, '<br>',
-              '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+              '<b>BoatSolAzm (degree)</b>: ', BoatSolAzm, '<br>'
             )
           ) %>%
           add_markers(
@@ -222,7 +222,7 @@ mod_select_data_server <- function(id, Apla, DB){
               '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
               '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
               '<b>Course (TN)</b>: ', Course_TN, '<br>',
-              '<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+              '<b>BoatSolAzm (degree)</b>: ', BoatSolAzm, '<br>'
             )
           ) %>%
           add_markers(

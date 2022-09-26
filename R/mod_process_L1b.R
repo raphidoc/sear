@@ -73,12 +73,18 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Station){
       if (str_detect(Instrument$ToProcess(), "HOCR")) {
 
         # Filter data point before processing to optimize execution time
+
+        # Add one second to each end of time interval to make it inclusive
+
         SelDateTime <- SelData$UpApla()$DateTime[SelData$UpApla()$ID %in% SelData$SelApla()$ID]
         TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 
         FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
 
-        Station$HOCR$L1b <- cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime)))
+        Station$HOCR$L1b <- spsComps::shinyCatch(
+          cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
+          trace_back = TRUE
+        )
 
       }
 

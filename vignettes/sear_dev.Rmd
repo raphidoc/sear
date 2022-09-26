@@ -55,7 +55,8 @@ If no data where previously loaded, you need to provide some to the app. For now
 
 ## Selection display
 
-When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second ?) data point with the observation type, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot exposing the azimuth of point selected on the map. 
+When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second ?) data point, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot representing the solar azimuth relative to the boat heading of points selected on the map.
+
 An observation type `ObsType` (Station, Transect) and an observation name `ObsName` can be attributed to the selected point which will be processed with the `Process to L1b` button.
 
 ### Azimuth polar plot
