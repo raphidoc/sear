@@ -59,6 +59,8 @@ When parsed data is loaded in the app, a selection display column in the dashboa
 
 An observation type `ObsType` (Station, Transect) and an observation name `ObsName` can be attributed to the selected point which will be processed with the `Process to L1b` button.
 
+NEED: Think about the required and optional NMEA string that sear will use.
+
 ### Azimuth polar plot
 
 First compute the sun azimuth.
@@ -119,4 +121,31 @@ temp %>%
 
 # Server
 
-# SQL backend
+## golem organization 
+
+This shiny app will become quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task. 
+
+* fct_ : files containing the function of the app, they defined the data parsing, tidying and computation logic.
+* mod_ : files containing both frontend (`_ui` function) and backend (`_server` function) shiny logic. Inputs, reactive value, observer and consumer are defined here.
+* utils_ : files containing helpers functions that doesn't really belong exclusively to this app.
+* app_ : files to wrap ui and server, configure and run the app.
+* zzz.R : file containing the call to `.onLoad()`
+
+# SQLite backend
+
+Present the DB schema here
+
+## Save
+
+When an `UUID` already exist and the `Save` button is pressed, the records in the SQLite DB are uptaded. For the `Metadata` table, the following fields are updated:
+* `Comment`
+* `ProTime`
+* `Analyst`
+* `Mail`
+
+For the `HOCRL1b` table only the `QC` field is updated, it is uniquely identified by the (UUID, ID) pair. THIS PAIR IS NOT A PRIMARY KEY as it doesn't uniquely identifies the entry of the table. The PRIMARY KEY of the HOCRL1b table is (UUID, ID, SN, Wavelength).
+QUESTION: Would it be relevant to separate the `QC` in it's own table ?
+
+## Delete
+
+When the delete button is pressed, if the active data point (station) has an `UUID`, it's suppressed in the `Metadata` table. As the FOREIGN KEY constraint is activated in the DB schema (`PRAGMA foreign_keys=ON`) and `HOCRL1b` and `HOCRL2` are child table build with the `ON DELETE CASCADE` constraints, matching record are automatically deleted.

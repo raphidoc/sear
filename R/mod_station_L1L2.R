@@ -131,7 +131,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     observeEvent(
       input$Save,
       {
-        Station$Metadata <- Station$Metadata() %>% mutate(Comment = input$Comment)
+        Station$Metadata <- Station$Metadata %>% mutate(Comment = input$Comment)
       })
 
 # HOCR tab ----------------------------------------------------------------

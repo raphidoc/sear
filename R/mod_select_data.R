@@ -176,7 +176,7 @@ mod_select_data_server <- function(id, Apla, DB){
           ) %>%
           add_markers(
             name = "Stations",
-            data = DB$ObsMeta() %>%
+            data = DB$ObsMeta()() %>%
               filter(ObsType == "Station"),
             x = ~Lon,
             y = ~Lat,
@@ -227,7 +227,7 @@ mod_select_data_server <- function(id, Apla, DB){
           ) %>%
           add_markers(
             name = "Stations",
-            data = DB$ObsMeta() %>%
+            data = DB$ObsMeta()() %>%
               filter(ObsType == "Station"),
             x = ~Lon,
             y = ~Lat,
