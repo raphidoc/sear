@@ -30,6 +30,8 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     output$TabPanel <- renderUI({
       req(Station)
 
+      shinyFeedback::useShinyFeedback()
+
       tabsetPanel(
         id = ns("Tabset"),
         type = "pills",

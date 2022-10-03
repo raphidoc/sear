@@ -11,6 +11,9 @@ mod_manage_obs_ui <- function(id){
   ns <- NS(id)
   tagList(
 
+    # actionButton(ns("Delete"), "Delete", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
+    # actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
+
   )
 }
 
@@ -36,11 +39,12 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
         Station$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
+        # UUID have to ship with Instrument and SN to be passed to HOCR$L2
         qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='",SelData$SelUUID(),"';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Station$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
-          nest(AproxData = !matches("Instrument|SN"))
+          nest(AproxData = !matches("Instrument|SN|UUID"))
         DBI::dbClearResult(res)
 
         qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='",SelData$SelUUID(),"';")
@@ -67,12 +71,9 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
     observeEvent(
       req(L2$Save()),
       {
-        #browser()
 
-        # If UUID already exist, update SQLite
+        # If UUID already exist, update record in SQLite
         if (any(str_detect(names(Station$Metadata), "UUID"))) {
-
-          browser()
 
           # Update Metadata table
           Metadata <- Station$Metadata %>%
@@ -91,7 +92,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
             WHERE UUID = '", Station$Metadata$UUID, "';"
           )
 
-          DBI::dbSendStatement(DB$Con(), qry)
+          DBI::dbExecute(DB$Con(), qry)
 
           # Update HOCRL1b table
           HOCRL1b <- Station$HOCR$L1b %>%
@@ -105,28 +106,62 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
           # And now I realize that HOCRL1b does not complies with tidy data principles
           # a signle observational unit by table. Should a specific table be created for QC data ?
 
-          qry <- glue::glue_sql_collapse(purrr::pmap_chr(
+          qry <- purrr::pmap_chr(
             list(..1 = SumQC$UUID, ..2 = SumQC$ID , ..3 = SumQC$QC),
             .f = ~ glue::glue(
-              "UPDATE HOCRL1b
+              "
+              UPDATE HOCRL1b
               SET QC = '", ..3,"'
-              WHERE (UUID || ID = '", glue::glue(..1, ..2), "');"
+              WHERE (UUID || ID = '", glue::glue(..1, ..2), "');
+              "
             )
-          ))
+          )
 
-          DBI::dbSendStatement(DB$Con(), qry)
+          # At the moment RSQLite does not provide support for multiple statement
+          # in one query: https://github.com/r-dbi/RSQLite/issues/313
+          # Have to send each query separately ...
+          # Maybe raise an issue to provide support for that ?
+
+          # Result is that we issue query to update QC everywhere, event if it doesn't change ...
+
+          purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x)))
 
           # Update HOCRL2 table
-          # HOCRL2 <- Station$HOCR$L2
-          #
-          # qry <- glue::glue(
-          #   "UPDATE HOCRL2
-          #   SET Rrs = ", HOCRL2$Rrs,",
-          #       KLu = ", HOCRL2$KLu,"
-          #   WHERE UUID = ", Station$Metadata$UUID, ";"
-          # )
-          #
-          # DBI::dbSendStatement(DB$Con(), qry)
+          HOCRL2 <- Station$HOCR$L2
+
+          # Individual CASE WHEN for each variables to change: Rrs, KLu
+          qryRrs <- glue::glue_sql_collapse(purrr::pmap_chr(
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength , ..3 = HOCRL2$Rrs, ..4 = HOCRL2$KLu),
+            .f = ~ glue::glue(
+              "WHEN UUID = '",..1,"' AND Wavelength = ",..2," THEN ",..3
+            )
+          ), sep = "\n")
+
+          qryKLu <- glue::glue_sql_collapse(purrr::pmap_chr(
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength , ..3 = HOCRL2$KLu),
+            .f = ~ glue::glue(
+              "WHEN UUID = '",..1,"' AND Wavelength = ",..2," THEN ",..3
+            )
+          ), sep = "\n")
+
+          # Assemble query
+          qry <- glue::glue_sql(
+            "UPDATE HOCRL2
+            SET Rrs = CASE
+                  ", qryRrs,"
+                  END,
+                KLu = CASE
+                  ", qryKLu,"
+                  END
+            ;"
+          )
+
+          # NA value in R are equal to NULL in SQL
+          qry <- glue::glue_sql(stringr::str_replace_all(qry, "NA", "NULL"))
+
+          DBI::dbExecute(DB$Con(), qry)
+
+          shinyFeedback::feedbackSuccess("Save")
 
         } else {
 

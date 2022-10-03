@@ -326,6 +326,7 @@ L2_hocr <- function(L1bData){
       )
     ))
 
+  # This parameter should be an user input
   WaveSeq <- seq(353,800,3)
 
   approx_wave <- function(., WaveSeq) {
@@ -367,19 +368,19 @@ L2_hocr <- function(L1bData){
     select(!AproxData) %>%
     filter(SN == "1397" | SN == "1396") %>%
     unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime|CalData"))
+    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
   LuZ1 <- L1bAproxWide %>%
     select(!AproxData) %>%
     filter(SN == "1416" | SN == "1413") %>%
     unnest(cols = c(IntData))%>%
-    select(!matches("Instrument|SN|DateTime|CalData"))
+    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
   LuZ2 <- L1bAproxWide %>%
     select(!AproxData) %>%
     filter(SN == "1415" | SN == "1414") %>%
     unnest(cols = c(IntData))%>%
-    select(!matches("Instrument|SN|DateTime|CalData"))
+    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
   DeltaDepth <- 0.15 # Algae Wise 2022
 
@@ -415,4 +416,11 @@ L2_hocr <- function(L1bData){
     )
 
   L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
+
+  # Populate UUID if exist
+   if (any(names(L1bData) == "UUID")) {
+     L2Data <- L2Data %>%
+       mutate(UUID = unique(L1bData$UUID))
+   }
+
 }
