@@ -6,11 +6,46 @@ Authors@R:
 Description: What the package does (one paragraph).
 License: What license is it under?
 Imports: 
+    clock,
     config (>= 0.3.1),
+    curl,
+    DBI,
+    dplyr,
+    DT,
+    glue,
     golem (>= 0.3.2),
+    hms,
+    lubridate,
+    methods,
+    plotly,
+    purrr,
+    raster,
+    readr,
+    reticulate,
+    RSQLite,
+    sf,
     shiny (>= 1.6.0),
     shinydashboard,
-    stringr
+    shinyFeedback,
+    shinyFiles,
+    shinyWidgets,
+    spsComps,
+    stringr,
+    suncalc,
+    tibble,
+    tidyr,
+    uuid,
+    waiter,
+    widgetframe
+Suggests: 
+    covr,
+    knitr,
+    microbenchmark,
+    rmarkdown,
+    spelling,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
 Encoding: UTF-8
+Language: en-US
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1

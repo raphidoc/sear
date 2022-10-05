@@ -20,22 +20,29 @@ read_hocr <- function(BinFile){
   RawHOCR <- unlist(purrr::map(RawHOCR , ~ .x$packets))
 
   # Unefficent way of removing custom class python object dependencies resulting in null pointer
-  RawHOCR <- purrr::map(RawHOCR, ~ list(
-    "channel" = .$channel,
-    "checksum" = .$checksum,
-    "darkaverage" = .$darkaverage,
-    "darksample" = .$darksample,
-    "frame" = .$frame,
-    "gpstime" = .$gpstime,
-    "instrument" = as.character(.$instrument, errors="ignore"),
-    "inttime" = .$inttime,
-    "loggerport" = .$loggerport,
-    "mysterydate" = .$mysterydate,
-    "sampledelay" = .$sampledelay,
-    "sn" = as.character(.$sn, errors="ignore"),
-    "spectemp" = as.character(.$spectemp, errors="ignore"),
-    "timer" = as.character(.$timer, errors="ignore")
+  # How to avoid: Error in py_ref_to_r(x) : Embedded NUL in string ? (packet 27281 of AlgaeValidation (2022/07/05))
+
+  RawHOCR <- purrr::imap(RawHOCR, ~ tryCatch(
+    list(
+      "channel" = .$channel,
+      "checksum" = .$checksum,
+      "darkaverage" = .$darkaverage,
+      "darksample" = .$darksample,
+      "frame" = .$frame,
+      "gpstime" = .$gpstime,
+      "instrument" = as.character(.$instrument, errors="ignore"),
+      "inttime" = .$inttime,
+      "loggerport" = .$loggerport,
+      "mysterydate" = .$mysterydate,
+      "sampledelay" = .$sampledelay,
+      "sn" = as.character(.$sn, errors="ignore"),
+      "spectemp" = as.character(.$spectemp, errors="ignore"),
+      "timer" = as.character(.$timer, errors="ignore")
+    ),
+    error = function(...) NA
   ))
+
+  RawHOCR <- RawHOCR[-which(is.na(RawHOCR))]
 
   # check for invalid packet
   ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors="ignore"), "SAT(HPL|HSE|HED|PLD)"))
@@ -116,6 +123,8 @@ tidy_hocr <- function(Packets, AplaDate){
 #'
 #' @noRd
 cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
+
+  #browser()
 
   RawData <- purrr::map_df(FiltRawHOCR, ~ tidy_hocr(., AplaDate))
 
@@ -238,8 +247,17 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
       colnames(tbl)[i] <- colnames(.)[i]
     }
 
-    tbl %>% mutate(ID = seq_along(TimeSeq))
+    tbl %>% mutate(
+      ID = seq_along(TimeSeq),
+      QC = "1"
+      )
   }
+
+  # Debug for NA values in interpolation
+  #browser()
+
+  # Need to test if two non-NA values are available to interpolate
+  # This is handled by wrapping cal_hocr in spsComps::shinyCatch
 
   HOCRWide <- HOCRWide %>%
     mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
@@ -261,7 +279,9 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
         group_by(ID)
     ))
 
-  HOCRLong
+  # CalData is not needed further
+  HOCRLong %>%
+    select(!CalData)
 }
 
 #' L2_hocr
@@ -308,6 +328,7 @@ L2_hocr <- function(L1bData){
       )
     ))
 
+  # This parameter should be an user input
   WaveSeq <- seq(353,800,3)
 
   approx_wave <- function(., WaveSeq) {
@@ -347,23 +368,23 @@ L2_hocr <- function(L1bData){
 
   Es <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1397") %>%
+    filter(SN == "1397" | SN == "1396") %>%
     unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime"))
+    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
   LuZ1 <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1416") %>%
+    filter(SN == "1416" | SN == "1413") %>%
     unnest(cols = c(IntData))%>%
-    select(!matches("Instrument|SN|DateTime"))
+    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
   LuZ2 <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1415") %>%
+    filter(SN == "1415" | SN == "1414") %>%
     unnest(cols = c(IntData))%>%
-    select(!matches("Instrument|SN|DateTime"))
+    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
-  DeltaDepth <- 0.30 # 30 cm
+  DeltaDepth <- 0.15 # Algae Wise 2022
 
   KLuWide <- (log(LuZ1)-log(LuZ2))/DeltaDepth
 
@@ -397,4 +418,12 @@ L2_hocr <- function(L1bData){
     )
 
   L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
+
+  # Populate UUID if exist
+   if (any(names(L1bData) == "UUID")) {
+     L2Data <- L2Data %>%
+       mutate(UUID = unique(L1bData$UUID))
+   }
+
+  return(L2Data)
 }

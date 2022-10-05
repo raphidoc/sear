@@ -19,9 +19,9 @@ mod_station_hocr_ui <- function(id){
 #' station_hocr Server Functions
 #'
 #' @noRd
-mod_station_hocr_server <- function(id, L1bData){
+mod_station_hocr_server <- function(id, L1bData, Station){
 
-  stopifnot(is.reactive(L1bData))
+  #stopifnot(is.reactive(L1bData))
 
   moduleServer( id, function(input, output, session){
     ns <- session$ns
@@ -41,88 +41,104 @@ mod_station_hocr_server <- function(id, L1bData){
     # QC flag for HOCR --------------------------------------------------------
     QCData <- reactiveVal({
 
-      L1bData()$HOCR$AproxData[[1]] %>%
-        select(DateTime, ID) %>%
-        unique() %>%
-        mutate(QC = "1")
+      reactive({
+        L1bData()$HOCR$AproxData[[1]] %>%
+          select(DateTime, ID) %>%
+          unique() %>%
+          mutate(QC = "1")
+      })
 
     })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
 
-    observeEvent(event_data('plotly_click', source = "HOCRL1b"),
-                 label = "QC HOCR",
-                 ignoreInit = TRUE, {
-                   Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
+    observeEvent(
+      event_data('plotly_click', source = "HOCRL1b"),
+      label = "QC HOCR",
+      ignoreInit = TRUE,
+      {
+        Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
 
-                   tmp <- QCData()
+        tmp <- QCData()
 
-                   # Change value for selected spectrum ID
-                   if (tmp$QC[tmp$ID %in% Selected] == "1") {
-                     tmp$QC[tmp$ID %in% Selected] <- 0
-                   } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
-                     tmp$QC[tmp$ID %in% Selected] <- 1
-                   }
+        # Change value for selected spectrum ID
+        if (tmp$QC[tmp$ID %in% Selected] == "1") {
+          tmp$QC[tmp$ID %in% Selected] <- 0
+        } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
+          tmp$QC[tmp$ID %in% Selected] <- 1
+        }
 
-                   QCData(tmp)
-                 })
+        QCData(tmp)
+      }
+    )
 
     L1bHOCR <- reactive({
 
       L1bData()$HOCR %>%
         select(Instrument, SN, AproxData) %>%
-        mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData(), by = c("DateTime", "ID"))))
-    })
+        mutate(AproxData = purrr::map(AproxData, ~ left_join(., QCData(), by = c("DateTime", "ID"))))
 
+    })
 
     # HOCR Es and Lu plot -----------------------------------------------------
     output$HOCRL1b <- renderPlotly({
 
-      req(L1bHOCR())
+      #req(L1bHOCR())
       #req(QCData())
 
+      browser()
 
       PlyFont <- list(family="Times New Roman", size = 18)
-      BlackSquare <- list(type = "rect", fillcolor = "transparent",line = list(width = 0.5), xref = "paper", yref = "paper", x0 = 0, x1 = 1, y0 = 0, y1 = 1 )
+      BlackSquare <- list(
+        type = "rect",
+        fillcolor = "transparent",
+        line = list(width = 0.5),
+        xref = "paper",
+        yref = "paper",
+        x0 = 0,
+        x1 = 1,
+        y0 = 0,
+        y1 = 1
+      )
 
-
-      ply <- L1bHOCR() %>%
+      ply <- Station$HOCR$L1b %>%
         #filter(str_detect(Instrument, "HPL")) %>%
-        mutate(Plot = purrr::map2(
-          .x = AproxData,
-          .y = SN,
-          ~plot_ly(
-            .x,
-            text = ~ID,
-            customdata = ~ID
-          ) %>%
-            add_lines(
-              x = ~Wavelength,
-              y = ~Channels ,
-              name = ~QC,
-              showlegend = F,
-              color = ~QC,
-              colors = c("1" = "seagreen", "0" = "red")
+        mutate(
+          Plot = purrr::map2(
+            .x = AproxData,
+            .y = SN,
+            ~plot_ly(
+              .x,
+              text = ~ID,
+              customdata = ~ID
             ) %>%
-            add_annotations(
-              text = ~.y,
-              x = 0.5,
-              y = 1,
-              yref = "paper",
-              xref = "paper",
-              xanchor = "middle",
-              yanchor = "top",
-              showarrow = FALSE,
-              font = list(size = 15)
-            ) %>%
-            layout(
-              shapes = BlackSquare,
-              yaxis = list(rangemode = "nonnegative"
-                           #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
-              ),
-              xaxis = list(rangemode = "nonnegative")
-            )
-        ))
+              add_lines(
+                x = ~Wavelength,
+                y = ~Channels ,
+                name = ~QC,
+                showlegend = F,
+                color = ~QC,
+                colors = c("1" = "seagreen", "0" = "red")
+              ) %>%
+              add_annotations(
+                text = ~.y,
+                x = 0.5,
+                y = 1,
+                yref = "paper",
+                xref = "paper",
+                xanchor = "middle",
+                yanchor = "top",
+                showarrow = FALSE,
+                font = list(size = 15)
+              ) %>%
+              layout(
+                shapes = BlackSquare,
+                yaxis = list(rangemode = "nonnegative"
+                             #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
+                ),
+                xaxis = list(rangemode = "nonnegative")
+              )
+          ))
 
       Lu <- ply %>%
         filter(str_detect(Instrument, "HPL")) %>%
@@ -162,20 +178,24 @@ mod_station_hocr_server <- function(id, L1bData){
     })
 
     # HOCR AOPs computation ---------------------------------------------------
-    L2Data <- eventReactive(input$ProcessL2, {
-      L2Data <- L2_hocr(L1bHOCR())
-
-    })
+    observeEvent(
+      input$ProcessL2,
+      {
+        Station$HOCR$L2 <- L2_hocr(L1bHOCR())
+      }
+    )
 
     output$AOPs <- renderPlotly({
 
-      req(L2Data())
+      #req(L2Data())
 
-      Rrsplot <- L2Data() %>%
+      browser()
+
+      Rrsplot <- Station$HOCR$L2() %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 
-      KLuplot <- L2Data() %>%
+      KLuplot <- Station$HOCR$L2 %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 
@@ -185,8 +205,8 @@ mod_station_hocr_server <- function(id, L1bData){
 # Module output -----------------------------------------------------------
 
   list(
-    L1bHOCR = L1bHOCR,
-    AOPs = L2Data
+    L1bHOCR = L1bHOCR
+    #AOPs = Station$HOCR$L2
   )
 
   })
