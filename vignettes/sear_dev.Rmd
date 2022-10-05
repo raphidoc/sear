@@ -146,6 +146,11 @@ When an `UUID` already exist and the `Save` button is pressed, the records in th
 For the `HOCRL1b` table only the `QC` field is updated, it is uniquely identified by the (UUID, ID) pair. THIS PAIR IS NOT A PRIMARY KEY as it doesn't uniquely identifies the entry of the table. The PRIMARY KEY of the HOCRL1b table is (UUID, ID, SN, Wavelength).
 QUESTION: Would it be relevant to separate the `QC` in it's own table ?
 
+When the `Save` button is pressed, feedback is given to the user in the form of a `session$sendCustomMessage`.
+
+Note reagarding diffference bettwen the `WHERE` and the `CASE WHEN` approach for updating SQLite.
+Whith 
+
 ## Delete
 
 When the delete button is pressed, if the active data point (station) has an `UUID`, it's suppressed in the `Metadata` table. As the FOREIGN KEY constraint is activated in the DB schema (`PRAGMA foreign_keys=ON`) and `HOCRL1b` and `HOCRL2` are child table build with the `ON DELETE CASCADE` constraints, matching record are automatically deleted.

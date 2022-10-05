@@ -30,8 +30,6 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     output$TabPanel <- renderUI({
       req(Station)
 
-      shinyFeedback::useShinyFeedback()
-
       tabsetPanel(
         id = ns("Tabset"),
         type = "pills",
@@ -125,8 +123,10 @@ mod_station_L1L2_server <- function(id, L1b, Station){
           resize = NULL
         ),
 
-        actionButton(ns("Delete"), "Delete", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
-        actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
+        mod_manage_obs_ui("manage_obs")
+
+        # actionButton(ns("Delete"), "Delete", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
+        # actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
       )
     })
 
@@ -345,8 +345,8 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 # Module output -----------------------------------------------------------
 
   list(
-    Save = reactive(input$Save),
-    Delete = reactive(input$Delete)
+    #Save = reactive(input$Save),
+    #Delete = reactive(input$Delete)
     #StationTbl = StationTbl,
     #HOCR = HOCRL2
   )

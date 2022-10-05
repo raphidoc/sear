@@ -9,13 +9,11 @@ app_ui <- function(request) {
     # Leave this function for adding external resources
     golem_add_external_resources(),
     # Your application UI logic
+
     dashboardPage(
       dashboardHeader(
         title = tags$a(href='https://github.com/raphidoc/sear',
-                       favicon(
-                         ico = "hex_sear",
-                         ext = "png"
-                       ),
+                       tags$img(src= app_sys("app","www","hex_sear.png"), width = "50px", height = "40px"),
                        'sear')
       ),
       dashboardSidebar(
@@ -30,6 +28,7 @@ app_ui <- function(request) {
         mod_manage_DB_ui("manage_DB")
       ),
       dashboardBody(
+        shinyFeedback::useShinyFeedback(),
         mod_parse_mtelog_ui("parse_mtelog"),
         fluidRow(
           column(
@@ -71,5 +70,32 @@ golem_add_external_resources <- function() {
     )
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
+  )
+}
+
+# Taken from https://stackoverflow.com/questions/31440564/adding-a-company-logo-to-shinydashboard-header
+# Takes a location 'href', an image location 'src', a loading gif 'loadingsrc'
+# height, width and alt text, and produces a loading logo that activates while
+# Shiny is busy.
+loadingLogo <- function(href, src, loadingsrc, height = NULL, width = NULL, alt = NULL) {
+  tagList(
+    tags$head(
+      tags$script(
+        "setInterval(function(){
+                     if ($('html').attr('class')=='shiny-busy') {
+                     $('div.busy').show();
+                     $('div.notbusy').hide();
+                     } else {
+                     $('div.busy').hide();
+                     $('div.notbusy').show();
+           }
+         },100)")
+    ),
+    tags$a(href=href,
+           div(class = "busy",
+               img(src=loadingsrc,height = height, width = width, alt = alt)),
+           div(class = 'notbusy',
+               img(src = src, height = height, width = width, alt = alt))
+    )
   )
 }
