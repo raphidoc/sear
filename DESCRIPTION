@@ -17,6 +17,7 @@ Imports:
     hms,
     lubridate,
     methods,
+    pkgload,
     plotly,
     purrr,
     raster,
