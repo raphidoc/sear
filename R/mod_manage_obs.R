@@ -11,8 +11,11 @@ mod_manage_obs_ui <- function(id){
   ns <- NS(id)
   tagList(
 
-    # actionButton(ns("Delete"), "Delete", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
-    # actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
+    #shinyFeedback::useShinyFeedback(),
+    tags$head(tags$script(src = "message-handler.js")),
+
+    actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
+    actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
 
   )
 }
@@ -69,11 +72,21 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
 
 # Save button send data to SQLite -----------------------------------------
     observeEvent(
-      req(L2$Save()),
+      req(input$Save),
       {
 
+        # Does UUID is present in Metadata colnames ?
+        UUIDPresent <- any(str_detect(names(Station$Metadata), "UUID"))
+
+        # Does UUID exist in database, check ObsMeta
+        if (UUIDPresent) {
+          UUIDExist <- any(Station$Metadata$UUID %in% DB$ObsMeta()()$UUID)
+        } else {
+          UUIDExist <- F
+        }
+
         # If UUID already exist, update record in SQLite
-        if (any(str_detect(names(Station$Metadata), "UUID"))) {
+        if (UUIDPresent & UUIDExist) {
 
           # Update Metadata table
           Metadata <- Station$Metadata %>%
@@ -92,7 +105,8 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
             WHERE UUID = '", Station$Metadata$UUID, "';"
           )
 
-          DBI::dbExecute(DB$Con(), qry)
+          # Execute the statement and return the number of line affected
+          MetaUp <- DBI::dbExecute(DB$Con(), qry)
 
           # Update HOCRL1b table
           HOCRL1b <- Station$HOCR$L1b %>%
@@ -124,12 +138,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
 
           # Result is that we issue query to update QC everywhere, event if it doesn't change ...
 
-          purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x)))
+          # Execute the statement and return the number of line affected
+          L1bUp <- unlist(purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x))))
 
           # Update HOCRL2 table
           HOCRL2 <- Station$HOCR$L2
 
           # Individual CASE WHEN for each variables to change: Rrs, KLu
+          # As the WHERE constraint on UUID is already present on the final query could remove UUID from CASE WHEN
           qryRrs <- glue::glue_sql_collapse(purrr::pmap_chr(
             list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength , ..3 = HOCRL2$Rrs, ..4 = HOCRL2$KLu),
             .f = ~ glue::glue(
@@ -149,23 +165,48 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
             "UPDATE HOCRL2
             SET Rrs = CASE
                   ", qryRrs,"
+                  ELSE Rrs
                   END,
                 KLu = CASE
                   ", qryKLu,"
+                  ELSE KLu
                   END
-            ;"
+            WHERE UUID = '",Station$Metadata$UUID,"';"
           )
 
           # NA value in R are equal to NULL in SQL
           qry <- glue::glue_sql(stringr::str_replace_all(qry, "NA", "NULL"))
 
-          DBI::dbExecute(DB$Con(), qry)
+          # Execute the statement and return the number of line affected
+          L2Up <- DBI::dbExecute(DB$Con(), qry)
 
-          shinyFeedback::feedbackSuccess("Save")
+          # Check that the number of line affected is correct, should probably improve this
+          # MetaUp must be only one line affected, if more means UUID collision
+          # L1bUp == 3 * 137 wavelengths * bins number
+          # L2Up == User input wavelength
+          test <- all(MetaUp == 1, unique(L1bUp) == 411,  L2Up == 150)
+
+          # Feedback to the user
+          session$sendCustomMessage(
+            type = 'testmessage',
+            message =
+              glue::glue(
+                "Metadata: ",MetaUp," entry updated\n",
+                "HOCRL1b: ", sum(L1bUp)," entry updated\n",
+                "HOCRL2: ",L2Up," entry updated\n")
+            )
+
+          # Shiny feedback doesn't work with actionButton
+          # shinyFeedback::feedbackSuccess(
+          #   inputId = "Save",
+          #   show = test,
+          #   text = "Updated",
+          #   color = "#5cb85c",
+          #   icon = shiny::icon("ok", lib = "glyphicon"),
+          #   session = shiny::getDefaultReactiveDomain()
+          # )
 
         } else {
-
-          browser()
 
           ObsUUID <- uuid::UUIDgenerate(
             use.time = T,
@@ -189,7 +230,6 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
 
           HOCRL1b <- Station$HOCR$L1b %>%
             unnest(cols = c(AproxData)) %>%
-            select(!CalData) %>%
             mutate(UUID = ObsUUID)
 
           HOCRL2 <- Station$HOCR$L2 %>%
@@ -199,26 +239,61 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
           DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
 
-        }
+          # Feedback to the user
+          session$sendCustomMessage(
+            type = 'testmessage',
+            message = "Saved"
+            # glue::glue(
+            #   "Metadata: ",MetaUp," entry updated\n",
+            #   "HOCRL1b: ", sum(L1bUp)," entry updated\n",
+            #   "HOCRL2: ",L2Up," entry updated\n")
+          )
 
-        DB$ObsMeta(reactive(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata"))))
+          # Update the list of observation
+          DB$ObsMeta(reactive(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata"))))
+        }
 
       })
 
 # Delete button remove data from SQLite -----------------------------------
 
-    observeEvent(
-      req(L2$Delete()),
-      {
-        #browser()
+    modal_confirm <- modalDialog(
+      "Are you sure you want to continue?",
+      title = "Deleting files",
+      footer = tagList(
+        actionButton(ns("cancel"), "Cancel"),
+        actionButton(ns("ok"), "Delete", class = "btn btn-danger")
+      )
+    )
+
+    observeEvent(req(input$Delete), {
+        showModal(modal_confirm)
+      })
+
+    # If user confirm delete
+    observeEvent(input$ok, {
+        removeModal()
 
         qry <- glue::glue("DELETE FROM Metadata WHERE UUID='",Station$Metadata$UUID,"';")
 
-        DBI::dbSendStatement(DB$Con(), qry)
+        LineDel <- DBI::dbExecute(DB$Con(), qry)
 
+        # Feedback to the user
+        session$sendCustomMessage(
+          type = 'testmessage',
+          message =
+            glue::glue(
+              LineDel," line deleted\n")
+        )
+
+        # Update the list of observation
         DB$ObsMeta(reactive(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata"))))
-
       })
+
+    # If user cancel
+    observeEvent(input$cancel, {
+      removeModal()
+    })
 
   })
 }

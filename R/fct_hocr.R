@@ -279,7 +279,9 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
         group_by(ID)
     ))
 
-  HOCRLong
+  # CalData is not needed further
+  HOCRLong %>%
+    select(!CalData)
 }
 
 #' L2_hocr
@@ -423,4 +425,5 @@ L2_hocr <- function(L1bData){
        mutate(UUID = unique(L1bData$UUID))
    }
 
+  return(L2Data)
 }
