@@ -47,7 +47,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
       # Try to read parsed and filtered applanix data
 
       #Potential filtered File
-      PotApla <- file.path(SearTbl()$ProjPath,"L1",paste0("filtered_apla_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+      PotApla <- file.path(SearTbl()$ProjPath,".sear",paste0("filtered_apla_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
 
       if (file.exists(PotApla)) {
 
@@ -64,7 +64,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
         #   BoatSolAzm > 0 & BoatSolAzm < 180
         #   ))
 
-        dir.create(file.path(SearTbl()$ProjPath,"L1"))
+        dir.create(file.path(SearTbl()$ProjPath,".sear"))
 
         write_csv(Apla(), PotApla)
       }
@@ -84,9 +84,9 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
         waiter$show()
         on.exit(waiter$hide())
 
-        PotHocr <- file.path(SearTbl()$ProjPath, "L1", paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+        PotHocr <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
-        PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, "L1",
+        PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, ".sear",
                                       paste0("filtered_time_index_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
         if (file.exists(PotHocr) & file.exists(PotTimeIndexHocr)) {

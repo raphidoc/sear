@@ -43,13 +43,59 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
         Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite)
 
+        # Enable foreign keys
+        DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
+
         # Create DB schema
-
-        DBI::dbGetQuery(
-          Con, "CREATE TABLE IF NOT EXISTS Metadata (
-
+        # Metadata
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS Metadata (
+          ObsName TEXT NOT NULL,
+          ObsType TEXT NOT NULL,
+          DateTime TEXT NOT NULL,
+          Lat DOUBLE NOT NULL,
+          Lon DOUBLE NOT NULL,
+          Comment TEXT,
+          UUID TEXT PRIMARY KEY,
+          ProTime TEXT NOT NULL,
+          Analyst TEXT NOT NULL,
+          Mail TEXT NOT NULL
           );"
-          )
+        )
+
+        # HOCRL1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `HOCRL1b` (
+          `Instrument` TEXT,
+          `SN` TEXT,
+          `DateTime` TEXT,
+          `ID` INTEGER,
+          `QC` TEXT,
+          `Type` TEXT,
+          `Wavelength` REAL,
+          `Channels` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # HOCRL2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `HOCRL2` (
+          `Wavelength` REAL,
+          `Rrs` REAL,
+          `KLu` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
 
         # Return Con
         Con
@@ -78,23 +124,41 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
 # Fetch MetaData ----------------------------------------------------------
 
-    ObsMeta <- reactive({
-      req(Con())
+    ObsMeta <- reactiveVal({
+      reactive({
+        req(Con())
 
-      tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
+        # if DB is not empty list UUID and get current index
+        if (
+          !identical(DBI::dbListTables(Con()), character(0)) #&
+          #str_detect(DBI::dbListTables(Con), "ObsMeta")
+        ) {
+          message("Listing Obs")
 
+          tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
+
+        } else {
+          tibble(
+            ObsType = NA,
+            ObsName = NA,
+            UUID = NA,
+            Lat = NA,
+            Lon = NA,
+            DateTime = NA
+          )
+        }
+      })
     })
+
+
 
     #Obs = {reactive(add_trace)}
 
-
-
-
     output$ObsList <- renderUI({
 
-      validate(need(ObsMeta, label = "Empty DB"))
+      validate(need(ObsMeta(), label = "Empty DB"))
 
-      selectInput(ns("ObsList"), "ObsList", choices = ObsMeta()$UUID, selected = NULL, multiple = F)
+      selectInput(ns("ObsList"), "ObsList", choices = ObsMeta()()$UUID, selected = NULL, multiple = F)
     })
 
     list(
