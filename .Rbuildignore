@@ -9,3 +9,5 @@ $run_dev.*
 ^\.github$
 ^app\.R$
 ^rsconnect$
+^doc$
+^Meta$

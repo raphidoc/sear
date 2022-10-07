@@ -1,6 +1,13 @@
 # global reference to kaitaistruct (will be initialized in .onLoad)
 kaitaistruct <- NULL
 
+# helper function to skip tests if we don't have the 'kaitaistruct' module
+skip_if_no_kaitaistruct <- function() {
+  have_kaitaistruct <- reticulate::py_module_available("kaitaistruct")
+  if (!have_kaitaistruct)
+    testthat::skip("kaitaistruct not available for testing")
+}
+
 .onLoad <- function(lib, pkg) {
   reticulate::use_condaenv(condaenv = "py_sear", conda = "auto", required = NULL)
 
