@@ -27,7 +27,7 @@ jobs:
           needs: coverage
 
       - name: Test coverage
-        run: covr::codecov(quiet = FALSE)
+        run: covr::codecov(quiet = FALSE, token = 70241d41-8ccd-44c0-8b48-870b754480b4)
         shell: Rscript {0}
 
       - uses: actions/checkout@master
