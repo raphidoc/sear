@@ -50,7 +50,7 @@ devtools::build_vignettes()
 
 ## Code Coverage----
 ## Set the code coverage service ("codecov" or "coveralls")
-usethis::use_coverage()
+usethis::use_coverage(type = c("codecov"))
 
 # Create a summary readme for the testthat subdirectory
 covrpage::covrpage()
