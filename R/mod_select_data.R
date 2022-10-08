@@ -8,7 +8,6 @@
 #'
 #' @importFrom shiny NS tagList
 #' @import lubridate
-
 mod_select_data_ui <- function(id){
   ns <- NS(id)
   tagList(
@@ -183,12 +182,8 @@ mod_select_data_server <- function(id, Apla, DB){
             customdata = ~UUID,
             marker = list(color = 'rgb(127, 255, 212)'),
             text = ~paste0(
-              #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
               '<b>ObsName</b>: ', ObsName, '<br>',
-              '<b>ObsType</b>: ', ObsType, '<br>'
-              #'<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-              #'<b>Course (TN)</b>: ', Course_TN, '<br>',
-              #'<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+              '<b>UUID</b>: ', UUID, '<br>'
             )
           ) %>%
           layout(
@@ -234,12 +229,8 @@ mod_select_data_server <- function(id, Apla, DB){
             customdata = ~UUID,
             marker = list(color = 'rgb(127, 255, 212)'),
             text = ~paste0(
-              #'<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
               '<b>ObsName</b>: ', ObsName, '<br>',
-              '<b>ObsType</b>: ', ObsType, '<br>'
-              #'<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-              #'<b>Course (TN)</b>: ', Course_TN, '<br>',
-              #'<b>SolAzm (degree)</b>: ', SolAzm, '<br>'
+              '<b>UUID</b>: ', UUID, '<br>'
             )
           ) %>%
           layout(
@@ -316,32 +307,3 @@ mod_select_data_server <- function(id, Apla, DB){
 
 ## To be copied in the server
 # mod_selection_display_server("selection_display_1")
-
-# DataTable used to visualize the state of the (subset of) DataSynthesis.csv file
-# output$DataTable <- DT::renderDataTable(
-#   DT::datatable(UpApla()[UpApla()$ID %in% selected()$customdata,],
-#                 extensions = c("Buttons", "Scroller", "Select"),
-#                 filter = "top",
-#                 escape = TRUE, rownames = FALSE,
-#                 style = "bootstrap",
-#                 class = "compact",
-#                 options = list(
-#                   dom = "Brtip",
-#                   select = list(style = 'os', items = 'row'),
-#                   buttons = list(I("colvis"),"selectNone","csv"),
-#                   columnDefs = list(
-#                     list(
-#                       visible = FALSE,
-#                       targets = c(0,2,3)
-#                     )),
-#                   deferRender = TRUE,
-#                   scrollY = 100,
-#                   pageLength = 10,
-#                   scroller = TRUE
-#                 ),
-#                 selection = "none",
-#                 editable = F
-#   ),
-#   server=FALSE,
-#   editable=T
-# )
