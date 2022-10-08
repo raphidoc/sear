@@ -23,7 +23,7 @@ mod_manage_obs_ui <- function(id){
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
+mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -39,30 +39,30 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
 
         qry <- paste0("SELECT * FROM Metadata WHERE UUID='",SelData$SelUUID(),"';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Station$Metadata <- tibble(DBI::dbFetch(res))
+        Obs$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # UUID have to ship with Instrument and SN to be passed to HOCR$L2
         qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='",SelData$SelUUID(),"';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Station$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
+        Obs$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
           nest(AproxData = !matches("Instrument|SN|UUID"))
         DBI::dbClearResult(res)
 
         qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='",SelData$SelUUID(),"';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Station$HOCR$L2 <- tibble(DBI::dbFetch(res))
+        Obs$HOCR$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         #dbDisconnect(con)
 
-        # Station$Metadata <- tibble(DBI::dbReadTable(DB$Con(), "Metadata"))
-        # Station$HOCR$L1b <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL1b"))
-        # Station$HOCR$L2 <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL2"))
+        # Obs$Metadata <- tibble(DBI::dbReadTable(DB$Con(), "Metadata"))
+        # Obs$HOCR$L1b <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL1b"))
+        # Obs$HOCR$L2 <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL2"))
 
 
-        # L2$StationTbl(Metadata)
+        # L2$ObsTbl(Metadata)
         #
         # L2$HOCR()$L1bHOCR(HOCRL1b)
         #
@@ -76,11 +76,11 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
       {
 
         # Does UUID is present in Metadata colnames ?
-        UUIDPresent <- any(str_detect(names(Station$Metadata), "UUID"))
+        UUIDPresent <- any(str_detect(names(Obs$Metadata), "UUID"))
 
         # Does UUID exist in database, check ObsMeta
         if (UUIDPresent) {
-          UUIDExist <- any(Station$Metadata$UUID %in% DB$ObsMeta()()$UUID)
+          UUIDExist <- any(Obs$Metadata$UUID %in% DB$ObsMeta()()$UUID)
         } else {
           UUIDExist <- F
         }
@@ -89,7 +89,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
         if (UUIDPresent & UUIDExist) {
 
           # Update Metadata table
-          Metadata <- Station$Metadata %>%
+          Metadata <- Obs$Metadata %>%
             mutate(
               ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
               Analyst = "Raphael Mabit",
@@ -102,14 +102,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
                 ProTime = '", Metadata$ProTime,"',
                 Analyst = '", Metadata$Analyst,"',
                 Mail = '", Metadata$Mail,"'
-            WHERE UUID = '", Station$Metadata$UUID, "';"
+            WHERE UUID = '", Obs$Metadata$UUID, "';"
           )
 
           # Execute the statement and return the number of line affected
           MetaUp <- DBI::dbExecute(DB$Con(), qry)
 
           # Update HOCRL1b table
-          HOCRL1b <- Station$HOCR$L1b %>%
+          HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData))
 
           # List L1bID the link between the instruments spectrum.
@@ -142,7 +142,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
           L1bUp <- unlist(purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x))))
 
           # Update HOCRL2 table
-          HOCRL2 <- Station$HOCR$L2
+          HOCRL2 <- Obs$HOCR$L2
 
           # Individual CASE WHEN for each variables to change: Rrs, KLu
           # As the WHERE constraint on UUID is already present on the final query could remove UUID from CASE WHEN
@@ -171,7 +171,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
                   ", qryKLu,"
                   ELSE KLu
                   END
-            WHERE UUID = '",Station$Metadata$UUID,"';"
+            WHERE UUID = '",Obs$Metadata$UUID,"';"
           )
 
           # NA value in R are equal to NULL in SQL
@@ -220,7 +220,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
           #                     as.character(AOPs),
           #                     collapse = ""))
 
-          Metadata <- Station$Metadata %>%
+          Metadata <- Obs$Metadata %>%
             mutate(
               UUID = ObsUUID,
               ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
@@ -228,11 +228,11 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
               Mail = "raphael.mabit@gmail.com"
               )
 
-          HOCRL1b <- Station$HOCR$L1b %>%
+          HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData)) %>%
             mutate(UUID = ObsUUID)
 
-          HOCRL2 <- Station$HOCR$L2 %>%
+          HOCRL2 <- Obs$HOCR$L2 %>%
             mutate(UUID = ObsUUID)
 
           DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
@@ -274,7 +274,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Station){
     observeEvent(input$ok, {
         removeModal()
 
-        qry <- glue::glue("DELETE FROM Metadata WHERE UUID='",Station$Metadata$UUID,"';")
+        qry <- glue::glue("DELETE FROM Metadata WHERE UUID='",Obs$Metadata$UUID,"';")
 
         LineDel <- DBI::dbExecute(DB$Con(), qry)
 

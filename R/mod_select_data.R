@@ -35,13 +35,6 @@ mod_select_data_server <- function(id, Apla, DB){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    # Update tibble ObsType and ObsName on ApplyObs button click event
-    UpApla <- reactiveVal({})
-
-    observe({
-      UpApla(Apla())
-    })
-
 # Filters for data selection ----------------------------------------------
     output$Filters <- renderUI({
 
@@ -64,17 +57,17 @@ mod_select_data_server <- function(id, Apla, DB){
       lubridate::interval(input$TimeFilter[1],input$TimeFilter[2])
     })
 
-    SubUpApla <- reactiveVal({})
+    SubApla <- reactiveVal({})
 
     observe({
       req(TimeInterval(), input$SpeedLimit, input$SolAzmLimit)
 
-      AplaTime <- UpApla() %>%
+      AplaTime <- Apla() %>%
         filter(DateTime %within% TimeInterval(),
                BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
                Speed_N <= input$SpeedLimit)
 
-      SubUpApla(AplaTime)
+      SubApla(AplaTime)
     })
 
 # Selected data points ----------------------------------------------------
@@ -119,7 +112,7 @@ mod_select_data_server <- function(id, Apla, DB){
         if (!uuid::UUIDvalidate(UUID)) {
           showModal(modalDialog(
             title = "Invalid click",
-            "You didn't click on an Obs feature (Station/Transect), no UUID attatched")
+            "You didn't click on an Obs feature, no UUID attatched")
           )
           invalidateLater(1)
 
@@ -130,25 +123,23 @@ mod_select_data_server <- function(id, Apla, DB){
       }
     )
 
-    observe(SelUUID())
-
     SelApla <- reactive({
       req(SelID())
 
       # Should not be recomputed when processing to L1b ...
 
-      UpApla()[UpApla()$ID %in% SelID(), ]
+      Apla()[Apla()$ID %in% SelID(), ]
     })
 
 
 # Map for data selection --------------------------------------------------
 
     output$Map <- renderPlotly({
-      req(SubUpApla())
+      req(SubApla())
 
-      #ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Station" = "green")
+      #ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Obs" = "green")
 
-      zc <- zoom_center(SubUpApla()$Lat_DD, SubUpApla()$Lon_DD)
+      zc <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
       zoom <- zc[[1]]
       center <- zc[[2]]
 
@@ -161,7 +152,7 @@ mod_select_data_server <- function(id, Apla, DB){
         ) %>%
           add_markers(
             name = "Raw",
-            data = SubUpApla(),
+            data = SubApla(),
             x = ~Lon_DD,
             y = ~Lat_DD,
             customdata = ~ID,
@@ -174,9 +165,8 @@ mod_select_data_server <- function(id, Apla, DB){
             )
           ) %>%
           add_markers(
-            name = "Stations",
-            data = DB$ObsMeta()() %>%
-              filter(ObsType == "Station"),
+            name = "Obss",
+            data = DB$ObsMeta()(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,
@@ -208,7 +198,7 @@ mod_select_data_server <- function(id, Apla, DB){
         ) %>%
           add_markers(
             name = "Raw",
-            data = SubUpApla(),
+            data = SubApla(),
             x = ~Lon_DD,
             y = ~Lat_DD,
             customdata = ~ID,
@@ -221,9 +211,8 @@ mod_select_data_server <- function(id, Apla, DB){
             )
           ) %>%
           add_markers(
-            name = "Stations",
-            data = DB$ObsMeta()() %>%
-              filter(ObsType == "Station"),
+            name = "Obss",
+            data = DB$ObsMeta()(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,
@@ -292,7 +281,7 @@ mod_select_data_server <- function(id, Apla, DB){
 
 # Module output -----------------------------------------------------------
     list(
-      UpApla = UpApla,
+      Apla = Apla,
       SelApla = SelApla,
       SelID = SelID,
       SelUUID = SelUUID,

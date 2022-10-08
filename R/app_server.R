@@ -22,13 +22,13 @@ app_server <- function(input, output, session) {
 
   CalData <- mod_load_cal_server("HOCRCal")
 
-  L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData, Station)
+  L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData, Obs)
 
-  L2 <- mod_station_L1L2_server("station_L1L2", L1b, Station)
+  L2 <- mod_obs_L1L2_server("obs_L1L2", L1b, Obs)
 
-  Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Station)
+  Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
 
-  Station <- reactiveValues(
+  Obs <- reactiveValues(
     Metadata = reactive(tibble(NA)),
     HOCR = reactiveValues(
       L1b = reactive(tibble()),
@@ -36,30 +36,5 @@ app_server <- function(input, output, session) {
     )
   )
 
-
-  # observeEvent(
-  #   req(L1b$ProcessL1b() & L1b$ObsType() == "Station"),
-  #   {
-  #     L2 <- mod_station_L1L2_server("station_L1L2", L1b)
-  #   })
-
-  # observeEvent(
-  #   L1b$ProcessL1b(),
-  #   {
-  #
-  #     req(L1b$Data())
-  #
-  #     if (L1b$ObsType() == "Station") {
-  #
-  #       L2 <- mod_station_L1L2_server("station_L1L2", L1b)
-  #
-  #       Obs <- mod_manage_obs_server("manage_obs", DB, L2, SelData)
-  #
-  #     } else {
-  #
-  #       stop(L1b$ObsType()," not implemented")
-  #
-  #     }
-  #   })
 
 }

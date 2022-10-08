@@ -53,6 +53,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
           "CREATE TABLE IF NOT EXISTS Metadata (
           ObsName TEXT NOT NULL,
           ObsType TEXT NOT NULL,
+          ObsFlag TEXT NOT NULL,
           DateTime TEXT NOT NULL,
           Lat DOUBLE NOT NULL,
           Lon DOUBLE NOT NULL,
@@ -99,28 +100,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
         # Return Con
         Con
-
-        # if DB is not empty list UUID and get current index
-        # if (
-        #   !identical(DBI::dbListTables(Con()), character(0)) #&
-        #   #str_detect(DBI::dbListTables(Con), "ObsMeta")
-        # ) {
-        #   message("Listing Obs")
-        #
-        #   browser()
-        #
-        #   DBObs(DBI::dbGetQuery(Con(), "SELECT UUID FROM ObsMeta"))
-        # }
-
       })
-
-    # observeEvent(
-    #   req(SearTbl()$ProjPath),
-    #   {
-    #     Con()
-    #   })
-
-
 
 # Fetch MetaData ----------------------------------------------------------
 
@@ -149,10 +129,6 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
         }
       })
     })
-
-
-
-    #Obs = {reactive(add_trace)}
 
     output$ObsList <- renderUI({
 

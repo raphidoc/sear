@@ -1,4 +1,4 @@
-#' station_hocr UI Function
+#' obs_hocr UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_station_hocr_ui <- function(id){
+mod_obs_hocr_ui <- function(id){
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 320),
@@ -16,10 +16,10 @@ mod_station_hocr_ui <- function(id){
   )
 }
 
-#' station_hocr Server Functions
+#' obs_hocr Server Functions
 #'
 #' @noRd
-mod_station_hocr_server <- function(id, L1bData, Station){
+mod_obs_hocr_server <- function(id, L1bData, Obs){
 
   #stopifnot(is.reactive(L1bData))
 
@@ -101,7 +101,7 @@ mod_station_hocr_server <- function(id, L1bData, Station){
         y1 = 1
       )
 
-      ply <- Station$HOCR$L1b %>%
+      ply <- Obs$HOCR$L1b %>%
         #filter(str_detect(Instrument, "HPL")) %>%
         mutate(
           Plot = purrr::map2(
@@ -181,7 +181,7 @@ mod_station_hocr_server <- function(id, L1bData, Station){
     observeEvent(
       input$ProcessL2,
       {
-        Station$HOCR$L2 <- L2_hocr(L1bHOCR())
+        Obs$HOCR$L2 <- L2_hocr(L1bHOCR())
       }
     )
 
@@ -191,11 +191,11 @@ mod_station_hocr_server <- function(id, L1bData, Station){
 
       browser()
 
-      Rrsplot <- Station$HOCR$L2() %>%
+      Rrsplot <- Obs$HOCR$L2() %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 
-      KLuplot <- Station$HOCR$L2 %>%
+      KLuplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 
@@ -206,14 +206,14 @@ mod_station_hocr_server <- function(id, L1bData, Station){
 
   list(
     L1bHOCR = L1bHOCR
-    #AOPs = Station$HOCR$L2
+    #AOPs = Obs$HOCR$L2
   )
 
   })
 }
 
 ## To be copied in the UI
-# mod_station_hocr_ui("station_hocr")
+# mod_obs_hocr_ui("obs_hocr")
 
 ## To be copied in the server
-# mod_station_hocr_server("station_hocr")
+# mod_obs_hocr_server("obs_hocr")

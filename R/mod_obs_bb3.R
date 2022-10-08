@@ -1,4 +1,4 @@
-#' L1L2_transect UI Function
+#' obs_bb3 UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,17 +7,17 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_transect_L1L2_ui <- function(id){
+mod_obs_bb3_ui <- function(id){
   ns <- NS(id)
   tagList(
 
   )
 }
 
-#' L1L2_transect Server Functions
+#' obs_bb3 Server Functions
 #'
 #' @noRd
-mod_transect_L1L2_server <- function(id){
+mod_obs_bb3_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -25,7 +25,7 @@ mod_transect_L1L2_server <- function(id){
 }
 
 ## To be copied in the UI
-# mod_L1L2_transect_ui("L1L2_transect_1")
+# mod_obs_bb3_ui("obs_bb3_1")
 
 ## To be copied in the server
-# mod_L1L2_transect_server("L1L2_transect_1")
+# mod_obs_bb3_server("obs_bb3_1")

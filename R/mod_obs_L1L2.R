@@ -1,4 +1,4 @@
-#' L1L2_station UI Function
+#' L1L2_obs UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,17 +7,17 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_station_L1L2_ui <- function(id){
+mod_obs_L1L2_ui <- function(id){
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("TabPanel"))
   )
 }
 
-#' L1L2_station Server Functions
+#' L1L2_obs Server Functions
 #'
 #' @noRd
-mod_station_L1L2_server <- function(id, L1b, Station){
+mod_obs_L1L2_server <- function(id, L1b, Obs){
 
   #stopifnot(is.reactive(L1b$Data))
 
@@ -28,20 +28,20 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 
 # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
-      req(Station)
+      req(Obs)
 
       tabsetPanel(
         id = ns("Tabset"),
         type = "pills",
         tabPanel(
-          "Station",
-          uiOutput(ns("Station"))
+          "Observation",
+          uiOutput(ns("Obs"))
         ),
         tabPanel("HOCR",
                  plotlyOutput(ns("HOCRL1b"), height = 320),
                  actionButton(ns("ProcessL2"), "ProcessL2"),
                  plotlyOutput(ns("AOPs"), height = 250)
-                 #mod_station_hocr_ui(ns("station_hocr"))
+                 #mod_obs_hocr_ui(ns("obs_hocr"))
                  )
       )
 
@@ -50,26 +50,27 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     # Keep that for dev purpose
 
     # observeEvent(
-    #   req(StationTbl()),
+    #   req(ObsTbl()),
     #   {
-    #     appendTab(inputId ="Tabset", tabPanel("Station", uiOutput(ns("Station"))))
+    #     appendTab(inputId ="Tabset", tabPanel("Obs", uiOutput(ns("Obs"))))
     #   })
     #
     # observeEvent(
     #   req(str_detect(names(L1b$Data()), "HOCR")),
     #   {
-    #     appendTab(inputId ="Tabset", tabPanel("HOCR", mod_station_hocr_ui(ns("station_hocr"))))
+    #     appendTab(inputId ="Tabset", tabPanel("HOCR", mod_obs_hocr_ui(ns("obs_hocr"))))
     #   })
 
-# Station tab -------------------------------------------------------------
-    StationTbl <- reactiveVal({})
+# Obs tab -------------------------------------------------------------
+    ObsTbl <- reactiveVal({})
 
     observeEvent(
       L1b$ProcessL1b(),
       {
-          Station$Metadata <- tibble(
-            ObsName = L1b$ObsName(),
-            ObsType = L1b$ObsType(), # Obviously should be "Station"
+          Obs$Metadata <- tibble(
+            ObsName = "NA",
+            ObsType = "NA",
+            ObsFlag = "NA",
             DateTime = mean(L1b$SelApla()$DateTime, na.rm = T),
             Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
             Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T)
@@ -78,9 +79,9 @@ mod_station_L1L2_server <- function(id, L1b, Station){
       }
     )
 
-    #DataTable used to display Station information
+    #DataTable used to display Obs information
     output$DataTable <- DT::renderDataTable(
-      DT::datatable(Station$Metadata,
+      DT::datatable(Obs$Metadata,
                     #extensions = c("Buttons", "Scroller", "Select"),
                     #filter = "top",
                     escape = TRUE, rownames = FALSE,
@@ -107,7 +108,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
       editable=T
     )
 
-    output$Station <- renderUI({
+    output$Obs <- renderUI({
 
       tagList(
         DT::DTOutput(ns("DataTable")),
@@ -133,14 +134,14 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     observeEvent(
       input$Save,
       {
-        Station$Metadata <- Station$Metadata %>% mutate(Comment = input$Comment)
+        Obs$Metadata <- Obs$Metadata %>% mutate(Comment = input$Comment)
       })
 
 # HOCR tab ----------------------------------------------------------------
 
     # Have to call this module inside a reactive consumer, why ?
     # Because a reactiveVal is not a reactive consumer
-    #mod_station_hocr_server("station_hocr", L1b$Data, Station)
+    #mod_obs_hocr_server("obs_hocr", L1b$Data, Obs)
 
     # Then have to force computation of HOCRL2 ...
     # observe({
@@ -154,7 +155,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     QCData <- reactive({
 
       browser()
-      Station$HOCR$L1b$AproxData[[1]] %>%
+      Obs$HOCR$L1b$AproxData[[1]] %>%
         select(DateTime, ID) %>%
         unique() %>%
         mutate(QC = "1")
@@ -180,7 +181,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
         #
         # #QCData <- reactive(tmp)
         #
-        # Station$HOCR$L1b <- Station$HOCR$L1b %>%
+        # Obs$HOCR$L1b <- Obs$HOCR$L1b %>%
         #   select(Instrument, SN, AproxData) %>%
         #   mutate(AproxData = purrr::map(AproxData, ~ left_join(., tmp, by = c("DateTime", "ID"))))
 
@@ -205,13 +206,13 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 
         }
 
-        Station$HOCR$L1b <- Station$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
+        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
       }
     )
 
     # L1bHOCR <- reactive({
     #
-    #   Station$HOCR$L1b %>%
+    #   Obs$HOCR$L1b %>%
     #     select(Instrument, SN, AproxData) %>%
     #     mutate(AproxData = purrr::map(AproxData, ~ left_join(., QCData(), by = c("DateTime", "ID"))))
     #
@@ -238,7 +239,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
         y1 = 1
       )
 
-      ply <- Station$HOCR$L1b %>%
+      ply <- Obs$HOCR$L1b %>%
         #filter(str_detect(Instrument, "HPL")) %>%
         mutate(
           Plot = purrr::map2(
@@ -318,7 +319,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
     observeEvent(
       input$ProcessL2,
       {
-        Station$HOCR$L2 <- L2_hocr(Station$HOCR$L1b)
+        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b)
       }
     )
 
@@ -328,11 +329,11 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 
       #browser()
 
-      Rrsplot <- Station$HOCR$L2 %>%
+      Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 
-      KLuplot <- Station$HOCR$L2 %>%
+      KLuplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 
@@ -347,7 +348,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
   list(
     #Save = reactive(input$Save),
     #Delete = reactive(input$Delete)
-    #StationTbl = StationTbl,
+    #ObsTbl = ObsTbl,
     #HOCR = HOCRL2
   )
 
@@ -355,7 +356,7 @@ mod_station_L1L2_server <- function(id, L1b, Station){
 }
 
 ## To be copied in the UI
-# mod_L1L2_station_ui("L1L2_station")
+# mod_L1L2_obs_ui("L1L2_obs")
 
 ## To be copied in the server
-# mod_L1L2_station_server("L1L2_station")
+# mod_L1L2_obs_server("L1L2_obs")

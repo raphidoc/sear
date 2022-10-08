@@ -20,7 +20,7 @@ mod_process_L1b_ui <- function(id){
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1b_server <- function(id, L1, SelData, CalData, Station){
+mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
 
   # stopifnot(is.reactive(UpApla))
   # stopifnot(is.reactive(SelID))
@@ -35,14 +35,6 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Station){
 
       tagList(
         waiter::use_waiter(),
-        fluidRow(
-          column(6,
-                 selectInput(ns("ObsType"), "ObsType", choices = list("Station","Transect"), selected = NULL, multiple = F)
-                 ),
-          column(6,
-                 textInput(ns("ObsName"), "ObsName", value = "NA", placeholder = "Prefix")
-                 )
-        ),
         mod_select_instrument_ui(ns("select_instrument")),
         actionButton(ns("ProcessL1b"), "ProcessL1b")
       )
@@ -76,33 +68,31 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Station){
 
         # Add one second to each end of time interval to make it inclusive
 
-        SelDateTime <- SelData$UpApla()$DateTime[SelData$UpApla()$ID %in% SelData$SelApla()$ID]
+        SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
         TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 
         FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
 
-        Station$HOCR$L1b <- spsComps::shinyCatch(
+        Obs$HOCR$L1b <- spsComps::shinyCatch(
           cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
           trace_back = TRUE
         )
 
       }
 
-      # # Create a temporary copy of the current UpApla tibble
-      # tmp <- UpApla()
+      # # Create a temporary copy of the current Apla tibble
+      # tmp <- Apla()
       #
       # # Update values in place
       # tmp$ObsType[tmp$ID %in% SelID()] <- input$ObsType
       # tmp$ObsName[tmp$ID %in% SelID()] <- input$ObsName
       #
-      # # Update the UpApla reactiveVal
-      # UpApla(tmp)
+      # # Update the Apla reactiveVal
+      # Apla(tmp)
     })
 
 # Module output -----------------------------------------------------------
     list(
-      ObsType = reactive(input$ObsType),
-      ObsName = reactive(input$ObsName),
       SelApla = SelData$SelApla,
       Map = SelData$Map,
       ProcessL1b = reactive(input$ProcessL1b)
