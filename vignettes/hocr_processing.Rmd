@@ -30,8 +30,6 @@ library(stringr)
 library(tidyr)
 ```
 
-No
-
 # Satlantic HOCR
 
 HOCR data is stored in .raw file in a mix of ASCII and binary format.
@@ -45,7 +43,7 @@ HOCR data is stored in .raw file in a mix of ASCII and binary format.
 For that will pass by the kaitai struct parser trough python (or cpp as it may improve speed, have to test).
 To code live in python use `reticulate::repl_python()`, to get object from python or r envs use `py$<name>` or `r.<name>`, `source_python()` to source function in python file.
 
-```{r}
+```{r read-hocr}
 # Good data file: DATA_20211111_171729.bin
 
 BinFile <- system.file("extdata", "DATA_20211111_171729.bin", package = "sear", mustWork = T)
