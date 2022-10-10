@@ -20,7 +20,7 @@ mod_parse_mtelog_ui <- function(id){
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
+mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
 
   stopifnot(is.reactive(SearTbl))
   stopifnot(is.reactive(DataFiles))
@@ -39,7 +39,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
     # Aplanix data ------------------------------------------------------------
 
-    Apla <- reactiveVal({})
+    #Apla <- reactiveVal({})
 
     # Initial tibble
     observe({
@@ -101,17 +101,12 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles){
 
           Hocr <- read_hocr(DataFiles()$bin)
 
-          # Dont know the logger date format so quick and dirty fix with Apla date
+          # Dont know the logger date format so quick fix with Apla date
           AplaDate <- unique(date(Apla()$DateTime))
 
           # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
           TimeIndex <- purrr::map(.x = Hocr, ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
-
-          # Apla()$DateTime is filtered for speed < 4 knt
-          #Hocr <- Hocr[TimeIndex %in% Apla()$DateTime]
-
-          #TimeIndex <- TimeIndex[TimeIndex %in% Apla()$DateTime]
 
           HOCR(Hocr)
 

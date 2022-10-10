@@ -284,6 +284,7 @@ mod_select_data_server <- function(id, Apla, DB){
 # Module output -----------------------------------------------------------
     list(
       Apla = Apla,
+      SubApla = SubApla,
       SelApla = SelApla,
       SelID = SelID,
       SelUUID = SelUUID,

@@ -126,8 +126,6 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
         mod_manage_obs_ui("manage_obs")
 
-        # actionButton(ns("Delete"), "Delete", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
-        # actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
       )
     })
 
