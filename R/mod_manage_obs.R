@@ -33,8 +33,6 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
     observeEvent(
       req(SelData$SelUUID()),
       {
-        SelData$SelUUID()
-
         # Have to query data based on UUID
 
         qry <- paste0("SELECT * FROM Metadata WHERE UUID='",SelData$SelUUID(),"';")
@@ -251,6 +249,10 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
 
           # Update the list of observation
           DB$ObsMeta(reactive(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata"))))
+
+          qry <- glue::glue_sql("SELECT * FROM Metadata WHERE UUID = '",ObsUUID,"';")
+
+          Obs$Metadata <- tibble(DBI::dbGetQuery(DB$Con(), qry))
         }
 
       })

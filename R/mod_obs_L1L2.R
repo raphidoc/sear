@@ -71,7 +71,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
             ObsName = "NA",
             ObsType = "NA",
             ObsFlag = "NA",
-            DateTime = mean(L1b$SelApla()$DateTime, na.rm = T),
+            DateTime = as.character(mean(L1b$SelApla()$DateTime, na.rm = T)),
             Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
             Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T)
           )

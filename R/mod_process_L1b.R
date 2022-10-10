@@ -66,8 +66,6 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
 
         # Filter data point before processing to optimize execution time
 
-        # Add one second to each end of time interval to make it inclusive
-
         SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
         TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 

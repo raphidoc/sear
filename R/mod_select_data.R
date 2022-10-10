@@ -173,6 +173,7 @@ mod_select_data_server <- function(id, Apla, DB){
             marker = list(color = 'rgb(127, 255, 212)'),
             text = ~paste0(
               '<b>ObsName</b>: ', ObsName, '<br>',
+              '<b>DateTime</b>: ', DateTime, '<br>',
               '<b>UUID</b>: ', UUID, '<br>'
             )
           ) %>%
@@ -219,6 +220,7 @@ mod_select_data_server <- function(id, Apla, DB){
             marker = list(color = 'rgb(127, 255, 212)'),
             text = ~paste0(
               '<b>ObsName</b>: ', ObsName, '<br>',
+              '<b>DateTime</b>: ', DateTime, '<br>',
               '<b>UUID</b>: ', UUID, '<br>'
             )
           ) %>%

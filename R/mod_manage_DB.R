@@ -41,7 +41,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
           dir.create(L2dir)
         }
 
-        Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite)
+        Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)
 
         # Enable foreign keys
         DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
