@@ -77,7 +77,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
 
         # Does UUID exist in database, check ObsMeta
         if (UUIDPresent) {
-          UUIDExist <- any(Obs$Metadata$UUID %in% DB$ObsMeta()()$UUID)
+          UUIDExist <- any(Obs$Metadata$UUID %in% DB$ObsMeta()$UUID)
         } else {
           UUIDExist <- F
         }
@@ -247,7 +247,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           )
 
           # Update the list of observation
-          DB$ObsMeta(reactive(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata"))))
+          DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
 
           qry <- glue::glue_sql("SELECT * FROM Metadata WHERE UUID = '",ObsUUID,"';")
 

@@ -164,7 +164,7 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
           ) %>%
           add_markers(
             name = "Obs",
-            data = ObsMeta()(),
+            data = ObsMeta(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,
@@ -211,7 +211,7 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
           ) %>%
           add_markers(
             name = "Obs",
-            data = ObsMeta()(),
+            data = ObsMeta(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,

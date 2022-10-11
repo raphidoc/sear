@@ -21,6 +21,17 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
+    ObsMeta <- reactiveVal({
+      tibble(
+        ObsType = character(),
+        ObsName = character(),
+        UUID = character(),
+        Lat = numeric(),
+        Lon = numeric(),
+        DateTime = character(),
+      )
+    })
+
 # Connect project SQLite DB -----------------------------------------------
     Con <- eventReactive(
       req(SearTbl()$ProjPath),
@@ -99,44 +110,46 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
           )"
         )
 
+        ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM Metadata")))
+
         # Return Con
         Con
       })
 
 
 # Fetch MetaData ----------------------------------------------------------
-
-    ObsMeta <- reactiveVal({
-      reactive({
-        req(Con())
-
-        # if DB is not empty list UUID and get current index
-        if (
-          !identical(DBI::dbListTables(Con()), character(0)) #&
-          #str_detect(DBI::dbListTables(Con), "ObsMeta")
-        ) {
-          message("Listing Obs")
-
-          tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
-
-        } else {
-          tibble(
-            ObsType = character(),
-            ObsName = character(),
-            UUID = character(),
-            Lat = numeric(),
-            Lon = numeric(),
-            DateTime = character(),
-          )
-        }
-      })
-    })
+#
+#     ObsMeta <- reactiveVal({
+#       reactive({
+#         req(Con())
+#
+#         # if DB is not empty list UUID and get current index
+#         if (
+#           !identical(DBI::dbListTables(Con()), character(0)) #&
+#           #str_detect(DBI::dbListTables(Con), "ObsMeta")
+#         ) {
+#           message("Listing Obs")
+#
+#           tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
+#
+#         } else {
+#           tibble(
+#             ObsType = character(),
+#             ObsName = character(),
+#             UUID = character(),
+#             Lat = numeric(),
+#             Lon = numeric(),
+#             DateTime = character(),
+#           )
+#         }
+#       })
+#     })
 
     output$ObsList <- renderUI({
+      req(Con())
+      validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
 
-      validate(need(nrow(ObsMeta()()) != 0, message = "Empty DB"))
-
-      selectInput(ns("ObsList"), "ObsList", choices = ObsMeta()()$UUID, selected = NULL, multiple = F)
+      selectInput(ns("ObsList"), "ObsList", choices = ObsMeta()$UUID, selected = NULL, multiple = F)
     })
 
     list(
