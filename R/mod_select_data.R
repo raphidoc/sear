@@ -137,8 +137,6 @@ mod_select_data_server <- function(id, Apla, DB){
     output$Map <- renderPlotly({
       req(SubApla())
 
-      #ObsTypeColor <- c("Unknown" = "red", "Transit" = "black", "Transect" = "orange", "Obs" = "green")
-
       zc <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
       zoom <- zc[[1]]
       center <- zc[[2]]
@@ -165,7 +163,7 @@ mod_select_data_server <- function(id, Apla, DB){
             )
           ) %>%
           add_markers(
-            name = "Obss",
+            name = "Obs",
             data = DB$ObsMeta()(),
             x = ~Lon,
             y = ~Lat,
@@ -212,7 +210,7 @@ mod_select_data_server <- function(id, Apla, DB){
             )
           ) %>%
           add_markers(
-            name = "Obss",
+            name = "Obs",
             data = DB$ObsMeta()(),
             x = ~Lon,
             y = ~Lat,
@@ -221,6 +219,7 @@ mod_select_data_server <- function(id, Apla, DB){
             text = ~paste0(
               '<b>ObsName</b>: ', ObsName, '<br>',
               '<b>DateTime</b>: ', DateTime, '<br>',
+              '<b>HDilution</b>: ', HDilution, '<br>',
               '<b>UUID</b>: ', UUID, '<br>'
             )
           ) %>%

@@ -73,7 +73,12 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
             ObsFlag = "NA",
             DateTime = as.character(mean(L1b$SelApla()$DateTime, na.rm = T)),
             Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
-            Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T)
+            Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T),
+            LatMin = min_geo(L1b$SelApla()$Lat_DD, na.rm = T),
+            LatMax = max_geo(L1b$SelApla()$Lat_DD, na.rm = T),
+            LonMin = min_geo(L1b$SelApla()$Lon_DD, na.rm = T),
+            LonMax = max_geo(L1b$SelApla()$Lon_DD, na.rm = T),
+            HDilution = pracma::haversine(c(LatMin,LonMin), c(LatMax,LonMax))*1000 # in meter
           )
 
       }

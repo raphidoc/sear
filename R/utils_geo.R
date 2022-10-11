@@ -1,4 +1,4 @@
-#' zoom_center
+#' geo
 #'
 #' @description A utils function
 #'
@@ -45,4 +45,23 @@ zoom_center <- function(lat=NULL, lon=NULL){
                  xout = area)
 
   return(list(zoom = zoom[[2]], center = center))
+}
+
+
+# MinMaxLatLon ------------------------------------------------------------
+# What if we cross the Equator or Greenwich ?
+min_geo <- function(coor, ...) {
+  if (any(stringr::str_detect(as.character(coor), "-"))) {
+    -min(abs(coor), ...)
+  } else {
+    min(coor, ...)
+  }
+}
+
+max_geo <- function(coor, ...) {
+  if (any(stringr::str_detect(as.character(coor), "-"))) {
+    -max(abs(coor), ...)
+  } else {
+    max(coor, ...)
+  }
 }

@@ -31,6 +31,8 @@ app_server <- function(input, output, session) {
 
   SelData <- mod_select_data_server("select_data", Apla, DB)
 
+  mod_discretize_server("discretize", Apla)
+
   CalData <- mod_load_cal_server("HOCRCal")
 
   L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData, Obs)
