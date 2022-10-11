@@ -98,10 +98,11 @@ mod_manage_project_server <- function(id){
 
         write_csv(SearTbl ,searproj)
 
-        # return SearTble pbject
+        # return SearTble object
         SearTbl
 
       }
+
     })
 
   })

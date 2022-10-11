@@ -12,24 +12,41 @@ app_server <- function(input, output, session) {
   Apla <- reactiveVal()
 
   Obs <- reactiveValues(
-    Metadata = reactive(tibble(NA)),
+    Metadata = tibble(
+      ObsName = character(),
+      ObsType = character(),
+      ObsFlag = character(),
+      DateTime = character(),
+      DateTimeMin = character(),
+      DateTimeMax = character(),
+      TimeElapsed = numeric(),
+      Lat = numeric(),
+      Lon = numeric(),
+      LatMin = numeric(),
+      LatMax = numeric(),
+      LonMin = numeric(),
+      LonMax = numeric(),
+      DistanceRun = numeric(),
+      Comment = character(),
+      UUID = character()
+    ),
     HOCR = reactiveValues(
-      L1b = reactive(tibble()),
-      L2 = reactive(tibble())
+      L1b = tibble(),
+      L2 = tibble()
     )
   )
 
   SearTbl <- mod_manage_project_server("manage_project")
 
-  DB <- mod_manage_DB_server("manage_DB", SearTbl, SelData)
+  DB <- mod_manage_DB_server("manage_DB", SearTbl, SelData, Obs)
 
   DataFiles <- mod_load_mtelog_server("load_mtelog", SearTbl)
 
   L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, Apla)
 
-  mod_filter_cut_server("filter_cut", SearTbl, DataFiles, SelData, Apla)
+  mod_filter_trim_server("filter_trim", SearTbl, DataFiles, SelData, Apla)
 
-  SelData <- mod_select_data_server("select_data", Apla, DB)
+  SelData <- mod_select_data_server("select_data", Apla, DB$ObsMeta)
 
   mod_discretize_server("discretize", Apla)
 

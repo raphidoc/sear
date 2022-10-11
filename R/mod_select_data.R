@@ -28,7 +28,7 @@ mod_select_data_ui <- function(id){
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, Apla, DB){
+mod_select_data_server <- function(id, Apla, ObsMeta){
 
   stopifnot(is.reactive(Apla))
 
@@ -77,7 +77,7 @@ mod_select_data_server <- function(id, Apla, DB){
     SelID <- eventReactive(
       event_data("plotly_selected", source = "map"),
       label = "Select data",
-      ignoreInit = T,
+      ignoreInit = F,
       {
 
         # curvenumber 0 is the Applanix trace
@@ -104,7 +104,7 @@ mod_select_data_server <- function(id, Apla, DB){
     SelUUID <- eventReactive(
       event_data("plotly_click", source = "map"),
       label = "Select Obs",
-      ignoreInit = T,
+      ignoreInit = F,
       {
 
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
@@ -164,7 +164,7 @@ mod_select_data_server <- function(id, Apla, DB){
           ) %>%
           add_markers(
             name = "Obs",
-            data = DB$ObsMeta()(),
+            data = ObsMeta()(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,
@@ -211,7 +211,7 @@ mod_select_data_server <- function(id, Apla, DB){
           ) %>%
           add_markers(
             name = "Obs",
-            data = DB$ObsMeta()(),
+            data = ObsMeta()(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,

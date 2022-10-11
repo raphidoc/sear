@@ -72,7 +72,6 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
     observeEvent(
       req(input$Save),
       {
-
         # Does UUID is present in Metadata colnames ?
         UUIDPresent <- any(str_detect(names(Obs$Metadata), "UUID"))
 
@@ -289,7 +288,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
         )
 
         # Update the list of observation
-        DB$ObsMeta(reactive(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata"))))
+        DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
       })
 
     # If user cancel

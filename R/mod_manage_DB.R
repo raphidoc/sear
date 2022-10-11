@@ -17,16 +17,9 @@ mod_manage_DB_ui <- function(id){
 #' manage_DB Server Functions
 #'
 #' @noRd
-mod_manage_DB_server <- function(id, SearTbl, SelData){
+mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
-
-    # DBObs <- reactiveValues(
-    #   UUID = {list()},
-    #   Tbl = {tibble()}
-    # )
-
-    #Con <- reactiveVal()
 
 # Connect project SQLite DB -----------------------------------------------
     Con <- eventReactive(
@@ -55,13 +48,16 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
           ObsType TEXT NOT NULL,
           ObsFlag TEXT NOT NULL,
           DateTime TEXT NOT NULL,
+          DateTimeMin TEXT NOT NULL,
+          DateTimeMax TEXT NOT NULL,
+          TimeElapsed INTEGER NOT NULL,
           Lat DOUBLE NOT NULL,
           Lon DOUBLE NOT NULL,
           LatMin DOUBLE NOT NULL,
           LatMax DOUBLE NOT NULL,
           LonMin DOUBLE NOT NULL,
           LonMax DOUBLE NOT NULL,
-          HDilution DOUBLE NOT NULL,
+          DistanceRun DOUBLE NOT NULL,
           Comment TEXT,
           UUID TEXT PRIMARY KEY,
           ProTime TEXT NOT NULL,
@@ -107,6 +103,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
         Con
       })
 
+
 # Fetch MetaData ----------------------------------------------------------
 
     ObsMeta <- reactiveVal({
@@ -124,12 +121,12 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
         } else {
           tibble(
-            ObsType = NA,
-            ObsName = NA,
-            UUID = NA,
-            Lat = NA,
-            Lon = NA,
-            DateTime = NA
+            ObsType = character(),
+            ObsName = character(),
+            UUID = character(),
+            Lat = numeric(),
+            Lon = numeric(),
+            DateTime = character(),
           )
         }
       })
@@ -137,7 +134,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData){
 
     output$ObsList <- renderUI({
 
-      validate(need(ObsMeta(), label = "Empty DB"))
+      validate(need(nrow(ObsMeta()()) != 0, message = "Empty DB"))
 
       selectInput(ns("ObsList"), "ObsList", choices = ObsMeta()()$UUID, selected = NULL, multiple = F)
     })

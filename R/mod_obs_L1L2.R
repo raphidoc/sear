@@ -28,7 +28,8 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
 # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
-      req(Obs)
+
+      req(nrow(Obs$Metadata) != 0)
 
       tabsetPanel(
         id = ns("Tabset"),
@@ -72,13 +73,18 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
             ObsType = "NA",
             ObsFlag = "NA",
             DateTime = as.character(mean(L1b$SelApla()$DateTime, na.rm = T)),
+            DateTimeMin = as.character(min(L1b$SelApla()$DateTime, na.rm = T)),
+            DateTimeMax = as.character(max(L1b$SelApla()$DateTime, na.rm = T)),
+            TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
             Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
             Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T),
             LatMin = min_geo(L1b$SelApla()$Lat_DD, na.rm = T),
             LatMax = max_geo(L1b$SelApla()$Lat_DD, na.rm = T),
             LonMin = min_geo(L1b$SelApla()$Lon_DD, na.rm = T),
             LonMax = max_geo(L1b$SelApla()$Lon_DD, na.rm = T),
-            HDilution = pracma::haversine(c(LatMin,LonMin), c(LatMax,LonMax))*1000 # in meter
+            DistanceRun = pracma::haversine(c(LatMin,LonMin), c(LatMax,LonMax))*1000, # in meter
+            Comment = "NA",
+            UUID = "NA"
           )
 
       }
@@ -115,23 +121,23 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
     output$Obs <- renderUI({
 
-      tagList(
-        DT::DTOutput(ns("DataTable")),
-        textAreaInput(
-          ns("Comment"),
-          "Comment",
-          value = "No comment",
-          width = NULL,
-          height = NULL,
-          cols = NULL,
-          rows = NULL,
-          placeholder = NULL,
-          resize = NULL
-        ),
+        tagList(
+          DT::DTOutput(ns("DataTable")),
+          textAreaInput(
+            ns("Comment"),
+            "Comment",
+            value = "No comment",
+            width = NULL,
+            height = NULL,
+            cols = NULL,
+            rows = NULL,
+            placeholder = NULL,
+            resize = NULL
+          ),
 
-        mod_manage_obs_ui("manage_obs")
+          mod_manage_obs_ui("manage_obs")
 
-      )
+        )
     })
 
     observeEvent(
@@ -157,7 +163,6 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
     # QC flag for HOCR --------------------------------------------------------
     QCData <- reactive({
 
-      browser()
       Obs$HOCR$L1b$AproxData[[1]] %>%
         select(DateTime, ID) %>%
         unique() %>%
@@ -331,6 +336,8 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
       #req(L2Data())
 
       #browser()
+
+      validate(need(nrow(Obs$HOCR$L2) != 0, "Process to L2 to display AOPs"))
 
       Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%

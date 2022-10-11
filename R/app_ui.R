@@ -24,13 +24,12 @@ app_ui <- function(request) {
           label = "Load data",
           tootltip = "path to go here"
         ),
-        mod_filter_cut_ui("filter_cut"),
+        mod_filter_trim_ui("filter_trim"),
         mod_discretize_ui("discretize"),
         mod_process_L1b_ui("process_L1b"),
         mod_manage_DB_ui("manage_DB")
       ),
       dashboardBody(
-        shinyFeedback::useShinyFeedback(),
         mod_parse_mtelog_ui("parse_mtelog"),
         fluidRow(
           column(
