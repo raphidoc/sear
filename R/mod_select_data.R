@@ -28,7 +28,7 @@ mod_select_data_ui <- function(id){
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, Apla, ObsMeta){
+mod_select_data_server <- function(id, Apla, DB){
 
   stopifnot(is.reactive(Apla))
 
@@ -106,7 +106,6 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
       label = "Select Obs",
       ignoreInit = F,
       {
-
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
 
         if (!uuid::UUIDvalidate(UUID)) {
@@ -141,14 +140,18 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
       zoom <- zc[[1]]
       center <- zc[[2]]
 
-      if (curl::has_internet() #& curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
-          ) {
+      browser()
 
-        p <- plot_mapbox(
-          mode = 'scattermapbox',
-          source = "map"
-        ) %>%
+      # SF read coords as XY not YX aka Lat Lon
+      ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
+      ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun/2) %>% sf::st_transform(4326)
+
+      # plot definition
+
+      PlotDef <- function(.) {
+        (.) %>%
           add_markers(
+            inherit = F,
             name = "Raw",
             data = SubApla(),
             x = ~Lon_DD,
@@ -162,9 +165,20 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
               '<b>BoatSolAzm (degree)</b>: ', BoatSolAzm, '<br>'
             )
           ) %>%
+          add_sf(
+            inherit = F,
+            name = "ObsBuffer",
+            data = ObsMetaBuffer,
+            customdata = ~UUID,
+            line = list(color ='rgb(127, 255, 212)', width = 1),
+            fillcolor = 'rgba(127, 255, 212, 0.2)',
+            split = ~UUID,
+            legendgroup = "Obs",
+            showlegend = F
+          )  %>%
           add_markers(
             name = "Obs",
-            data = ObsMeta(),
+            data = DB$ObsMeta(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,
@@ -173,7 +187,8 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
               '<b>ObsName</b>: ', ObsName, '<br>',
               '<b>DateTime</b>: ', DateTime, '<br>',
               '<b>UUID</b>: ', UUID, '<br>'
-            )
+            ),
+            legendgroup = "Obs"
           ) %>%
           layout(
             plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
@@ -187,57 +202,27 @@ mod_select_data_server <- function(id, Apla, ObsMeta){
           ) %>%
           event_register("plotly_click") %>%
           event_register("plotly_selected")
+      }
+
+
+      if (curl::has_internet() #& curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
+          ) {
+
+        p <- plot_mapbox(
+          mode = 'scattermapbox',
+          source = "map") %>% PlotDef()
+
 
       } else {
 
+        g <- list(showland = TRUE,
+                  landcolor = toRGB("#e5ecf6"))
+
         p <- plot_geo(
-          #mode = 'scattermapbox',
           source = "map",
-          offline = TRUE
-        ) %>%
-          add_markers(
-            name = "Raw",
-            data = SubApla(),
-            x = ~Lon_DD,
-            y = ~Lat_DD,
-            customdata = ~ID,
-            marker = list(color = 'rgb(154, 42, 42)'),
-            text = ~paste0(
-              '<b>DateTime</b>: ', paste(hour(DateTime),":",minute(DateTime),":",second(DateTime)), '<br>',
-              '<b>Speed (Knt)</b>: ', Speed_N, '<br>',
-              '<b>Course (TN)</b>: ', Course_TN, '<br>',
-              '<b>BoatSolAzm (degree)</b>: ', BoatSolAzm, '<br>'
-            )
-          ) %>%
-          add_markers(
-            name = "Obs",
-            data = ObsMeta(),
-            x = ~Lon,
-            y = ~Lat,
-            customdata = ~UUID,
-            marker = list(color = 'rgb(127, 255, 212)'),
-            text = ~paste0(
-              '<b>ObsName</b>: ', ObsName, '<br>',
-              '<b>DateTime</b>: ', DateTime, '<br>',
-              '<b>HDilution</b>: ', HDilution, '<br>',
-              '<b>UUID</b>: ', UUID, '<br>'
-            )
-          ) %>%
-          layout(
-            plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
-            geo = list(style = "satellite",
-                       resolution = 50,
-                       projection = list(
-                         scale = zoom
-                       ),
-                       center = list(
-                         lat = center[[1]],
-                         lon = center[[2]]
-                       )
-            )
-          ) %>%
-          event_register("plotly_click") %>%
-          event_register("plotly_selected")
+          offline = T
+        ) %>% PlotDef() %>% layout(geo = g)
+
       }
 
       p

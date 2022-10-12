@@ -28,7 +28,9 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
         UUID = character(),
         Lat = numeric(),
         Lon = numeric(),
+        DistanceRun = numeric(),
         DateTime = character(),
+        TimeElapsed = character()
       )
     })
 

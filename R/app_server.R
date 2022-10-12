@@ -46,7 +46,7 @@ app_server <- function(input, output, session) {
 
   mod_filter_trim_server("filter_trim", SearTbl, DataFiles, SelData, Apla)
 
-  SelData <- mod_select_data_server("select_data", Apla, DB$ObsMeta)
+  SelData <- mod_select_data_server("select_data", Apla, DB)
 
   mod_discretize_server("discretize", Apla)
 
