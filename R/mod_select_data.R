@@ -106,9 +106,10 @@ mod_select_data_server <- function(id, Apla, DB){
       label = "Select Obs",
       ignoreInit = F,
       {
+
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
 
-        if (!uuid::UUIDvalidate(UUID)) {
+        if (!identical(UUID, character(0)) && !uuid::UUIDvalidate(UUID)) {
           showModal(modalDialog(
             title = "Invalid click",
             "You didn't click on an Obs feature, no UUID attatched")
@@ -136,11 +137,11 @@ mod_select_data_server <- function(id, Apla, DB){
     output$Map <- renderPlotly({
       req(SubApla())
 
+
+      # TODO: Determine zoom and center outside the call to render plolty to maake them reactive to event SelectUUID from map or ObList
       zc <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
       zoom <- zc[[1]]
       center <- zc[[2]]
-
-      browser()
 
       # SF read coords as XY not YX aka Lat Lon
       ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
@@ -151,7 +152,6 @@ mod_select_data_server <- function(id, Apla, DB){
       PlotDef <- function(.) {
         (.) %>%
           add_markers(
-            inherit = F,
             name = "Raw",
             data = SubApla(),
             x = ~Lon_DD,
@@ -166,7 +166,6 @@ mod_select_data_server <- function(id, Apla, DB){
             )
           ) %>%
           add_sf(
-            inherit = F,
             name = "ObsBuffer",
             data = ObsMetaBuffer,
             customdata = ~UUID,
@@ -215,13 +214,30 @@ mod_select_data_server <- function(id, Apla, DB){
 
       } else {
 
-        g <- list(showland = TRUE,
-                  landcolor = toRGB("#e5ecf6"))
+        # Determine survey area bounding box and crop coastline accordingly
+
+        SurveyArea <- sf::st_as_sf(SubApla(), coords = c("Lon_DD", "Lat_DD"), crs = 4326) %>% select(geometry) %>% summarise()
+
+        SurveyArea <- sf::st_cast(x = SurveyArea, to="MULTILINESTRING")
+
+        SurveyArea <- sf::st_buffer(x = SurveyArea, dist = 3000)# %>% sf::st_transform(4326)
+
+        BBox <- sf::st_bbox(SurveyArea)
+
+        Coast <- sf::st_read(app_sys("intdata/ne_10m_coastline/ne_10m_coastline.shp")) %>% select(geometry)
+
+        CoastCrop <- sf::st_crop(Coast, BBox)
+
+        g <- list(
+          scope = 'world',
+          visible = F,
+          landcolor = toRGB("#e5ecf6")
+        )
 
         p <- plot_geo(
           source = "map",
-          offline = T
-        ) %>% PlotDef() %>% layout(geo = g)
+          offline = F
+        ) %>% add_sf(data = CoastCrop) %>% PlotDef() %>% layout(geo = g)
 
       }
 
