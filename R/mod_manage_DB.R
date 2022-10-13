@@ -151,7 +151,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
       req(Con())
       validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
 
-      selectInput(ns("ObsList"), "ObsList", choices = ObsMeta()$UUID, selected = NULL, multiple = F)
+      selectizeInput(ns("ObsList"), "ObsList", choices = c("",ObsMeta()$UUID), selected = NULL, multiple = F)
     })
 
     list(

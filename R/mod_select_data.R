@@ -101,10 +101,17 @@ mod_select_data_server <- function(id, Apla, DB){
         }
       })
 
-    SelUUID <- eventReactive(
+    # Define zoom and center reactive value to be updated in SelUUID
+
+    Center <- reactiveVal()
+    Zoom <- reactiveVal(15)
+
+    SelUUID <- reactiveVal()
+
+    observeEvent(
       event_data("plotly_click", source = "map"),
-      label = "Select Obs",
-      ignoreInit = F,
+      label = "Click Obs",
+      ignoreInit = T,
       {
 
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
@@ -117,11 +124,30 @@ mod_select_data_server <- function(id, Apla, DB){
           invalidateLater(1)
 
         } else {
-          UUID
+          SelUUID(UUID)
+          Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
         }
 
       }
     )
+
+    observeEvent(
+      DB$ObsSel(),
+      label = "Select Obs",
+      {
+        UUID <- DB$ObsSel()
+
+        if (!uuid::UUIDvalidate(UUID)) {
+          invalidateLater(1)
+        } else {
+          SelUUID(UUID)
+          Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
+        }
+
+      }
+    )
+
+
 
     SelApla <- reactive({
       req(SelID())
@@ -137,11 +163,11 @@ mod_select_data_server <- function(id, Apla, DB){
     output$Map <- renderPlotly({
       req(SubApla())
 
-
-      # TODO: Determine zoom and center outside the call to render plolty to maake them reactive to event SelectUUID from map or ObList
-      zc <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
-      zoom <- zc[[1]]
-      center <- zc[[2]]
+      if (is.null(SelUUID())) {
+        ZC <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
+        Zoom <- reactiveVal(ZC[[1]])
+        Center <- reactiveVal(ZC[[2]])
+      }
 
       # SF read coords as XY not YX aka Lat Lon
       ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
@@ -150,6 +176,7 @@ mod_select_data_server <- function(id, Apla, DB){
       # plot definition
 
       PlotDef <- function(.) {
+
         (.) %>%
           add_markers(
             name = "Raw",
@@ -165,9 +192,11 @@ mod_select_data_server <- function(id, Apla, DB){
               '<b>BoatSolAzm (degree)</b>: ', BoatSolAzm, '<br>'
             )
           ) %>%
-          add_sf(
+          add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
             name = "ObsBuffer",
-            data = ObsMetaBuffer,
+            data = sfheaders::sf_to_df(ObsMetaBuffer, fill = T),
+            x=~x,
+            y=~y,
             customdata = ~UUID,
             line = list(color ='rgb(127, 255, 212)', width = 1),
             fillcolor = 'rgba(127, 255, 212, 0.2)',
@@ -192,10 +221,10 @@ mod_select_data_server <- function(id, Apla, DB){
           layout(
             plot_bgcolor = '#191A1A', paper_bgcolor = '#191A1A',
             mapbox = list(style = "satellite",
-                          zoom = zoom,
+                          zoom = Zoom(),
                           center = list(
-                            lat = center[[1]],
-                            lon = center[[2]]
+                            lat = Center()[[1]],
+                            lon = Center()[[2]]
                           )
             )
           ) %>%
@@ -228,22 +257,13 @@ mod_select_data_server <- function(id, Apla, DB){
 
         CoastCrop <- sf::st_crop(Coast, BBox)
 
-        g <- list(
-          scope = 'world',
-          visible = F,
-          landcolor = toRGB("#e5ecf6")
-        )
-
-        p <- plot_geo(
+        p <- plot_ly(
           source = "map",
-          offline = F
-        ) %>% add_sf(data = CoastCrop) %>% PlotDef() %>% layout(geo = g)
+        ) %>% add_sf(data = CoastCrop) %>% PlotDef(.)
 
       }
 
       p
-
-      # for transect rgb(228, 208, 10)
 
     })
 

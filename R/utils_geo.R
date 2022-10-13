@@ -18,12 +18,11 @@ zoom_center <- function(lat=NULL, lon=NULL){
   # Return default
   if (is.null(lat) | is.null(lon)) return(list(zoom = 0, center = c(0,0)))
 
-  # Get the boundary-box
+  # Get the bounding-box
   b_box = list()
   b_box['height'] <- max(lat)-min(lat)
   b_box['width'] <- max(lon)-min(lon)
 
-  #
   dat <- matrix(c(lat,lon), nrow = length(lat))
   dat <- raster::coordinates(dat)
   center <- raster::coordinates(methods::as(raster::extent(sf::st_bbox(sf::st_multipoint(dat))), "SpatialPolygons"))
