@@ -13,7 +13,7 @@ app_ui <- function(request) {
     dashboardPage(
       dashboardHeader(
         title = tags$a(href='https://github.com/raphidoc/sear',
-                       tags$img(src= app_sys("app","www","hex_sear.png"), width = "50px", height = "40px"),
+                       tags$img(src= "www/logo_sear.png", width = "95px", height = "40px"),
                        'sear')
       ),
       dashboardSidebar(
@@ -24,8 +24,8 @@ app_ui <- function(request) {
           label = "Load data",
           tootltip = "path to go here"
         ),
-        mod_filter_trim_ui("filter_trim"),
-        mod_discretize_ui("discretize"),
+        #mod_filter_trim_ui("filter_trim"),
+        #mod_discretize_ui("discretize"),
         mod_process_L1b_ui("process_L1b"),
         mod_manage_DB_ui("manage_DB")
       ),

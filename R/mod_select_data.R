@@ -104,7 +104,7 @@ mod_select_data_server <- function(id, Apla, DB){
     # Define zoom and center reactive value to be updated in SelUUID
 
     Center <- reactiveVal()
-    Zoom <- reactiveVal(15)
+    Zoom <- reactiveVal(20)
 
     SelUUID <- reactiveVal()
 
@@ -147,8 +147,6 @@ mod_select_data_server <- function(id, Apla, DB){
       }
     )
 
-
-
     SelApla <- reactive({
       req(SelID())
 
@@ -159,6 +157,23 @@ mod_select_data_server <- function(id, Apla, DB){
 
 
 # Map for data selection --------------------------------------------------
+
+    # TODO: GitHub issue #11
+
+    # observeEvent(
+    #   SelUUID(),
+    #   {
+    #     plotlyProxy("map", session) %>%
+    #       plotlyProxyInvoke(
+    #         "addTraces",
+    #         list(
+    #           Lon = list(Center()[[2]]),
+    #           Lat = list(Center()[[1]]),
+    #           marker.color = list('rgb(255, 0, 0)')
+    #         )
+    #       )
+    #   }
+    # )
 
     output$Map <- renderPlotly({
       req(SubApla())
@@ -232,13 +247,14 @@ mod_select_data_server <- function(id, Apla, DB){
           event_register("plotly_selected")
       }
 
-
       if (curl::has_internet() #& curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
           ) {
 
         p <- plot_mapbox(
           mode = 'scattermapbox',
           source = "map") %>% PlotDef()
+
+        htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.hmtl"))
 
 
       } else {
