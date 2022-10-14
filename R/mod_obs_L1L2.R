@@ -83,6 +83,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
             LonMin = min_geo(L1b$SelApla()$Lon_DD, na.rm = T),
             LonMax = max_geo(L1b$SelApla()$Lon_DD, na.rm = T),
             DistanceRun = pracma::haversine(c(LatMin,LonMin), c(LatMax,LonMax))*1000, # in meter
+            BoatSolAzm = mean(L1b$SelApla()$BoatSolAzm, na.rm =T),
             Comment = "NA",
             UUID = "NA"
           )
@@ -93,20 +94,20 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
     #DataTable used to display Obs information
     output$DataTable <- DT::renderDataTable(
       DT::datatable(Obs$Metadata,
-                    #extensions = c("Buttons", "Scroller", "Select"),
+                    extensions = c("Buttons", "Scroller", "Select"),
                     #filter = "top",
                     escape = TRUE, rownames = FALSE,
                     style = "bootstrap",
                     class = "compact",
                     options = list(
-                      #dom = "Brtip",
-                      #select = list(style = 'os', items = 'row'),
-                      #buttons = list(I("colvis"),"selectNone","csv"),
-                      #columnDefs = list(
-                       # list(
-                          #visible = FALSE,
-                          #targets = c(0,2,3)
-                        #)),
+                      dom = "Brtip",
+                      select = list(style = 'os', items = 'row'),
+                      buttons = list(I("colvis"),"selectNone","csv"),
+                      columnDefs = list(
+                      list(
+                      visible = FALSE,
+                      targets = c(0,1,2,3,4,5,7,8,9,10,11,12)
+                      )),
                       deferRender = TRUE,
                       scrollY = 100,
                       pageLength = 10,
@@ -116,7 +117,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
                     editable = F
       ),
       server=FALSE,
-      editable=T
+      editable=F
     )
 
     output$Obs <- renderUI({

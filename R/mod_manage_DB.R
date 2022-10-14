@@ -71,6 +71,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
           LonMin DOUBLE NOT NULL,
           LonMax DOUBLE NOT NULL,
           DistanceRun DOUBLE NOT NULL,
+          BoatSolAzm DOUBLE NOT NULL,
           Comment TEXT,
           UUID TEXT PRIMARY KEY,
           ProTime TEXT NOT NULL,

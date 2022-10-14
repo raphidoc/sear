@@ -188,8 +188,18 @@ mod_select_data_server <- function(id, Apla, DB){
       ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
       ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun/2) %>% sf::st_transform(4326)
 
-      # plot definition
+      # Avoid sfheaders::sf_to_df bug if object empty
+      if (nrow(ObsMetaBuffer) == 0) {
+        ObsMetaBuffer <- tibble(
+          UUID = NA,
+          x = NA,
+          y = NA
+        )
+      } else {
+        ObsMetaBuffer <- sfheaders::sf_to_df(ObsMetaBuffer, fill = T)
+      }
 
+      # plot definition
       PlotDef <- function(.) {
 
         (.) %>%
@@ -209,7 +219,7 @@ mod_select_data_server <- function(id, Apla, DB){
           ) %>%
           add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
             name = "ObsBuffer",
-            data = sfheaders::sf_to_df(ObsMetaBuffer, fill = T),
+            data = ObsMetaBuffer,
             x=~x,
             y=~y,
             customdata = ~UUID,

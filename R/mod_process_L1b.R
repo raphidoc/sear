@@ -33,6 +33,8 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
 
     output$L1b <- renderUI({
 
+      req(L1$Apla())
+
       tagList(
         waiter::use_waiter(),
         mod_select_instrument_ui(ns("select_instrument")),
@@ -47,7 +49,6 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
       label = "processL1b",
       {
 
-      # Nice display to indicate that processing is happening
       waiter <- waiter::Waiter$new()
       waiter$show()
       on.exit(waiter$hide())
