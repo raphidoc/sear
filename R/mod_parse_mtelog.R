@@ -136,8 +136,6 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, ECO){
 
         } else {
 
-          browser()
-
           validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
 
           BBFL2(read_bbfl2(MainLog()))
@@ -169,8 +167,6 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, ECO){
 
         } else {
 
-          browser()
-
           validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
 
           SeaOWL(read_seaowl(MainLog()))
@@ -201,8 +197,6 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, ECO){
           SBE19(read_csv(PotSBE19))
 
         } else {
-
-          browser()
 
           validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
 
