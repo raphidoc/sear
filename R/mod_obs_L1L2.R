@@ -66,7 +66,8 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
     ObsTbl <- reactiveVal({})
 
     observeEvent(
-      L1b$ProcessL1b(),
+      L1b$ProcessL1b(), # This one create even if L1b processing fail
+      #Obs$HOCR$L1b, # This one doesnt update if L1b doesn't change
       {
           Obs$Metadata <- tibble(
             ObsName = "NA",

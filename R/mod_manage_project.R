@@ -69,7 +69,7 @@ mod_manage_project_server <- function(id){
     SearTbl <- reactive({
       req(Project())
 
-      searproj <- file.path(Project()$Path, ".searproj")
+      searproj <- file.path(Project()$Path, glue::glue(Project()$Name,".searproj"))
 
       if (file.exists(searproj)) {
         message("Reading ", searproj)

@@ -126,8 +126,6 @@ tidy_hocr <- function(Packets, AplaDate){
 #' @noRd
 cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
 
-  #browser()
-
   RawData <- purrr::map_df(FiltRawHOCR, ~ tidy_hocr(., AplaDate))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
@@ -196,10 +194,18 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
       ~ select(.x, !all_of(c("Units","FieldLength","DataType","CalLines","FitType","a0","a1","im","cint")))
     )) %>% # Packet metadata
     mutate(CalData = purrr::map(
-      CalData, ~ select(.x, !all_of(c("SampleDelay","DarkSample","DarkAverage","SpecTemp","Frame","Timer","CheckSum")))
+      CalData,
+      ~ select(.x, !all_of(c("SampleDelay","DarkSample","DarkAverage","SpecTemp","Frame","Timer","CheckSum")))
     )) %>%
     select(Instrument, SN, CalData) %>%
     filter(str_detect(Instrument, "HSE|HPL"))
+
+  # If not 3 instrument HSE|HPL record raise an error
+
+  if (nrow(HOCRLong) != 3) {
+    MissSn <- unique(GlobCal$SN)[which(!unique(GlobCal$SN) %in% HOCRLong$SN)]
+    stop(glue::glue("No light record for instrument: ", MissSn))
+  }
 
   # Convert to wide format
 
@@ -256,7 +262,11 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
   }
 
   # Debug for NA values in interpolation
-  #browser()
+
+  if (any(purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1))) {
+    MissSn <- HOCRWide$SN[purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1)]
+    stop(glue::glue("Cannot interpolate with one light record for instrument: ", MissSn))
+  }
 
   # Need to test if two non-NA values are available to interpolate
   # This is handled by wrapping cal_hocr in spsComps::shinyCatch
