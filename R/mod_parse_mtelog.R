@@ -20,7 +20,7 @@ mod_parse_mtelog_ui <- function(id){
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
+mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, ECO){
 
   stopifnot(is.reactive(SearTbl))
   stopifnot(is.reactive(DataFiles))
@@ -28,7 +28,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    # DataLogger reactive tibble ----------------------------------------------
+# DataLogger reactive tibble ----------------------------------------------
 
     MainLog <- reactive(label = "MainLog",{
       req(DataFiles())
@@ -37,7 +37,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
 
     })
 
-    # Aplanix data ------------------------------------------------------------
+# Aplanix data ------------------------------------------------------------
 
     #Apla <- reactiveVal({})
 
@@ -71,7 +71,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
 
     })
 
-    # HOCR binary read --------------------------------------------------------
+# HOCR binary read --------------------------------------------------------
 
     HOCR <- reactiveVal()
     TimeIndexHOCR <- reactiveVal()
@@ -120,6 +120,107 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
 
       })
 
+
+# BBFL2 data ----------------------------------------------------------------
+
+      observe({
+
+        # Try to read parsed and filtered applanix data
+
+        #Potential filtered File
+        PotBBFL2 <- file.path(SearTbl()$ProjPath,".sear",paste0("filtered_bbfl2_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+
+        if (file.exists(PotBBFL2)) {
+
+          BBFL2(read_csv(PotBBFL2))
+
+        } else {
+
+          browser()
+
+          validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
+
+          BBFL2(read_bbfl2(MainLog()))
+
+          # Apla(Apla() %>% filter(
+          #   Speed_N <= 4,
+          #   BoatSolAzm > 0 & BoatSolAzm < 180
+          #   ))
+
+          dir.create(file.path(SearTbl()$ProjPath,".sear"))
+
+          write_csv(BBFL2(), PotBBFL2)
+        }
+
+      })
+
+# SeaOWL data -------------------------------------------------------------
+
+      observe({
+
+        # Try to read parsed and filtered applanix data
+
+        #Potential filtered File
+        PotSeaOWL <- file.path(SearTbl()$ProjPath,".sear",paste0("filtered_seaowl_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+
+        if (file.exists(PotSeaOWL)) {
+
+          SeaOWL(read_csv(PotSeaOWL))
+
+        } else {
+
+          browser()
+
+          validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
+
+          SeaOWL(read_seaowl(MainLog()))
+
+          # Apla(Apla() %>% filter(
+          #   Speed_N <= 4,
+          #   BoatSolAzm > 0 & BoatSolAzm < 180
+          #   ))
+
+          dir.create(file.path(SearTbl()$ProjPath,".sear"))
+
+          write_csv(SeaOWL(), PotSeaOWL)
+        }
+
+      })
+
+# SBE19 data ----------------------------------------------------------------
+
+      observe({
+
+        # Try to read parsed and filtered applanix data
+
+        #Potential filtered File
+        PotSBE19 <- file.path(SearTbl()$ProjPath,".sear",paste0("filtered_sbe19_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+
+        if (file.exists(PotSBE19)) {
+
+          SBE19(read_csv(PotSBE19))
+
+        } else {
+
+          browser()
+
+          validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
+
+          SBE19(read_sbe19(MainLog()))
+
+          # Apla(Apla() %>% filter(
+          #   Speed_N <= 4,
+          #   BoatSolAzm > 0 & BoatSolAzm < 180
+          #   ))
+
+          dir.create(file.path(SearTbl()$ProjPath,".sear"))
+
+          write_csv(SBE19(), PotSBE19)
+        }
+
+      })
+
+# Module export -----------------------------------------------------------
     list(
       MainLog = MainLog,
       Apla = Apla,
@@ -131,7 +232,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla){
 }
 
 ## To be copied in the UI
-# mod_parse_mtelog_ui("parse_mtelog_1")
+# mod_parse_mtelog_ui("parse_mtelog")
 
 ## To be copied in the server
-# mod_parse_mtelog_server("parse_mtelog_1")
+# mod_parse_mtelog_server("parse_mtelog")

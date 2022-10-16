@@ -26,9 +26,6 @@ mod_discretize_server <- function(id, Apla){
     observeEvent(
       input$Discretize,
       {
-        browser()
-
-
 
       }
     )

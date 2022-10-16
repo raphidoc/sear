@@ -34,7 +34,6 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
       req(SelData$SelUUID()),
       {
         # Have to query data based on UUID
-
         qry <- paste0("SELECT * FROM Metadata WHERE UUID='",SelData$SelUUID(),"';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$Metadata <- tibble(DBI::dbFetch(res))
@@ -295,6 +294,13 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
     observeEvent(input$cancel, {
       removeModal()
     })
+
+
+# Module export -----------------------------------------------------------
+    list(
+      Save = reactive(input$Save)
+    )
+
 
   })
 }

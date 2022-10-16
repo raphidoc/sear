@@ -74,6 +74,7 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
 
         Obs$HOCR$L1b <- spsComps::shinyCatch(
           cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
+          shiny = T,
           trace_back = TRUE
         )
 

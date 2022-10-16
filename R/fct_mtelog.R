@@ -1,7 +1,7 @@
-#' Read and tidy data from Applanix, CTD, BB3, SeaOWL, SUNA
+#' Read and tidy data from Applanix, CTD, ECO, SeaOWL, SUNA
 #'
 #' @description
-#' The read function take as input MainLog, a first parsing of the txt file of
+#' The read function take as input a first parsing of the txt file of
 #' the data logger
 #'
 #' @import stringr
@@ -55,10 +55,22 @@ read_apla <- function(MainLog){
     separate(
       col = GPGGA,
       sep = ",",
-      into =  c("UTC","Lat","NS","Lon","EW","GPS","Nsat",
-                "HorizontalDilution","Altitude","AltitudeUnit",
-                "GeoidalSeparation","GeoidalSeparationUnit","GPSAge",
-                "DiffID")
+      into =  c(
+        "UTC",
+        "Lat",
+        "NS",
+        "Lon",
+        "EW",
+        "GPS",
+        "Nsat",
+        "HorizontalDilution",
+        "Altitude",
+        "AltitudeUnit",
+        "GeoidalSeparation",
+        "GeoidalSeparationUnit",
+        "GPSAge",
+        "DiffID"
+        )
     ) %>% # Filter malformated Lat and Lon field
     filter(str_detect(Lat,"[:digit:]{4}\\.[:digit:]{5}") & str_detect(Lon,"[:digit:]{5}\\.[:digit:]{5}")
     ) %>% # Filter incorect N S W E field
@@ -124,8 +136,6 @@ read_apla <- function(MainLog){
   # Solar altitude above the horizon in radian and azimuth in radian from south to west
   PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
 
-  browser()
-
   Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
     rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
     mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
@@ -140,7 +150,99 @@ read_apla <- function(MainLog){
     # ) %>%
     mutate(
       ID = seq_along(DateTime),
-      ObsType = "Unknown",
+      ObsType = NA,
       ObsName = NA)
+
+}
+
+# BBFL2 extractor -----------------------------------------------------------
+
+read_bbfl2 <- function(MainLog) {
+
+  BBFL2 <- MainLog %>%
+    filter(Instrument == "ECO") %>%
+    separate(
+      col = Data,
+      sep = "(?!^)\\s",
+      into = c(
+        "ECODate",
+        "ECOTime",
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+        "g"
+        ),
+      extra = "merge"
+    ) %>%
+    mutate(
+      #Trame = str_extract(Trame, "[[:alpha:]]+"),
+      Time = str_remove(Time, ".{4}$") # Take Time to second
+    ) %>%
+    drop_na()
+
+}
+
+# SeaOWL extractor -----------------------------------------------------------
+
+read_seaowl <- function(MainLog) {
+
+  SeaOWL <- MainLog %>%
+    filter(Instrument == "OWL") %>%
+    separate(
+      col = Data,
+      sep = "(?!^)\\s",
+      into = c(
+        "SN",
+        "ChlLEDForwardVoltage",
+        "ChlLowGainRawCounts",
+        "ChlHighGainRawCounts",
+        "ChlOutput",
+        "Bb700LEDForwardVoltage",
+        "Bb700LowGainRawCounts",
+        "Bb700HighGainRawCounts",
+        "Bb700Output",
+        "FDOMLED1ForwardVoltage",
+        "FDOMLED2ForwardVoltage",
+        "FDOMLowGainRawCounts",
+        "FDOMHighGainRawCounts",
+        "FDOMOutput"
+      ),
+      extra = "merge"
+    ) %>%
+    mutate(
+      #Trame = str_extract(Trame, "[[:alpha:]]+"),
+      Time = str_remove(Time, ".{4}$") # Take Time to second
+    ) %>%
+    drop_na()
+
+}
+
+# SBE19 extractor -----------------------------------------------------------
+
+read_sbe19 <- function(MainLog) {
+
+  SBE19 <- MainLog %>%
+    filter(Instrument == "CTD") %>%
+    separate(
+      col = Data,
+      sep = ",\\s",
+      into = c(
+        "Temperature", # Celsius ITS-90
+        "Conductivity", # S/m
+        "Pressure", # decibars
+        "UNKNWON1",
+        "UNKNWON2"
+      ),
+      convert = T,
+      extra = "merge"
+    ) %>%
+    mutate(
+      #Trame = str_extract(Trame, "[[:alpha:]]+"),
+      Time = str_remove(Time, ".{4}$") # Take Time to second
+    ) %>%
+    drop_na()
 
 }

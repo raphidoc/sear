@@ -11,6 +11,11 @@ app_server <- function(input, output, session) {
 
   Apla <- reactiveVal()
 
+  BBFL2 <- reactiveVal()
+
+  SeaOWL()
+
+  # Active discrete observation
   Obs <- reactiveValues(
     Metadata = tibble(
       ObsName = character(),
@@ -43,11 +48,11 @@ app_server <- function(input, output, session) {
 
   DataFiles <- mod_load_mtelog_server("load_mtelog", SearTbl)
 
-  L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, Apla)
+  L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, Apla, BBFL2, SeaOWL)
 
   mod_filter_trim_server("filter_trim", SearTbl, DataFiles, SelData, Apla)
 
-  SelData <- mod_select_data_server("select_data", Apla, DB)
+  SelData <- mod_select_data_server("select_data", Apla, DB, ManObs)
 
   mod_discretize_server("discretize", Apla)
 
@@ -57,6 +62,6 @@ app_server <- function(input, output, session) {
 
   L2 <- mod_obs_L1L2_server("obs_L1L2", L1b, Obs)
 
-  mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
+  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
 
 }

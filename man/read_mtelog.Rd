@@ -2,11 +2,11 @@
 % Please edit documentation in R/fct_mtelog.R
 \name{read_mtelog}
 \alias{read_mtelog}
-\title{Read and tidy data from Applanix, CTD, BB3, SeaOWL, SUNA}
+\title{Read and tidy data from Applanix, CTD, ECO, SeaOWL, SUNA}
 \usage{
 read_mtelog(LogFile)
 }
 \description{
-The read function take as input MainLog, a first parsing of the txt file of
+The read function take as input a first parsing of the txt file of
 the data logger
 }

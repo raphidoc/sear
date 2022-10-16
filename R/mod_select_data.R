@@ -28,7 +28,7 @@ mod_select_data_ui <- function(id){
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, Apla, DB){
+mod_select_data_server <- function(id, Apla, DB, ManObs){
 
   stopifnot(is.reactive(Apla))
 
@@ -142,6 +142,25 @@ mod_select_data_server <- function(id, Apla, DB){
         } else {
           SelUUID(UUID)
           Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
+        }
+
+      }
+    )
+
+    observeEvent(
+      ManObs$Save(),
+      {
+        UUID <- Obs$Metadata$UUID
+
+        if (!uuid::UUIDvalidate(UUID)) {
+          showModal(modalDialog(
+            title = "Invalid UUID",
+            "Not a valid UUID")
+          )
+          invalidateLater(1)
+        } else {
+          SelUUID(UUID)
+          Center(Obs$Metadata %>% select(Lat, Lon))
         }
 
       }
