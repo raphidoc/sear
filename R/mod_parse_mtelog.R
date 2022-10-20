@@ -20,7 +20,7 @@ mod_parse_mtelog_ui <- function(id){
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, ECO){
+mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL, SBE19){
 
   stopifnot(is.reactive(SearTbl))
   stopifnot(is.reactive(DataFiles))

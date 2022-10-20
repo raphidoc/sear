@@ -36,7 +36,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
         type = "pills",
         tabPanel(
           "Observation",
-          uiOutput(ns("Obs"))
+          uiOutput(ns("ObsTab"))
         ),
         tabPanel("HOCR",
                  plotlyOutput(ns("HOCRL1b"), height = 320),
@@ -121,7 +121,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
       editable=F
     )
 
-    output$Obs <- renderUI({
+    output$ObsTab <- renderUI({
 
         tagList(
           DT::DTOutput(ns("DataTable")),
