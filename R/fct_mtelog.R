@@ -233,8 +233,8 @@ read_sbe19 <- function(MainLog) {
         "Temperature", # Celsius ITS-90
         "Conductivity", # S/m
         "Pressure", # decibars
-        "UNKNWON1",
-        "UNKNWON2"
+        "UNKNWON1", # Volt0 ? = OXY
+        "UNKNWON2" # Volt2 ? = PH
       ),
       convert = T,
       extra = "merge"

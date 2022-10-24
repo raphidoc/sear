@@ -28,7 +28,7 @@ mod_select_data_ui <- function(id){
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, Apla, DB, ManObs){
+mod_select_data_server <- function(id, Apla, DB, Obs, ManObs){
 
   stopifnot(is.reactive(Apla))
 

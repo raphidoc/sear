@@ -87,7 +87,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL,
         PotHocr <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
         PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, ".sear",
-                                      paste0("filtered_time_index_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+                                      paste0("filtered_hocr_time_index_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
         if (file.exists(PotHocr) & file.exists(PotTimeIndexHocr)) {
 

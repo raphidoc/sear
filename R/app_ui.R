@@ -14,7 +14,7 @@ app_ui <- function(request) {
       dashboardHeader(
         title = tags$a(href='https://github.com/raphidoc/sear',
                        tags$img(src= "www/logo_sear.png", width = "95px", height = "40px"),
-                       'sear')
+                       'seaR')
       ),
       dashboardSidebar(
         mod_manage_project_ui("manage_project"),
