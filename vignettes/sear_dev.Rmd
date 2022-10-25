@@ -42,6 +42,10 @@ Apla <- sear:::read_apla(MTELog)
 
 # UI
 
+## Style
+
+The UI use the 'norwegian blue' #4f89b0 as theme color
+
 ## Project workflow
 
 The first step to work with `sear` is to select a project folder. A project folder is identified by the presence of a `.searproj` file, this file additionally contain relevant metadata such as the project path, date of creation and last update. Other useful information could be added.
