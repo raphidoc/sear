@@ -44,7 +44,7 @@ Apla <- sear:::read_apla(MTELog)
 
 ## Style
 
-The UI use the 'norwegian blue' #4f89b0 as theme color
+The UI use the 'norwegian blue' (The dead parrot) #4f89b0 as theme color
 
 ## Project workflow
 

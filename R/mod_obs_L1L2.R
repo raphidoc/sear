@@ -40,7 +40,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
         ),
         tabPanel("HOCR",
                  plotlyOutput(ns("HOCRL1b"), height = 320),
-                 actionButton(ns("ProcessL2"), "ProcessL2"),
+                 actionButton(ns("ProcessL2"), "Process L2"),
                  plotlyOutput(ns("AOPs"), height = 250)
                  #mod_obs_hocr_ui(ns("obs_hocr"))
                  )
@@ -163,13 +163,13 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
 
     # QC flag for HOCR --------------------------------------------------------
-    QCData <- reactive({
-
-      Obs$HOCR$L1b$AproxData[[1]] %>%
-        select(DateTime, ID) %>%
-        unique() %>%
-        mutate(QC = "1")
-    })
+    # QCData <- reactive({
+    #
+    #   Obs$HOCR$L1b$AproxData[[1]] %>%
+    #     select(DateTime, ID) %>%
+    #     unique() %>%
+    #     mutate(QC = "1")
+    # })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
 
@@ -194,7 +194,6 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
         # Obs$HOCR$L1b <- Obs$HOCR$L1b %>%
         #   select(Instrument, SN, AproxData) %>%
         #   mutate(AproxData = purrr::map(AproxData, ~ left_join(., tmp, by = c("DateTime", "ID"))))
-
 
         qc_shift <- function(df, Selected){
 
@@ -339,7 +338,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
       #browser()
 
-      validate(need(nrow(Obs$HOCR$L2) != 0, "Process to L2 to display AOPs"))
+      validate(need(nrow(Obs$HOCR$L2) != 0, "Process L2 to display AOPs"))
 
       Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
