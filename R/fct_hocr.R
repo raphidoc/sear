@@ -78,7 +78,7 @@ filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
   RawHOCR[ind]
 }
 
-#' filter_hocr
+#' tidy_hocr
 #'
 #' @description tidyer for HOCR packets.
 #'
@@ -112,21 +112,174 @@ tidy_hocr <- function(Packets, AplaDate){
   )
 }
 
+#' cal_inttime
+#'
+#' @description Calibrate HOCR integration time
+#'
+#' @noRd
+cal_inttime <- function(RawData, INTTIME){
+  a0 <- INTTIME$a0
+  a1 <- INTTIME$a1
+
+  purrr::modify_in(RawData, .where = "IntTime", ~(a0*.x^0) + (a1*.x^1))
+}
+
+#' cal_optic3
+#'
+#' @description Calibrate HOCR optical channels
+#'
+#' @noRd
+cal_optic3 <- function(.x, Instrument){
+
+  if (str_detect(Instrument, "HSE|HED")) { # In air
+
+    dplyr::mutate(.data = .x, Channels = 1.0*a1*(Channels-a0)*(cint/IntTime))
+
+  } else if (str_detect(Instrument, "HPL|PLD")){ # In water
+
+    dplyr::mutate(.data = .x, Channels = im*a1*(Channels-a0)*(cint/IntTime))
+
+  } else {
+    warning(paste0("Instrument name not valid: ", Instrument))
+  }
+}
+
+#' approx_tbl
+#'
+#' @description approximate measurements on common time coordinates
+#'
+#' @noRd
+approx_tbl <- function(., TimeSeq) {
+
+  tbl <- tibble(DateTime = TimeSeq)
+
+  for (i in seq_along(colnames(.))[-1]) {
+
+    coord <- approx(x = .[[1]], y = .[[i]], xout = TimeSeq, method = "linear")
+
+    tbl <- bind_cols(tbl, x = coord[[2]])
+    colnames(tbl)[i] <- colnames(.)[i]
+  }
+
+  tbl %>% mutate(
+    ID = seq_along(TimeSeq),
+    QC = "1",
+    .before = DateTime
+  )
+}
+
+#' cal_dark
+#'
+#' @description Calibrate HOCR dark packets to L1b
+#'
+#' @return Return a wide data frame for HOCR dark offset
+#'
+#' @noRd
+cal_dark <- function(RawHOCR, CalHOCR, AplaDate){
+
+  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., AplaDate))
+
+  # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
+
+  # There will be a problem here if some HCOR packet have corrupted Instrument and SN.
+  # Have to filter and remove those corrupted pakect before, in the tidy_hocr function ?
+
+  GlobCal <- RawData %>% group_by(Instrument, SN) %>% nest(RawData = !matches("Instrument|SN"))
+
+  GlobCal <- left_join(GlobCal, CalHOCR$OPTIC3, by = c("Instrument", "SN"))
+
+  GlobCal <- left_join(GlobCal, CalHOCR$THERM1, by = c("Instrument", "SN"))
+
+  GlobCal <- left_join(GlobCal, CalHOCR$INTTIME, by = c("Instrument", "SN"))
+
+  GlobCal <- left_join(GlobCal, CalHOCR$SAMPLE, by = c("Instrument", "SN"))
+
+  # Add OPTIC3 to raw data --------------------------------------------------
+
+  # taken from: https://gist.github.com/mdlincoln/528a53939538b07ade86
+  row_rep <- function(df, n) {
+    df[rep(1:nrow(df), times = n),]
+  }
+
+  GlobCal <- GlobCal %>% mutate(RawData = purrr::map2(RawData, OPTIC3, ~ bind_cols(.x, row_rep(.y, nrow(.x)/nrow(.y)))))
+
+  # Calibrate time ----------------------------------------------------------
+
+  GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~cal_inttime(.x, .y)))
+
+  # Calibrate optical channels ----------------------------------------------
+
+  GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = Instrument, ~ cal_optic3(.x, .y)))
+
+  # Interpolate time coordinate ---------------------------------------------
+
+  HOCRLong <- GlobCal %>% # OPTIC3
+    mutate(CalData = purrr::map(
+      CalData,
+      ~ select(.x, !all_of(c("Units","FieldLength","DataType","CalLines","FitType","a0","a1","im","cint")))
+    )) %>% # Packet metadata
+    mutate(CalData = purrr::map(
+      CalData,
+      ~ select(.x, !all_of(c("SampleDelay","DarkSample","DarkAverage","SpecTemp","Frame","Timer","CheckSum")))
+    )) %>%
+    select(Instrument, SN, CalData)
+
+  # Convert to wide format
+
+  HOCRWide <- HOCRLong %>%
+    mutate(CalData = purrr::map(
+      CalData,
+      ~ pivot_wider(
+        .,
+        names_from = all_of(c("Type", "Wavelength")),
+        names_sep = "_",
+        values_from = Channels
+      ))) %>%
+    mutate(CalData = purrr::map(CalData, ~ select(., where(function(x) all(!is.na(x))))))
+
+  # Compute the Time Sequence
+
+  ShortNobs <- HOCRWide %>%
+    mutate(Nobs = purrr::map_dbl(CalData, ~ length(rownames(.))))
+
+  ShortNobs <- ShortNobs %>%
+    filter(Nobs == min(ShortNobs$Nobs)) %>%
+    unnest(cols = c(CalData))
+
+  MinTime <- min(ShortNobs$GPSTime)
+  #format(MinTime, "%Y-%m-%d %H:%M:%OS3")
+
+  MaxTime <- max(ShortNobs$GPSTime)
+  #format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
+
+  TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60)
+  #format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
+
+  # Interpolate to commom time coordinates
+
+  HOCRWide <- HOCRWide %>%
+    mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
+
+  HOCRWide <- HOCRWide %>%
+    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
+}
+
 #' cal_hocr
 #'
 #' @description Calibrate HOCR packets to L1b
 #'
 #' @param FiltRawHOCR subset from \code{\link{filter_hocr}})
 #' @param CalData calibration data from \code{\link{tidy_cal_hocr}}
+#' @param CalData dark data from \code{\link{cal_dark}}
 #' @param AplaDate The binary date format added by the MTE datalogger is unknown.
 #' Quick Fix
 #'
 #' @return Return L1b HOCR data in a tidy long format
 #'
 #' @noRd
-cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
+cal_hocr <- function(RawHOCR, CalHOCR, DarkHOCR, AplaDate){
 
-  RawData <- purrr::map_df(FiltRawHOCR, ~ tidy_hocr(., AplaDate))
+  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., AplaDate))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
 
@@ -156,35 +309,11 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
 
   # Calibrate time ----------------------------------------------------------
 
-  cal_inttime <- function(RawData, INTTIME){
-    a0 <- INTTIME$a0
-    a1 <- INTTIME$a1
-
-    purrr::modify_in(RawData, .where = "IntTime", ~(a0*.x^0) + (a1*.x^1))
-  }
-
   GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~cal_inttime(.x, .y)))
-
 
   # Calibrate optical channels ----------------------------------------------
 
-  cal_optic3 <- function(.x, Instrument){
-
-    if (str_detect(Instrument, "HSE|HED")) { # In air
-
-      dplyr::mutate(.data = .x, Channels = 1.0*a1*(Channels-a0)*(cint/IntTime))
-
-    } else if (str_detect(Instrument, "HPL|PLD")){ # In water
-
-      dplyr::mutate(.data = .x, Channels = im*a1*(Channels-a0)*(cint/IntTime))
-
-    } else {
-      warning(paste0("Instrument name not valid: ", Instrument))
-    }
-  }
-
   GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = Instrument, ~ cal_optic3(.x, .y)))
-
 
   # Interpolate time coordinate ---------------------------------------------
 
@@ -243,24 +372,6 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
   HOCRWide <- HOCRWide %>%
     mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
 
-  approx_tbl <- function(., TimeSeq) {
-
-    tbl <- tibble(DateTime = TimeSeq)
-
-    for (i in seq_along(colnames(.))[-1]) {
-
-      coord <- approx(x = .[[1]], y = .[[i]], xout = TimeSeq, method = "linear")
-
-      tbl <- bind_cols(tbl, x = coord[[2]])
-      colnames(tbl)[i] <- colnames(.)[i]
-    }
-
-    tbl %>% mutate(
-      ID = seq_along(TimeSeq),
-      QC = "1"
-      )
-  }
-
   # Debug for NA values in interpolation
 
   if (any(purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1))) {
@@ -273,6 +384,24 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
 
   HOCRWide <- HOCRWide %>%
     mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
+
+  # Apply dark correction
+
+  HOCRWide <- left_join(HOCRWide, DarkHOCR , by = c("SN"))
+
+  cor_dark <- function(.x, .y){
+
+    ID <- .x[,1]
+    DateTime <- .x[,2]
+
+    Data <- .x[,-1:-2] - row_rep(.y[,-1:-2], nrow(.x[,-1:-2]))
+
+    bind_cols(ID,DateTime,Data)
+
+  }
+
+  HOCRWide <- HOCRWide %>%
+    mutate(AproxData = purrr::map2(AproxData, DarkAproxData, cor_dark))
 
   # Transform back to long format
 
@@ -293,7 +422,7 @@ cal_hocr <- function(FiltRawHOCR, CalHOCR, AplaDate){
 
   # CalData is not needed further
   HOCRLong %>%
-    select(!CalData)
+    select(!CalData&!DarkAproxData)
 }
 
 #' L2_hocr

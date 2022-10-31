@@ -101,10 +101,10 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs){
         }
       })
 
-    # Define zoom and center reactive value to be updated in SelUUID
+    # Define zoom and center reactive value to be updated with SelUUID
 
     Center <- reactiveVal()
-    Zoom <- reactiveVal(20)
+    Zoom <- reactiveVal()
 
     SelUUID <- reactiveVal()
 
@@ -126,6 +126,7 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs){
         } else {
           SelUUID(UUID)
           Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
+          Zoom(20)
         }
 
       }
@@ -142,8 +143,8 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs){
         } else {
           SelUUID(UUID)
           Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
+          Zoom(20)
         }
-
       }
     )
 
@@ -152,16 +153,9 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs){
       {
         UUID <- Obs$Metadata$UUID
 
-        if (!uuid::UUIDvalidate(UUID)) {
-          showModal(modalDialog(
-            title = "Invalid UUID",
-            "Not a valid UUID")
-          )
-          invalidateLater(1)
-        } else {
-          SelUUID(UUID)
-          Center(Obs$Metadata %>% select(Lat, Lon))
-        }
+        SelUUID(UUID)
+        Center(Obs$Metadata %>% select(Lat, Lon))
+        Zoom(20)
 
       }
     )
@@ -199,8 +193,8 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs){
 
       if (is.null(SelUUID())) {
         ZC <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
-        Zoom <- reactiveVal(ZC[[1]])
-        Center <- reactiveVal(ZC[[2]])
+        Zoom(ZC[[1]])
+        Center(ZC[[2]])
       }
 
       # SF read coords as XY not YX aka Lat Lon

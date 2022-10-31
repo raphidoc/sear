@@ -68,6 +68,8 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
       })
 
 # Save button send data to SQLite -----------------------------------------
+    UUID <- reactiveVal()
+
     observeEvent(
       req(input$Save),
       {
@@ -295,12 +297,11 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
       removeModal()
     })
 
-
 # Module export -----------------------------------------------------------
     list(
-      Save = reactive(input$Save)
+      Save = reactive(input$Save),
+      UUID = UUID
     )
-
 
   })
 }

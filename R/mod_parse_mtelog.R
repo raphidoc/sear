@@ -20,7 +20,7 @@ mod_parse_mtelog_ui <- function(id){
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL, SBE19){
+mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, CalData, Apla, BBFL2, SeaOWL, SBE19){
 
   stopifnot(is.reactive(SearTbl))
   stopifnot(is.reactive(DataFiles))
@@ -74,6 +74,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL,
 # HOCR binary read --------------------------------------------------------
 
     HOCR <- reactiveVal()
+    DarkHOCR <- reactiveVal()
     TimeIndexHOCR <- reactiveVal()
 
       observe({
@@ -86,12 +87,16 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL,
 
         PotHocr <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
+        PotDarkHocr <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_dark_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+
         PotTimeIndexHocr <- file.path(SearTbl()$ProjPath, ".sear",
                                       paste0("filtered_hocr_time_index_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
 
-        if (file.exists(PotHocr) & file.exists(PotTimeIndexHocr)) {
+        if (file.exists(PotHocr) & file.exists(PotDarkHocr) & file.exists(PotTimeIndexHocr)) {
 
           HOCR(read_rds(PotHocr))
+
+          DarkHOCR(read_rds(PotDarkHocr))
 
           TimeIndexHOCR(read_rds(PotTimeIndexHocr))
 
@@ -99,10 +104,16 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL,
 
           validate(need(DataFiles()$bin, label = "Need raw HOCR"))
 
-          Hocr <- read_hocr(DataFiles()$bin)
-
           # Dont know the logger date format so quick fix with Apla date
           AplaDate <- unique(date(Apla()$DateTime))
+
+          Hocr <- read_hocr(DataFiles()$bin)
+
+          # Create dark index
+
+          DarkRawHocr <- Hocr[purrr::map_lgl(Hocr, ~str_detect(.$instrument, "HED|PLD"))]
+
+          DarkHocr <- cal_dark(DarkRawHocr, CalHOCR = CalData()$HOCR, AplaDate)
 
           # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
@@ -110,16 +121,18 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL,
 
           HOCR(Hocr)
 
+          DarkHOCR(DarkHocr)
+
           TimeIndexHOCR(TimeIndex)
 
           write_rds(Hocr, PotHocr)
 
+          write_rds(DarkHocr, PotDarkHocr)
+
           write_rds(TimeIndex, PotTimeIndexHocr)
         }
 
-
       })
-
 
 # BBFL2 data ----------------------------------------------------------------
 
@@ -219,6 +232,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, Apla, BBFL2, SeaOWL,
       MainLog = MainLog,
       Apla = Apla,
       HOCR = HOCR,
+      DarkHOCR = DarkHOCR,
       TimeIndexHOCR = TimeIndexHOCR
       )
 

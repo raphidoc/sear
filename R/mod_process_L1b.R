@@ -72,11 +72,22 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
 
         FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
 
+        # Select nearest dark data
+        ObsTime <- int_end(TimeInt/2)
+
+        DarkHOCR <- L1$DarkHOCR() %>%
+          mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime-ObsTime)),])) %>%
+          ungroup() %>%
+          select(SN, DarkAproxData)
+
         Obs$HOCR$L1b <- spsComps::shinyCatch(
-          cal_hocr(FiltRawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
+          cal_hocr(RawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, DarkHOCR = DarkHOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
           shiny = T,
           trace_back = TRUE
         )
+
+        # Empty L2 to avoid confusion
+        Obs$HOCR$L2 <- tibble()
 
       }
 
