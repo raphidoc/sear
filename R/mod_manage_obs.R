@@ -7,52 +7,50 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_manage_obs_ui <- function(id){
+mod_manage_obs_ui <- function(id) {
   ns <- NS(id)
   tagList(
 
-    #shinyFeedback::useShinyFeedback(),
+    # shinyFeedback::useShinyFeedback(),
     tags$head(tags$script(src = "message-handler.js")),
-
     actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
     actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
-
   )
 }
 
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
-  moduleServer( id, function(input, output, session){
+mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
 
-# UUID selection event trigger data display -------------------------------
-# by populating the reactive data table needed
+    # UUID selection event trigger data display -------------------------------
+    # by populating the reactive data table needed
     observeEvent(
       req(SelData$SelUUID()),
       {
         # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM Metadata WHERE UUID='",SelData$SelUUID(),"';")
+        qry <- paste0("SELECT * FROM Metadata WHERE UUID='", SelData$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # UUID have to ship with Instrument and SN to be passed to HOCR$L2
-        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='",SelData$SelUUID(),"';")
+        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='", SelData$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
           nest(AproxData = !matches("Instrument|SN|UUID"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='",SelData$SelUUID(),"';")
+        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='", SelData$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
-        #dbDisconnect(con)
+        # dbDisconnect(con)
 
         # Obs$Metadata <- tibble(DBI::dbReadTable(DB$Con(), "Metadata"))
         # Obs$HOCR$L1b <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL1b"))
@@ -64,10 +62,10 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
         # L2$HOCR()$L1bHOCR(HOCRL1b)
         #
         # L2$HOCR()$AOPs(HOCRL2)
+      }
+    )
 
-      })
-
-# Save button send data to SQLite -----------------------------------------
+    # Save button send data to SQLite -----------------------------------------
     UUID <- reactiveVal()
 
     observeEvent(
@@ -85,7 +83,6 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
 
         # If UUID already exist, update record in SQLite
         if (UUIDPresent & UUIDExist) {
-
           # Update Metadata table
           Metadata <- Obs$Metadata %>%
             mutate(
@@ -96,10 +93,10 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
 
           qry <- glue::glue(
             "UPDATE Metadata
-            SET Comment = '", Metadata$Comment,"',
-                ProTime = '", Metadata$ProTime,"',
-                Analyst = '", Metadata$Analyst,"',
-                Mail = '", Metadata$Mail,"'
+            SET Comment = '", Metadata$Comment, "',
+                ProTime = '", Metadata$ProTime, "',
+                Analyst = '", Metadata$Analyst, "',
+                Mail = '", Metadata$Mail, "'
             WHERE UUID = '", Obs$Metadata$UUID, "';"
           )
 
@@ -111,7 +108,9 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
             unnest(cols = c(AproxData))
 
           # List L1bID the link between the instruments spectrum.
-          SumQC <- HOCRL1b %>% group_by(UUID, ID, QC) %>% summarise()
+          SumQC <- HOCRL1b %>%
+            group_by(UUID, ID, QC) %>%
+            summarise()
 
           # Create specific query for each L1bID
           # As we only update QC, the pair (UUID, ID) is a primary key of the QC column
@@ -119,11 +118,11 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           # a signle observational unit by table. Should a specific table be created for QC data ?
 
           qry <- purrr::pmap_chr(
-            list(..1 = SumQC$UUID, ..2 = SumQC$ID , ..3 = SumQC$QC),
+            list(..1 = SumQC$UUID, ..2 = SumQC$ID, ..3 = SumQC$QC),
             .f = ~ glue::glue(
               "
               UPDATE HOCRL1b
-              SET QC = '", ..3,"'
+              SET QC = '", ..3, "'
               WHERE (UUID || ID = '", glue::glue(..1, ..2), "');
               "
             )
@@ -145,16 +144,16 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           # Individual CASE WHEN for each variables to change: Rrs, KLu
           # As the WHERE constraint on UUID is already present on the final query could remove UUID from CASE WHEN
           qryRrs <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength , ..3 = HOCRL2$Rrs, ..4 = HOCRL2$KLu),
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$Rrs, ..4 = HOCRL2$KLu),
             .f = ~ glue::glue(
-              "WHEN UUID = '",..1,"' AND Wavelength = ",..2," THEN ",..3
+              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
           qryKLu <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength , ..3 = HOCRL2$KLu),
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$KLu),
             .f = ~ glue::glue(
-              "WHEN UUID = '",..1,"' AND Wavelength = ",..2," THEN ",..3
+              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
@@ -162,14 +161,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           qry <- glue::glue_sql(
             "UPDATE HOCRL2
             SET Rrs = CASE
-                  ", qryRrs,"
+                  ", qryRrs, "
                   ELSE Rrs
                   END,
                 KLu = CASE
-                  ", qryKLu,"
+                  ", qryKLu, "
                   ELSE KLu
                   END
-            WHERE UUID = '",Obs$Metadata$UUID,"';"
+            WHERE UUID = '", Obs$Metadata$UUID, "';"
           )
 
           # NA value in R are equal to NULL in SQL
@@ -182,17 +181,18 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           # MetaUp must be only one line affected, if more means UUID collision
           # L1bUp == 3 * 137 wavelengths * bins number
           # L2Up == User input wavelength
-          test <- all(MetaUp == 1, unique(L1bUp) == 411,  L2Up == 150)
+          test <- all(MetaUp == 1, unique(L1bUp) == 411, L2Up == 150)
 
           # Feedback to the user
           session$sendCustomMessage(
-            type = 'testmessage',
+            type = "testmessage",
             message =
               glue::glue(
-                "Metadata: ",MetaUp," entry updated\n",
-                "HOCRL1b: ", sum(L1bUp)," entry updated\n",
-                "HOCRL2: ",L2Up," entry updated\n")
-            )
+                "Metadata: ", MetaUp, " entry updated\n",
+                "HOCRL1b: ", sum(L1bUp), " entry updated\n",
+                "HOCRL2: ", L2Up, " entry updated\n"
+              )
+          )
 
           # Shiny feedback doesn't work with actionButton
           # shinyFeedback::feedbackSuccess(
@@ -203,9 +203,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           #   icon = shiny::icon("ok", lib = "glyphicon"),
           #   session = shiny::getDefaultReactiveDomain()
           # )
-
         } else {
-
           ObsUUID <- uuid::UUIDgenerate(
             use.time = T,
             output = "string"
@@ -224,7 +222,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
               ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
               Analyst = "Raphael Mabit",
               Mail = "raphael.mabit@gmail.com"
-              )
+            )
 
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData)) %>%
@@ -239,7 +237,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
 
           # Feedback to the user
           session$sendCustomMessage(
-            type = 'testmessage',
+            type = "testmessage",
             message = "Saved"
             # glue::glue(
             #   "Metadata: ",MetaUp," entry updated\n",
@@ -250,14 +248,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
           # Update the list of observation
           DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
 
-          qry <- glue::glue_sql("SELECT * FROM Metadata WHERE UUID = '",ObsUUID,"';")
+          qry <- glue::glue_sql("SELECT * FROM Metadata WHERE UUID = '", ObsUUID, "';")
 
           Obs$Metadata <- tibble(DBI::dbGetQuery(DB$Con(), qry))
         }
+      }
+    )
 
-      })
-
-# Delete button remove data from SQLite -----------------------------------
+    # Delete button remove data from SQLite -----------------------------------
 
     modal_confirm <- modalDialog(
       "Are you sure you want to continue?",
@@ -269,40 +267,40 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs){
     )
 
     observeEvent(req(input$Delete), {
-        showModal(modal_confirm)
-      })
+      showModal(modal_confirm)
+    })
 
     # If user confirm delete
     observeEvent(input$ok, {
-        removeModal()
+      removeModal()
 
-        qry <- glue::glue("DELETE FROM Metadata WHERE UUID='",Obs$Metadata$UUID,"';")
+      qry <- glue::glue("DELETE FROM Metadata WHERE UUID='", Obs$Metadata$UUID, "';")
 
-        LineDel <- DBI::dbExecute(DB$Con(), qry)
+      LineDel <- DBI::dbExecute(DB$Con(), qry)
 
-        # Feedback to the user
-        session$sendCustomMessage(
-          type = 'testmessage',
-          message =
-            glue::glue(
-              LineDel," line deleted\n")
-        )
+      # Feedback to the user
+      session$sendCustomMessage(
+        type = "testmessage",
+        message =
+          glue::glue(
+            LineDel, " line deleted\n"
+          )
+      )
 
-        # Update the list of observation
-        DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
-      })
+      # Update the list of observation
+      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
+    })
 
     # If user cancel
     observeEvent(input$cancel, {
       removeModal()
     })
 
-# Module export -----------------------------------------------------------
+    # Module export -----------------------------------------------------------
     list(
       Save = reactive(input$Save),
       UUID = UUID
     )
-
   })
 }
 

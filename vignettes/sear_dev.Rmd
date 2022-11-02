@@ -71,15 +71,14 @@ First compute the sun azimuth.
 
 ```{r}
 # Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
-# 
+#
 # # Solar altitude above the horizon in radian and azimuth in radian from south to west
 # PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
-# 
+#
 # Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
 #   rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
 #   mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
 #          SolAlt = SolAlt * 180/pi)
-
 ```
 
 Take the boat azimuth (relative to true north) from the applanix, then subtract one by the other to find boat azimuth from the sun.
@@ -103,23 +102,21 @@ m <- list(
 
 temp %>%
   plot_ly(
-    type = 'scatterpolar',
+    type = "scatterpolar",
     r = ~Speed_N,
     theta = ~BoatSolAzm,
-    
-    mode = 'markers'
-    
+    mode = "markers"
   ) %>%
   layout(
     autosize = F,
     margin = m,
     polar = list(
-      angularaxis  = list(
-        #rotation = ~mean(Course_TN, na.rm = T)+90,
+      angularaxis = list(
+        # rotation = ~mean(Course_TN, na.rm = T)+90,
         direction = "clockwise"
       )
-    ))
-
+    )
+  )
 ```
 
 

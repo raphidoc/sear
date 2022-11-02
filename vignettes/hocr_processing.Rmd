@@ -48,11 +48,11 @@ To code live in python use `reticulate::repl_python()`, to get object from pytho
 
 BinFile <- system.file("extdata", "DATA_20211111_171729.bin", package = "sear", mustWork = T)
 
-reticulate::source_python(system.file("py","hocr.py", package = "sear", mustWork = T))
+reticulate::source_python(system.file("py", "hocr.py", package = "sear", mustWork = T))
 
 RawHOCR <- purrr::map(BinFile, Hocr$from_file)
 
-RawHOCR <- unlist(purrr::map(RawHOCR , ~ .x$packets))
+RawHOCR <- unlist(purrr::map(RawHOCR, ~ .x$packets))
 
 # Unefficent way of removing custom class python object dependencies resulting in null pointer
 # How to avoid: Error in py_ref_to_r(x) : Embedded NUL in string ? (packet 27281 of AlgaeValidation (2022/07/05))
@@ -65,14 +65,14 @@ RawHOCR <- purrr::imap(RawHOCR, ~ tryCatch(
     "darksample" = .$darksample,
     "frame" = .$frame,
     "gpstime" = .$gpstime,
-    "instrument" = as.character(.$instrument, errors="ignore"),
+    "instrument" = as.character(.$instrument, errors = "ignore"),
     "inttime" = .$inttime,
     "loggerport" = .$loggerport,
     "mysterydate" = .$mysterydate,
     "sampledelay" = .$sampledelay,
-    "sn" = as.character(.$sn, errors="ignore"),
-    "spectemp" = as.character(.$spectemp, errors="ignore"),
-    "timer" = as.character(.$timer, errors="ignore")
+    "sn" = as.character(.$sn, errors = "ignore"),
+    "spectemp" = as.character(.$spectemp, errors = "ignore"),
+    "timer" = as.character(.$timer, errors = "ignore")
   ),
   error = function(...) NA
 ))
@@ -82,14 +82,12 @@ if (any(is.na(RawHOCR))) {
 }
 
 # check for invalid packet
-ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors="ignore"), "SAT(HPL|HSE|HED|PLD)"))
+ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors = "ignore"), "SAT(HPL|HSE|HED|PLD)"))
 
-if (any(!ValidInd)){
-  
+if (any(!ValidInd)) {
   message("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)))
-  
+
   RawHOCR <- RawHOCR[ValidInd]
-  
 } else {
   RawHOCR <- RawHOCR
 }
@@ -126,43 +124,43 @@ AplaDate <- "2021-11-11"
 
 ```{r}
 # # Small test data with invalid packet: DATA_20211111_160607.bin
-# 
+#
 # BenchConFile <- system.file("extdata", "DATA_20211111_160607.bin", package = "sear", mustWork = T)
-# 
+#
 # # Python function
 # BenchRawHOCR <- Hocr$from_file(BenchConFile)
-# 
+#
 # BenchRawHOCR <- unlist(BenchRawHOCR$packets, recursive = T)
-# 
+#
 # # Filter invalid HOCR packets
-# 
+#
 # BenchValidInd <- purrr::map_lgl(BenchRawHOCR, ~ str_detect(as.character(.x$instrument, errors="ignore"), "SAT(HPL|HSE|HED|PLD)"))
-# 
+#
 # if (any(!BenchValidInd)){
 #   warning("Invalid HOCR packets detected and removed: ", length(which(!BenchValidInd)))
-#   
+#
 #   BenchRawHOCR <- BenchRawHOCR[BenchValidInd]
 # } else {
 #   BenchRawHOCR <- BenchRawHOCR
 # }
-# 
-# 
+#
+#
 # pur_lub <- function(RawHOCR, AplaDate){
 #   purrr::map(.x = RawHOCR, ~ lubridate::ymd_hms(paste0(AplaDate,"T",hms::as_hms(.x$gpstime/1000))))
 # }
 
-pur_clock <- function(RawHOCR, AplaDate){
-  purrr::map(.x = RawHOCR, ~ clock::date_time_parse(paste0(AplaDate," ",hms::as_hms(.x$gpstime/1000)), zone = "UTC"))
+pur_clock <- function(RawHOCR, AplaDate) {
+  purrr::map(.x = RawHOCR, ~ clock::date_time_parse(paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)), zone = "UTC"))
 }
-# 
+#
 # pur_base <- function(RawHOCR, AplaDate){
 #   purrr::map(.x = RawHOCR, ~ base::strptime(paste0(AplaDate,"T",hms::as_hms(.x$gpstime/1000)), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
 # }
-# 
+#
 # pur_lub2 <- function(RawHOCR, AplaDate){
 #   purrr::map(.x = RawHOCR, ~ lubridate::fast_strptime(paste0(AplaDate,"T",hms::as_hms(.x$gpstime/1000)), format = "%Y-%m-%dT%H:%M:%S", tz = "UTC"))
 # }
-# 
+#
 # microbenchmark(times = 10,
 #   pur_lub(BenchRawHOCR, AplaDate),
 #   pur_clock(BenchRawHOCR, AplaDate),
@@ -170,7 +168,7 @@ pur_clock <- function(RawHOCR, AplaDate){
 #   pur_lub2(BenchRawHOCR, AplaDate)
 # )
 
-#gc()
+# gc()
 ```
 
 For now it's the `base::strptime` function which is the fastest. But strangely return a series of nested list ...
@@ -181,21 +179,20 @@ The resulting list is larger than the original HOCR object list, quite strange .
 ```{r}
 TimeIndexHOCR <- pur_clock(RawHOCR, AplaDate)
 
-#test <- unlist(TimeIndexHOCR, recursive = T)
+# test <- unlist(TimeIndexHOCR, recursive = T)
 ```
 
 
 ```{r}
 filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
-
   # Ideally the packet DateTime would be construct from the packet only ...
   # As I don't know the Date here quick and dirty fix with AplaDate
 
   Ind <- purrr::map_lgl(.x = TimeIndexHOCR, ~ .x %within% TimeInt)
-  
+
   # Search for shutter dark measurment in selected point
-  #DarkInd <- purrr::map_lgl(.x = RawHOCR[Ind], ~ str_detect(as.character(.x$instrument, error = "ignore"), "HED|PLD"))
-  
+  # DarkInd <- purrr::map_lgl(.x = RawHOCR[Ind], ~ str_detect(as.character(.x$instrument, error = "ignore"), "HED|PLD"))
+
 
   RawHOCR[Ind]
 }
@@ -225,91 +222,92 @@ To develop and illustrate the HOCR processing, we focus on a subset of `RawData`
 ```{r}
 CalFiles <- list.files(system.file("cal", "hocr", package = "sear", mustWork = T), full.names = T)
 
-read_cal <- function(CalFiles){
-	# CalFiles is a list of calibration files
-	
-	# Fit type specific coefficients
-	# OPTIC3 fit type: a0, a1, im, cint
-	# THERM1 fit type: m0 m1 m2 m3 Tr
-	# POLYU fit type: a0 a1
-	
-	# Create one tidy data frame per fit type
-	
-	CalFile <- read_lines(CalFiles, skip_empty_rows = T)
-	
-	CalFile <- CalFile[!str_detect(CalFile, "#")]
-	
-	# Cal file have tow types of delimiter ... space for definition line and tab for calibration coefficient
-	
-	# Working code over there ! 
-	CalFile <- str_replace_all(CalFile, "\\t", " ")
-	
-	# Get index of definition file 
-	indi <- purrr::imap_dbl(CalFile, ~  ifelse(str_detect(.x, "1 (OPTIC3|THERM1|POLYU)"), .y, NA))
-	# Calibration data is on the next line
-	CalData <- CalFile[indi+1]
-	# Put definition and calibration on the same line
-	CalFile <- tibble(Def = CalFile, Cal = CalData)
-	# Dirty Stuff to remove calibration lines: offset index by one to match calibration lines and logically remove them
-	CalFile <- CalFile %>% filter(is.na(!append(indi[-length(indi)], NA, 0)))
-	
-	CalFile <- CalFile %>%
-		separate(
-			col = Def,
-			into = c("Type", "ID", "Units", "FieldLength", "DataType", "CalLines", "FitType"),
-			sep = " ",
-			remove = T,
-			convert = T
-		)
-	
-	CalID <- CalFile %>%
-		filter(Type %in% c("INSTRUMENT", "SN")) %>%
-		select(Type, ID) %>% 
-		pivot_wider(
-			names_from = Type,
-			values_from = ID) %>%
-		rename(Instrument = INSTRUMENT)
-	
-	OPTIC3 <- CalFile %>%
-		filter(Type == "ES" | Type == "LU") %>%
-		separate(
-			col = Cal,
-			into = c("a0", "a1","im","cint"),
-			sep = " ",
-			remove = T,
-			convert = T
-		) %>%
-		bind_cols(CalID) %>% 
-		rename(Wavelength = "ID") %>%
-	  mutate(Wavelength = as.numeric(Wavelength))
-	
-	THERM1 <- CalFile %>%
-		filter(FitType == "THERM1") %>%
-		separate(
-			col = Cal,
-			into = c("m0", "m1","m2","m3","Tr"),
-			sep = " ",
-			remove = T,
-			convert = T
-		) %>%
-		bind_cols(CalID)
-	
-	# POLYU span from a0 to an, should write code to take that into account
-	# Sep in cal file appear to be two spaces ... cloud manage all those with "[[:blank:]]"
-	POLYU <- CalFile %>%
-		filter(FitType == "POLYU") %>%
-		separate(
-			col = Cal,
-			into = c("a0", "a1"),
-			sep = "[[:blank:]]{2}",
-			remove = T,
-			convert = T
-		) %>%
-		bind_cols(CalID)
-	
-	#tibble(FitType = c("OPTIC3","THERM1","POLYU"), CalData = list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
-	
-	return(list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
+read_cal <- function(CalFiles) {
+  # CalFiles is a list of calibration files
+
+  # Fit type specific coefficients
+  # OPTIC3 fit type: a0, a1, im, cint
+  # THERM1 fit type: m0 m1 m2 m3 Tr
+  # POLYU fit type: a0 a1
+
+  # Create one tidy data frame per fit type
+
+  CalFile <- read_lines(CalFiles, skip_empty_rows = T)
+
+  CalFile <- CalFile[!str_detect(CalFile, "#")]
+
+  # Cal file have tow types of delimiter ... space for definition line and tab for calibration coefficient
+
+  # Working code over there !
+  CalFile <- str_replace_all(CalFile, "\\t", " ")
+
+  # Get index of definition file
+  indi <- purrr::imap_dbl(CalFile, ~ ifelse(str_detect(.x, "1 (OPTIC3|THERM1|POLYU)"), .y, NA))
+  # Calibration data is on the next line
+  CalData <- CalFile[indi + 1]
+  # Put definition and calibration on the same line
+  CalFile <- tibble(Def = CalFile, Cal = CalData)
+  # Dirty Stuff to remove calibration lines: offset index by one to match calibration lines and logically remove them
+  CalFile <- CalFile %>% filter(is.na(!append(indi[-length(indi)], NA, 0)))
+
+  CalFile <- CalFile %>%
+    separate(
+      col = Def,
+      into = c("Type", "ID", "Units", "FieldLength", "DataType", "CalLines", "FitType"),
+      sep = " ",
+      remove = T,
+      convert = T
+    )
+
+  CalID <- CalFile %>%
+    filter(Type %in% c("INSTRUMENT", "SN")) %>%
+    select(Type, ID) %>%
+    pivot_wider(
+      names_from = Type,
+      values_from = ID
+    ) %>%
+    rename(Instrument = INSTRUMENT)
+
+  OPTIC3 <- CalFile %>%
+    filter(Type == "ES" | Type == "LU") %>%
+    separate(
+      col = Cal,
+      into = c("a0", "a1", "im", "cint"),
+      sep = " ",
+      remove = T,
+      convert = T
+    ) %>%
+    bind_cols(CalID) %>%
+    rename(Wavelength = "ID") %>%
+    mutate(Wavelength = as.numeric(Wavelength))
+
+  THERM1 <- CalFile %>%
+    filter(FitType == "THERM1") %>%
+    separate(
+      col = Cal,
+      into = c("m0", "m1", "m2", "m3", "Tr"),
+      sep = " ",
+      remove = T,
+      convert = T
+    ) %>%
+    bind_cols(CalID)
+
+  # POLYU span from a0 to an, should write code to take that into account
+  # Sep in cal file appear to be two spaces ... cloud manage all those with "[[:blank:]]"
+  POLYU <- CalFile %>%
+    filter(FitType == "POLYU") %>%
+    separate(
+      col = Cal,
+      into = c("a0", "a1"),
+      sep = "[[:blank:]]{2}",
+      remove = T,
+      convert = T
+    ) %>%
+    bind_cols(CalID)
+
+  # tibble(FitType = c("OPTIC3","THERM1","POLYU"), CalData = list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
+
+  return(list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
 }
 
 # test <- test %>%
@@ -332,23 +330,23 @@ POLYU <- bind_rows(FlatCal[names(FlatCal) == "POLYU"])
 ## Associate HOCR with calibration data
 
 ```{r}
-tidy_hocr <- function(Packets){
+tidy_hocr <- function(Packets) {
   tibble::tibble(
     # Applanix time added by the DataLogger in millisecond
     # Unkown Date format in the binary file, so take the one in the txt file
-    GPSTime = as.POSIXct(paste0(AplaDate, hms::as_hms(Packets$gpstime/1000)), format = "%Y-%m-%d %H:%M:%OS", tz = "UTC"),
+    GPSTime = as.POSIXct(paste0(AplaDate, hms::as_hms(Packets$gpstime / 1000)), format = "%Y-%m-%d %H:%M:%OS", tz = "UTC"),
 
     # HOCR Packets
     # Fix missing byte bug by ignoring decoding error
-    Instrument = as.character(Packets$instrument, errors="ignore"),
-    SN = as.character(Packets$sn, errors="ignore"),
+    Instrument = as.character(Packets$instrument, errors = "ignore"),
+    SN = as.character(Packets$sn, errors = "ignore"),
     IntTime = Packets$inttime,
     SampleDelay = Packets$sampledelay,
     DarkSample = Packets$darksample,
     DarkAverage = Packets$darkaverage,
-    SpecTemp = as.character(Packets$spectemp, errors="ignore"),
+    SpecTemp = as.character(Packets$spectemp, errors = "ignore"),
     Frame = Packets$frame,
-    Timer = as.character(Packets$timer, errors="ignore"),
+    Timer = as.character(Packets$timer, errors = "ignore"),
     CheckSum = Packets$checksum,
     Channels = Packets$channel
   )
@@ -362,21 +360,33 @@ Add wavelength and calibration data to RawData from the calibration file, join b
 ```{r}
 # taken from: https://gist.github.com/mdlincoln/528a53939538b07ade86
 row_rep <- function(df, n) {
-  df[rep(1:nrow(df), times = n),]
+  df[rep(1:nrow(df), times = n), ]
 }
 
-GlobCal <- RawData %>% group_by(Instrument, SN) %>% nest(RawData = !matches("Instrument|SN"))
+GlobCal <- RawData %>%
+  group_by(Instrument, SN) %>%
+  nest(RawData = !matches("Instrument|SN"))
 
-GlobCal <- GlobCal %>% filter(Instrument %in% c("SATHPL","SATHSE","SATHED","SATPLD"))
+GlobCal <- GlobCal %>% filter(Instrument %in% c("SATHPL", "SATHSE", "SATHED", "SATPLD"))
 
-OPTIC3 <- OPTIC3 %>% group_by(Instrument, SN) %>% nest(OPTIC3 = !matches("Instrument|SN"))
+OPTIC3 <- OPTIC3 %>%
+  group_by(Instrument, SN) %>%
+  nest(OPTIC3 = !matches("Instrument|SN"))
 
-THERM1 <- THERM1 %>% group_by(Instrument, SN) %>% nest(THERM1 = !matches("Instrument|SN"))
+THERM1 <- THERM1 %>%
+  group_by(Instrument, SN) %>%
+  nest(THERM1 = !matches("Instrument|SN"))
 
 # Two sensor have POLYU fit type, better to match by sensor, should make the rest consistent
-INTTIME <- POLYU %>% filter(Type == "INTTIME") %>% group_by(Instrument, SN) %>% nest(INTTIME = !matches("Instrument|SN"))
+INTTIME <- POLYU %>%
+  filter(Type == "INTTIME") %>%
+  group_by(Instrument, SN) %>%
+  nest(INTTIME = !matches("Instrument|SN"))
 
-SAMPLE <- POLYU %>% filter(Type == "SAMPLE") %>% group_by(Instrument, SN) %>% nest(SAMPLE = !matches("Instrument|SN"))
+SAMPLE <- POLYU %>%
+  filter(Type == "SAMPLE") %>%
+  group_by(Instrument, SN) %>%
+  nest(SAMPLE = !matches("Instrument|SN"))
 
 GlobCal <- left_join(GlobCal, OPTIC3, by = c("Instrument", "SN"))
 
@@ -386,7 +396,7 @@ GlobCal <- left_join(GlobCal, INTTIME, by = c("Instrument", "SN"))
 
 GlobCal <- left_join(GlobCal, SAMPLE, by = c("Instrument", "SN"))
 
-GlobCal <- GlobCal %>% mutate(RawData = purrr::map2(RawData, OPTIC3, ~ bind_cols(.x, row_rep(.y, nrow(.x)/nrow(.y)))))
+GlobCal <- GlobCal %>% mutate(RawData = purrr::map2(RawData, OPTIC3, ~ bind_cols(.x, row_rep(.y, nrow(.x) / nrow(.y)))))
 ```
 
 ## Calibrate THERM1 (thermal responsivity sensor)
@@ -406,14 +416,14 @@ $y = a_0x^0+a_1x^1$
 Convert INTTIME to seconds.
 
 ```{r}
-cal_inttime <- function(RawData, INTTIME){
+cal_inttime <- function(RawData, INTTIME) {
   a0 <- INTTIME$a0
   a1 <- INTTIME$a1
-  
-  modify_in(RawData, .where = "IntTime", ~(a0*.x^0) + (a1*.x^1))
+
+  modify_in(RawData, .where = "IntTime", ~ (a0 * .x^0) + (a1 * .x^1))
 }
 
-GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~cal_inttime(.x, .y)))
+GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~ cal_inttime(.x, .y)))
 ```
 
 ## Calibrate optical channels
@@ -440,16 +450,13 @@ $cint$: integration time used during calibration
 $aint$: adaptive integration time used during sampling, this coefficient is determined from the INTTIME sensor
 
 ```{r}
-cal_optic3 <- function(.x, Instrument){
-  
+cal_optic3 <- function(.x, Instrument) {
   if (str_detect(Instrument, "HSE|HED")) { # In air
-    
-    mutate(.data = .x, Channels = 1.0*a1*(Channels-a0)*(cint/IntTime))
-    
-  } else if (str_detect(Instrument, "HPL|PLD")){ # In water
-    
-    mutate(.data = .x, Channels = im*a1*(Channels-a0)*(cint/IntTime))
-    
+
+    mutate(.data = .x, Channels = 1.0 * a1 * (Channels - a0) * (cint / IntTime))
+  } else if (str_detect(Instrument, "HPL|PLD")) { # In water
+
+    mutate(.data = .x, Channels = im * a1 * (Channels - a0) * (cint / IntTime))
   } else {
     warning(paste0("Instrument name not valid: ", Instrument))
   }
@@ -470,12 +477,12 @@ As the OPTIC3 calibration data is no longer needed we can remove it. From there 
 HOCRLong <- GlobCal %>% # OPTIC3
   mutate(CalData = purrr::map(
     CalData,
-    ~ select(.x, !all_of(c("Units","FieldLength","DataType","CalLines","FitType","a0","a1","im","cint"))) 
+    ~ select(.x, !all_of(c("Units", "FieldLength", "DataType", "CalLines", "FitType", "a0", "a1", "im", "cint")))
   )) %>% # Packet metadata
   mutate(CalData = purrr::map(
-    CalData, ~ select(.x, !all_of(c("SampleDelay","DarkSample","DarkAverage","SpecTemp","Frame","Timer","CheckSum"))) 
-  )) %>% 
-  select(Instrument, SN, CalData) %>% 
+    CalData, ~ select(.x, !all_of(c("SampleDelay", "DarkSample", "DarkAverage", "SpecTemp", "Frame", "Timer", "CheckSum")))
+  )) %>%
+  select(Instrument, SN, CalData) %>%
   filter(str_detect(Instrument, "HSE|HPL"))
 ```
 
@@ -502,7 +509,8 @@ HOCRWide <- HOCRLong %>%
       names_from = all_of(c("Type", "Wavelength")),
       names_sep = "_",
       values_from = Channels
-    ))) %>%
+    )
+  )) %>%
   mutate(CalData = purrr::map(CalData, ~ select(., where(function(x) all(!is.na(x))))))
 
 ShortNobs <- HOCRWide %>%
@@ -513,33 +521,31 @@ ShortNobs <- ShortNobs %>%
   unnest(cols = c(CalData))
 
 MinTime <- min(ShortNobs$GPSTime)
-#format(MinTime, "%Y-%m-%d %H:%M:%OS3")
+# format(MinTime, "%Y-%m-%d %H:%M:%OS3")
 
 MaxTime <- max(ShortNobs$GPSTime)
-#format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
+# format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
 
 TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = min(ShortNobs$IntTime))
-#format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
+# format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
 ```
 
 Once We obtain the `TimeSeq` we go further by interpolating the instruments data on this common time co-ordinates. We can now remove the `IntTime` variable. This workflow does not seem optimum ... Could rethink it. 
 
 ```{r}
-HOCRWide <- HOCRWide %>% 
+HOCRWide <- HOCRWide %>%
   mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
 
 approx_tbl <- function(., TimeSeq) {
-  
   tbl <- tibble(DateTime = TimeSeq)
-  
+
   for (i in seq_along(colnames(.))[-1]) {
-    
     coord <- approx(x = .[[1]], y = .[[i]], xout = TimeSeq, method = "linear")
-    
+
     tbl <- bind_cols(tbl, x = coord[[2]])
     colnames(tbl)[i] <- colnames(.)[i]
   }
-  
+
   tbl %>% mutate(ID = seq_along(TimeSeq), .before = DateTime)
 }
 
@@ -571,7 +577,7 @@ $L = L_{light}-L_{dark}$
 The shutter dark data is identified by *HED* for the in air and by *PLD* for the in water sensors.
 
 ```{r}
-DarkRawHOCR <- RawHOCR[purrr::map_lgl(RawHOCR, ~str_detect(.$instrument, "HED|PLD"))]
+DarkRawHOCR <- RawHOCR[purrr::map_lgl(RawHOCR, ~ str_detect(.$instrument, "HED|PLD"))]
 ```
 
 ### Calibrate shutter dark
@@ -579,9 +585,11 @@ DarkRawHOCR <- RawHOCR[purrr::map_lgl(RawHOCR, ~str_detect(.$instrument, "HED|PL
 ```{r}
 DarkRawData <- purrr::map_df(DarkRawHOCR, tidy_hocr)
 
-DarkGlobCal <- DarkRawData %>% group_by(Instrument, SN) %>% nest(RawData = !matches("Instrument|SN"))
+DarkGlobCal <- DarkRawData %>%
+  group_by(Instrument, SN) %>%
+  nest(RawData = !matches("Instrument|SN"))
 
-DarkGlobCal <- DarkGlobCal %>% filter(Instrument %in% c("SATHPL","SATHSE","SATHED","SATPLD"))
+DarkGlobCal <- DarkGlobCal %>% filter(Instrument %in% c("SATHPL", "SATHSE", "SATHED", "SATPLD"))
 
 DarkGlobCal <- left_join(DarkGlobCal, OPTIC3, by = c("Instrument", "SN"))
 
@@ -591,9 +599,9 @@ DarkGlobCal <- left_join(DarkGlobCal, INTTIME, by = c("Instrument", "SN"))
 
 DarkGlobCal <- left_join(DarkGlobCal, SAMPLE, by = c("Instrument", "SN"))
 
-DarkGlobCal <- DarkGlobCal %>% mutate(RawData = purrr::map2(RawData, OPTIC3, ~ bind_cols(.x, row_rep(.y, nrow(.x)/nrow(.y)))))
+DarkGlobCal <- DarkGlobCal %>% mutate(RawData = purrr::map2(RawData, OPTIC3, ~ bind_cols(.x, row_rep(.y, nrow(.x) / nrow(.y)))))
 
-DarkGlobCal <- DarkGlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~cal_inttime(.x, .y)))
+DarkGlobCal <- DarkGlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~ cal_inttime(.x, .y)))
 
 DarkGlobCal <- DarkGlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = Instrument, ~ cal_optic3(.x, .y)))
 ```
@@ -604,11 +612,11 @@ DarkGlobCal <- DarkGlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = I
 DarkHOCRLong <- DarkGlobCal %>% # OPTIC3
   mutate(CalData = purrr::map(
     CalData,
-    ~ select(.x, !all_of(c("Units","FieldLength","DataType","CalLines","FitType","a0","a1","im","cint"))) 
+    ~ select(.x, !all_of(c("Units", "FieldLength", "DataType", "CalLines", "FitType", "a0", "a1", "im", "cint")))
   )) %>% # Packet metadata
   mutate(CalData = purrr::map(
-    CalData, ~ select(.x, !all_of(c("SampleDelay","DarkSample","DarkAverage","SpecTemp","Frame","Timer","CheckSum"))) 
-  )) %>% 
+    CalData, ~ select(.x, !all_of(c("SampleDelay", "DarkSample", "DarkAverage", "SpecTemp", "Frame", "Timer", "CheckSum")))
+  )) %>%
   select(Instrument, SN, CalData)
 ```
 
@@ -621,7 +629,8 @@ DarkHOCRWide <- DarkHOCRLong %>%
       names_from = all_of(c("Type", "Wavelength")),
       names_sep = "_",
       values_from = Channels
-    ))) %>%
+    )
+  )) %>%
   mutate(CalData = purrr::map(CalData, ~ select(., where(function(x) all(!is.na(x))))))
 
 ShortNobs <- DarkHOCRWide %>%
@@ -632,31 +641,29 @@ ShortNobs <- ShortNobs %>%
   unnest(cols = c(CalData))
 
 MinTime <- min(ShortNobs$GPSTime)
-#format(MinTime, "%Y-%m-%d %H:%M:%OS3")
+# format(MinTime, "%Y-%m-%d %H:%M:%OS3")
 
 MaxTime <- max(ShortNobs$GPSTime)
-#format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
+# format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
 
 TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60)
-#format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
+# format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
 ```
 
 ```{r}
-DarkHOCRWide <- DarkHOCRWide %>% 
+DarkHOCRWide <- DarkHOCRWide %>%
   mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
 
 approx_tbl <- function(., TimeSeq) {
-  
   tbl <- tibble(DateTime = TimeSeq)
-  
+
   for (i in seq_along(colnames(.))[-1]) {
-    
     coord <- approx(x = .[[1]], y = .[[i]], xout = TimeSeq, method = "linear")
-    
+
     tbl <- bind_cols(tbl, x = coord[[2]])
     colnames(tbl)[i] <- colnames(.)[i]
   }
-  
+
   tbl %>% mutate(ID = seq_along(TimeSeq), .before = DateTime)
 }
 
@@ -668,26 +675,24 @@ DarkHOCRWide <- DarkHOCRWide %>%
 
 Find the center time of obs interval and select nearest dark values.
 ```{r}
-ObsTime <- int_end(Station1PaP/2)
+ObsTime <- int_end(Station1PaP / 2)
 
 DarkHOCRWide <- DarkHOCRWide %>%
-  mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime-ObsTime)),])) %>%
+  mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
   ungroup() %>%
   select(SN, DarkAproxData)
 ```
 
 ```{r}
-HOCRWide <- left_join(HOCRWide, DarkHOCRWide , by = c("SN"))
+HOCRWide <- left_join(HOCRWide, DarkHOCRWide, by = c("SN"))
 
-cor_dark <- function(.x, .y){
+cor_dark <- function(.x, .y) {
+  ID <- .x[, 1]
+  DateTime <- .x[, 2]
 
-  ID <- .x[,1]
-  DateTime <- .x[,2]
-  
-  Data <- .x[,-1:-2] - row_rep(.y[,-1:-2], nrow(.x[,-1:-2]))
-  
-  bind_cols(ID,DateTime,Data)
-  
+  Data <- .x[, -1:-2] - row_rep(.y[, -1:-2], nrow(.x[, -1:-2]))
+
+  bind_cols(ID, DateTime, Data)
 }
 
 HOCRWide <- HOCRWide %>%
@@ -702,7 +707,7 @@ Now that we have the data interpolated to common time co-ordinate and corrected 
 HOCRLong <- HOCRWide %>%
   mutate(AproxData = purrr::map(
     AproxData,
-    ~pivot_longer(
+    ~ pivot_longer(
       .,
       cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
       values_to = "Channels",
@@ -712,17 +717,16 @@ HOCRLong <- HOCRWide %>%
     ) %>%
       group_by(ID)
   ))
-
 ```
 
 This data table is used to display the quality check. At beginning of L1b all data is considered good `QC = 1`, the user can then click on a spectrum to mark it as bad (0), click again to change it back to good. Here, we flag ID 91 as bad.
 
 ```{r}
 QCData <- HOCRLong$AproxData[[1]] %>%
-        select(ID, DateTime) %>%
-        unique() %>%
-        mutate(QC = "1") %>%
-        mutate(QC = ifelse(ID %in% c(6,10), "0", "1"))
+  select(ID, DateTime) %>%
+  unique() %>%
+  mutate(QC = "1") %>%
+  mutate(QC = ifelse(ID %in% c(6, 10), "0", "1"))
 ```
 
 ### Plot L1b HOCR data
@@ -730,37 +734,37 @@ QCData <- HOCRLong$AproxData[[1]] %>%
 To harmonize the visual identity of the app we need to define global display parameter for plotly graph.
 
 ```{r}
-PlyFont <- list(family="Times New Roman", size = 18)
-BlackSquare <- list(type = "rect", fillcolor = "transparent",line = list(width = 0.5), xref = "paper", yref = "paper", x0 = 0, x1 = 1, y0 = 0, y1 = 1 )
+PlyFont <- list(family = "Times New Roman", size = 18)
+BlackSquare <- list(type = "rect", fillcolor = "transparent", line = list(width = 0.5), xref = "paper", yref = "paper", x0 = 0, x1 = 1, y0 = 0, y1 = 1)
 
 L1bDataLong <- HOCRLong %>%
   select(Instrument, SN, AproxData) %>%
-  mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData, by = c("ID", "DateTime"))))
+  mutate(AproxData = purrr::map(AproxData, ~ left_join(., QCData, by = c("ID", "DateTime"))))
 
 ply <- L1bDataLong %>%
-  #filter(str_detect(Instrument, "HPL")) %>%
+  # filter(str_detect(Instrument, "HPL")) %>%
   mutate(Plot = purrr::map2(.x = AproxData, .y = SN, ~
-                              plot_ly(.x, text = ~ID) %>%
-                              add_lines(x = ~Wavelength, y = ~Channels , name = .y, showlegend = F, color = ~QC, colors = c("1" = "seagreen", "0" = "red")) %>%
-                              add_annotations(
-                                text = ~.y,
-                                x = 0.5,
-                                y = 1,
-                                yref = "paper",
-                                xref = "paper",
-                                xanchor = "middle",
-                                yanchor = "top",
-                                showarrow = FALSE,
-                                font = list(size = 15)
-                              ) %>%
-                              layout(
-                                shapes = BlackSquare,
-                                yaxis = list(rangemode = "nonnegative"
-                                             #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
-                                             ),
-                                xaxis = list(rangemode = "nonnegative")
-                                )
-                            ))
+    plot_ly(.x, text = ~ID) %>%
+      add_lines(x = ~Wavelength, y = ~Channels, name = .y, showlegend = F, color = ~QC, colors = c("1" = "seagreen", "0" = "red")) %>%
+      add_annotations(
+        text = ~.y,
+        x = 0.5,
+        y = 1,
+        yref = "paper",
+        xref = "paper",
+        xanchor = "middle",
+        yanchor = "top",
+        showarrow = FALSE,
+        font = list(size = 15)
+      ) %>%
+      layout(
+        shapes = BlackSquare,
+        yaxis = list(
+          rangemode = "nonnegative"
+          # title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
+        ),
+        xaxis = list(rangemode = "nonnegative")
+      )))
 
 Lu <- ply %>%
   filter(str_detect(Instrument, "HPL")) %>%
@@ -771,9 +775,9 @@ Ed <- ply %>%
 
 Ed <- Ed$Plot
 
-subplot(Ed[[1]], Lu, nrows = 2, margin = 0.035) %>% 
+subplot(Ed[[1]], Lu, nrows = 2, margin = 0.035) %>%
   add_annotations(
-    text = ~TeX("\\text{Wavelength [nm]}"),
+    text = ~ TeX("\\text{Wavelength [nm]}"),
     x = 0.5,
     y = -0.1,
     yref = "paper",
@@ -786,11 +790,10 @@ subplot(Ed[[1]], Lu, nrows = 2, margin = 0.035) %>%
   layout(
     font = PlyFont,
     yaxis = list(title = list(text = TeX("\\text{E}_\\text{d}"))),
-    yaxis2 = list(title = list(text = TeX("\\text{L}_\\text{u}")))#,
-    #xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
+    yaxis2 = list(title = list(text = TeX("\\text{L}_\\text{u}"))) # ,
+    # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
   ) %>%
   config(mathjax = "local", displayModeBar = T)
-
 ```
 
 
@@ -803,13 +806,13 @@ subplot(Ed[[1]], Lu, nrows = 2, margin = 0.035) %>%
 ```{r}
 L1bDataWide <- HOCRWide %>%
   select(Instrument, SN, AproxData) %>%
-  mutate(AproxData = purrr::map(AproxData, ~left_join(., QCData, by = c("DateTime", "ID"))))
+  mutate(AproxData = purrr::map(AproxData, ~ left_join(., QCData, by = c("DateTime", "ID"))))
 
 L1bDataWide <- L1bDataWide %>%
-        mutate(AproxData = purrr::map(AproxData, ~filter(., QC == "1")))
+  mutate(AproxData = purrr::map(AproxData, ~ filter(., QC == "1")))
 
 L1bDataWide <- L1bDataWide %>%
-  mutate(AproxData = purrr::map(AproxData, ~summarise(.x, across(.cols = !matches("ID|QC"), ~ mean(.x, na.rm =T)))))
+  mutate(AproxData = purrr::map(AproxData, ~ summarise(.x, across(.cols = !matches("ID|QC"), ~ mean(.x, na.rm = T)))))
 ```
 
 ### Wavelength co-ordinates
@@ -821,38 +824,36 @@ The sear app goes with the first option and require interpolation to common wave
 L1bAverageLong <- L1bDataWide %>%
   mutate(AproxData = purrr::map(
     AproxData,
-    ~pivot_longer(
+    ~ pivot_longer(
       .,
       cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
       values_to = "Channels",
-      names_to = c("Type","Wavelength"),
+      names_to = c("Type", "Wavelength"),
       names_sep = "_",
-      #names_prefix = "[[:alpha:]]{2}_",
+      # names_prefix = "[[:alpha:]]{2}_",
       names_transform = list(Wavelength = as.numeric)
     )
   ))
 
-WaveSeq <- seq(353,800,3)
+WaveSeq <- seq(353, 800, 3)
 
 approx_wave <- function(., WaveSeq) {
-  
   tbl <- tibble(
     DateTime = unique(.$DateTime),
     Type = unique(.$Type),
     Wavelength = WaveSeq
-    )
-  
+  )
+
   for (i in seq_along(colnames(.))[-1:-3]) {
-    
     coord <- approx(x = .[[3]], y = .[[i]], xout = WaveSeq, method = "linear")
-    
+
     tbl <- bind_cols(tbl, x = coord[[2]])
     colnames(tbl)[i] <- colnames(.)[i]
   }
-  
+
   tbl
-  
-  #tbl %>% mutate(ID = seq_along(TimeSeq))
+
+  # tbl %>% mutate(ID = seq_along(TimeSeq))
 }
 
 L1bAproxLong <- L1bAverageLong %>%
@@ -868,7 +869,8 @@ L1bAproxWide <- L1bAproxLong %>%
       names_from = all_of(c("Type", "Wavelength")),
       names_sep = "_",
       values_from = Channels
-    ))) %>%
+    )
+  )) %>%
   ungroup()
 
 Es <- L1bAproxWide %>%
@@ -880,42 +882,42 @@ Es <- L1bAproxWide %>%
 LuZ1 <- L1bAproxWide %>%
   select(!AproxData) %>%
   filter(SN == "1416") %>%
-  unnest(cols = c(IntData))%>%
+  unnest(cols = c(IntData)) %>%
   select(!matches("Instrument|SN|DateTime"))
 
 LuZ2 <- L1bAproxWide %>%
   select(!AproxData) %>%
   filter(SN == "1415") %>%
-  unnest(cols = c(IntData))%>%
+  unnest(cols = c(IntData)) %>%
   select(!matches("Instrument|SN|DateTime"))
 ```
 
 ## Compute KLu
 
 ```{r}
-DeltaDepth <- 0.30 # 30 cm 
+DeltaDepth <- 0.30 # 30 cm
 
-KLuWide <- (log(LuZ1)-log(LuZ2))/DeltaDepth
+KLuWide <- (log(LuZ1) - log(LuZ2)) / DeltaDepth
 
-KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu")) 
+KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu"))
 ```
 
 ```{r}
 KLuLong <- KLuWide %>%
   pivot_longer(
-      .,
-      cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-      values_to = "KLu",
-      names_to = c("Wavelength"),
-      #names_sep = "_",
-      names_prefix = "[[:alpha:]]{3}_",
-      names_transform = list(Wavelength = as.numeric)
-    )
+    .,
+    cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+    values_to = "KLu",
+    names_to = c("Wavelength"),
+    # names_sep = "_",
+    names_prefix = "[[:alpha:]]{3}_",
+    names_transform = list(Wavelength = as.numeric)
+  )
 
 
-KLuLong %>% 
+KLuLong %>%
   plot_ly() %>%
-  add_lines(x = ~Wavelength, y = ~KLu, showlegend = F) 
+  add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 ```
 
 ## Compute Rrs
@@ -928,42 +930,42 @@ uRrsWide <- 0.54 * LuZ1 / Es
 ```{r}
 uRrsLong <- uRrsWide %>%
   pivot_longer(
-      .,
-      cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-      values_to = "Rrs",
-      names_to = c("Wavelength"),
-      #names_sep = "_",
-      names_prefix = "[[:alpha:]]{2}_",
-      names_transform = list(Wavelength = as.numeric)
-    )
+    .,
+    cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+    values_to = "Rrs",
+    names_to = c("Wavelength"),
+    # names_sep = "_",
+    names_prefix = "[[:alpha:]]{2}_",
+    names_transform = list(Wavelength = as.numeric)
+  )
 
-uRrsLong %>% 
+uRrsLong %>%
   plot_ly() %>%
-  add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F) 
+  add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 ```
 
 ```{r}
 LuZ1Depth <- 0.10 # 10 cm
 
-Lw <- 0.54 * LuZ1 / exp(-LuZ1Depth*KLuWide)
+Lw <- 0.54 * LuZ1 / exp(-LuZ1Depth * KLuWide)
 RrsWide <- Lw / Es
 ```
 
 ```{r}
 RrsLong <- RrsWide %>%
   pivot_longer(
-      .,
-      cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-      values_to = "Rrs",
-      names_to = c("Wavelength"),
-      #names_sep = "_",
-      names_prefix = "[[:alpha:]]{2}_",
-      names_transform = list(Wavelength = as.numeric)
-    )
+    .,
+    cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+    values_to = "Rrs",
+    names_to = c("Wavelength"),
+    # names_sep = "_",
+    names_prefix = "[[:alpha:]]{2}_",
+    names_transform = list(Wavelength = as.numeric)
+  )
 
-RrsLong %>% 
+RrsLong %>%
   plot_ly() %>%
-  add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F) 
+  add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 ```
 
 ```{r}

@@ -7,32 +7,27 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_process_L1b_ui <- function(id){
+mod_process_L1b_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     uiOutput(outputId = ns("L1b"))
-
   )
-
 }
 
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
-
+mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs) {
   # stopifnot(is.reactive(UpApla))
   # stopifnot(is.reactive(SelID))
   # stopifnot(is.reactive(RawHOCR))
   # stopifnot(is.reactive(TimeIndexHOCR))
   # stopifnot(is.reactive(CalData))
 
-  moduleServer( id, function(input, output, session){
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$L1b <- renderUI({
-
       req(L1$Apla())
 
       tagList(
@@ -48,67 +43,66 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs){
       input$ProcessL1b,
       label = "processL1b",
       {
+        waiter <- waiter::Waiter$new()
+        waiter$show()
+        on.exit(waiter$hide())
 
-      waiter <- waiter::Waiter$new()
-      waiter$show()
-      on.exit(waiter$hide())
+        browser()
 
-      if (is.null(Instrument$ToProcess())) {
+        if (is.null(Instrument$ToProcess())) {
+          showModal(modalDialog(
+            title = "No instrument selected",
+            "Please select at least one instrument to process"
+          ))
+          invalidateLater(1)
+        }
 
-        showModal(modalDialog(
-          title = "No instrument selected",
-          "Please select at least one instrument to process")
-        )
-        invalidateLater(1)
+        if (any(str_detect(Instrument$ToProcess(), "HOCR"))) {
+          # Filter data point before processing to optimize execution time
 
+          SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
+          TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
+
+          FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
+
+          # Select nearest dark data
+          ObsTime <- int_end(TimeInt / 2)
+
+          DarkHOCR <- L1$DarkHOCR() %>%
+            mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
+            ungroup() %>%
+            select(SN, DarkAproxData)
+
+          Obs$HOCR$L1b <- spsComps::shinyCatch(
+            cal_hocr(RawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, DarkHOCR = DarkHOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
+            shiny = T,
+            trace_back = TRUE
+          )
+
+          # Empty L2 to avoid confusion
+          Obs$HOCR$L2 <- tibble()
+        }
+
+        if (any(str_detect(Instrument$ToProcess(), "SBE19"))) {
+          L1$SBE19()
+        }
+
+        if (any(str_detect(Instrument$ToProcess(), "BBFL2"))) {
+          L1$BBFL2()
+        }
+
+        if (any(str_detect(Instrument$ToProcess(), "SeaOWL"))) {
+          L1$SeaOWL()
+        }
       }
+    )
 
-      if (str_detect(Instrument$ToProcess(), "HOCR")) {
-
-        # Filter data point before processing to optimize execution time
-
-        SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
-        TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
-
-        FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
-
-        # Select nearest dark data
-        ObsTime <- int_end(TimeInt/2)
-
-        DarkHOCR <- L1$DarkHOCR() %>%
-          mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime-ObsTime)),])) %>%
-          ungroup() %>%
-          select(SN, DarkAproxData)
-
-        Obs$HOCR$L1b <- spsComps::shinyCatch(
-          cal_hocr(RawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, DarkHOCR = DarkHOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
-          shiny = T,
-          trace_back = TRUE
-        )
-
-        # Empty L2 to avoid confusion
-        Obs$HOCR$L2 <- tibble()
-
-      }
-
-      # # Create a temporary copy of the current Apla tibble
-      # tmp <- Apla()
-      #
-      # # Update values in place
-      # tmp$ObsType[tmp$ID %in% SelID()] <- input$ObsType
-      # tmp$ObsName[tmp$ID %in% SelID()] <- input$ObsName
-      #
-      # # Update the Apla reactiveVal
-      # Apla(tmp)
-    })
-
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
     list(
       SelApla = SelData$SelApla,
       Map = SelData$Map,
       ProcessL1b = reactive(input$ProcessL1b)
-      )
-
+    )
   })
 }
 

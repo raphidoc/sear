@@ -7,25 +7,22 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_load_cal_ui <- function(id){
+mod_load_cal_ui <- function(id) {
   ns <- NS(id)
-  tagList(
-
-  )
+  tagList()
 }
 
 #' load_cal Server Functions
 #'
 #' @noRd
-mod_load_cal_server <- function(id){
-  moduleServer( id, function(input, output, session){
+mod_load_cal_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # HOCR Calibration reactive value
     reactiveVal({
       tidy_cal_hocr()
     })
-
   })
 }
 

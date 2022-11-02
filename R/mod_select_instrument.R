@@ -7,36 +7,33 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_select_instrument_ui <- function(id){
+mod_select_instrument_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     uiOutput(ns("InstrumentList"))
-
   )
 }
 
 #' select_instrument Server Functions
 #'
 #' @noRd
-mod_select_instrument_server <- function(id, MainLog){
-
+mod_select_instrument_server <- function(id, MainLog) {
   stopifnot(is.reactive(MainLog))
 
-  moduleServer( id, function(input, output, session){
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     InstrumentList <- reactive({
-
       InstrumentList <- MainLog() %>%
         select(Instrument) %>%
         unique() %>%
-        filter(Instrument %in% c("OCR1", "OCR2", "OCR3"))
+        filter(Instrument %in% c("OCR1", "OCR2", "OCR3", "CTD", "ECO", "OWL"))
 
       InstrumentList <- InstrumentList[[1]]
 
-      if (any(InstrumentList %in% c("OCR1", "OCR2", "OCR3")) & any(!InstrumentList %in% c("OCR1", "OCR2", "OCR3"))) {
+      OCRList <- InstrumentList[str_detect(InstrumentList, "OCR")]
 
+      if (any(OCRList %in% c("OCR1", "OCR2", "OCR3")) & any(!OCRList %in% c("OCR1", "OCR2", "OCR3"))) {
         MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% InstrumentList)]
 
         warning("HOCR on port ", MissingOCR, "is missing from MainLog. Cannot process HOCR data.")
@@ -45,10 +42,12 @@ mod_select_instrument_server <- function(id, MainLog){
       }
 
       InstrumentList <- case_when(
-        str_detect(InstrumentList, "OCR1|OCR2|OCR3") ~ "HOCR"
-        ) %>%
+        str_detect(InstrumentList, "OCR1|OCR2|OCR3") ~ "HOCR",
+        str_detect(InstrumentList, "CTD") ~ "SBE19",
+        str_detect(InstrumentList, "ECO") ~ "BBFL2",
+        str_detect(InstrumentList, "OWL") ~ "SeaOWL"
+      ) %>%
         unique()
-
     })
 
     output$InstrumentList <- renderUI({
@@ -67,9 +66,10 @@ mod_select_instrument_server <- function(id, MainLog){
     })
 
     list(
-      ToProcess = reactive({input$InstrumentList})
+      ToProcess = reactive({
+        input$InstrumentList
+      })
     )
-
   })
 }
 

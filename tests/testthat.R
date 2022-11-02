@@ -10,5 +10,4 @@ library(testthat)
 library(sear)
 
 test_check("sear")
-#shinytest2::test_app()
-
+# shinytest2::test_app()

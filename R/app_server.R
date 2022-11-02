@@ -5,17 +5,9 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
-
-
-# Global objects ----------------------------------------------------------
+  # Global objects ----------------------------------------------------------
 
   Apla <- reactiveVal()
-
-  BBFL2 <- reactiveVal()
-
-  SeaOWL <- reactiveVal()
-
-  SBE19 <- reactiveVal()
 
   # Active discrete observation
   Obs <- reactiveValues(
@@ -41,6 +33,18 @@ app_server <- function(input, output, session) {
     HOCR = reactiveValues(
       L1b = tibble(),
       L2 = tibble()
+    ),
+    SBE19 = reactiveValues(
+      L1b = tibble(),
+      L2 = tibble()
+    ),
+    BBFL2 = reactiveValues(
+      L1b = tibble(),
+      L2 = tibble()
+    ),
+    SeaOWL = reactiveValues(
+      L1b = tibble(),
+      L2 = tibble()
     )
   )
 
@@ -50,7 +54,7 @@ app_server <- function(input, output, session) {
 
   DataFiles <- mod_load_mtelog_server("load_mtelog", SearTbl)
 
-  L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, CalData, Apla, BBFL2, SeaOWL, SBE19)
+  L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, CalData, Apla)
 
   mod_filter_trim_server("filter_trim", SearTbl, DataFiles, SelData, Apla)
 
@@ -65,5 +69,4 @@ app_server <- function(input, output, session) {
   L2 <- mod_obs_L1L2_server("obs_L1L2", L1b, Obs)
 
   ManObs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
-
 }

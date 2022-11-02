@@ -7,20 +7,17 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_obs_seaowl_ui <- function(id){
+mod_obs_seaowl_ui <- function(id) {
   ns <- NS(id)
-  tagList(
-
-  )
+  tagList()
 }
 
 #' obs_seaowl Server Functions
 #'
 #' @noRd
-mod_obs_seaowl_server <- function(id){
-  moduleServer( id, function(input, output, session){
+mod_obs_seaowl_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
   })
 }
 

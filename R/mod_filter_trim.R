@@ -8,53 +8,53 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_filter_trim_ui <- function(id){
+mod_filter_trim_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     actionButton(ns("trim"), "trim", icon = icon("glyphicon glyphicon-scissors", lib = "glyphicon"))
-
   )
 }
 
 #' filter_trim Server Functions
 #'
 #' @noRd
-mod_filter_trim_server <- function(id, SearTbl, DataFiles, SelData, Apla){
-  moduleServer( id, function(input, output, session){
+mod_filter_trim_server <- function(id, SearTbl, DataFiles, SelData, Apla) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     observeEvent(
       input$trim,
       {
         PotApla <- file.path(
-          SearTbl()$ProjPath,".sear",
-          paste0("filtered_apla_",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+          SearTbl()$ProjPath, ".sear",
+          paste0("filtered_apla_", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv")
+        )
 
         PotAplaTrim <- file.path(
-          SearTbl()$ProjPath,".sear",
-          paste0("filtered_apla_trim",str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"),".csv"))
+          SearTbl()$ProjPath, ".sear",
+          paste0("filtered_apla_trim", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv")
+        )
 
         PotHocr <- file.path(
           SearTbl()$ProjPath, ".sear",
-          paste0("filtered_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+          paste0("filtered_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
+        )
 
         PotTimeIndexHocr <- file.path(
           SearTbl()$ProjPath, ".sear",
-          paste0("filtered_time_index_hocr_",str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"),".rds"))
+          paste0("filtered_time_index_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
+        )
 
         if (any(!file.exists(PotApla, PotHocr, PotTimeIndexHocr))) {
-
           FileNotFound <- c(PotApla, PotHocr, PotTimeIndexHocr)[which(file.exists(c(PotApla, PotHocr, PotTimeIndexHocr)))]
 
           # Feedback to the user
           session$sendCustomMessage(
-            type = 'testmessage',
+            type = "testmessage",
             message = purrr::map_chr(FileNotFound, ~ glue::glue("File :", .x, " not found"))
           )
 
           invalidateLater(1)
-
         } else if (any(class(tryCatch(SelData$SelID(), error = function(e) e)) == "error")) {
           # if no data is selected SelData$SelID() throw an error
 
@@ -92,9 +92,7 @@ mod_filter_trim_server <- function(id, SearTbl, DataFiles, SelData, Apla){
           observeEvent(input$cancel, {
             removeModal()
           })
-
         } else if (class(SelData$SelID()) == "numeric") {
-
           modal_confirm <- modalDialog(
             "The selected data will be deleted, are you sure you want to continue?",
             title = "Deleting raw data",
@@ -132,7 +130,6 @@ mod_filter_trim_server <- function(id, SearTbl, DataFiles, SelData, Apla){
         }
       }
     )
-
   })
 }
 

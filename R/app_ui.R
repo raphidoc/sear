@@ -12,9 +12,11 @@ app_ui <- function(request) {
 
     dashboardPage(
       dashboardHeader(
-        title = tags$a(href='https://github.com/raphidoc/sear',
-                       tags$img(src= "www/logo_sear.png", width = "95px", height = "40px"),
-                       'seaR')
+        title = tags$a(
+          href = "https://github.com/raphidoc/sear",
+          tags$img(src = "www/logo_sear.png", width = "100px", height = "40px"),
+          "seaR"
+        )
       ),
       dashboardSidebar(
         mod_manage_project_ui("manage_project"),
@@ -24,8 +26,8 @@ app_ui <- function(request) {
           label = "Load data",
           tootltip = "path to go here"
         ),
-        #mod_filter_trim_ui("filter_trim"),
-        #mod_discretize_ui("discretize"),
+        # mod_filter_trim_ui("filter_trim"),
+        # mod_discretize_ui("discretize"),
         mod_process_L1b_ui("process_L1b"),
         mod_manage_DB_ui("manage_DB")
       ),
@@ -90,13 +92,19 @@ loadingLogo <- function(href, src, loadingsrc, height = NULL, width = NULL, alt 
                      $('div.busy').hide();
                      $('div.notbusy').show();
            }
-         },100)")
+         },100)"
+      )
     ),
-    tags$a(href=href,
-           div(class = "busy",
-               img(src=loadingsrc,height = height, width = width, alt = alt)),
-           div(class = 'notbusy',
-               img(src = src, height = height, width = width, alt = alt))
+    tags$a(
+      href = href,
+      div(
+        class = "busy",
+        img(src = loadingsrc, height = height, width = width, alt = alt)
+      ),
+      div(
+        class = "notbusy",
+        img(src = src, height = height, width = width, alt = alt)
+      )
     )
   )
 }

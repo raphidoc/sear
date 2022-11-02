@@ -7,20 +7,18 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_discretize_ui <- function(id){
+mod_discretize_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     actionButton(ns("Discretize"), "Discretize", icon = icon("fa-solid fa-puzzle-piece", lib = "font-awesome"))
-
   )
 }
 
 #' discretize Server Functions
 #'
 #' @noRd
-mod_discretize_server <- function(id, Apla){
-  moduleServer( id, function(input, output, session){
+mod_discretize_server <- function(id, Apla) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     observeEvent(
@@ -29,7 +27,6 @@ mod_discretize_server <- function(id, Apla){
 
       }
     )
-
   })
 }
 

@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_obs_L1L2_ui <- function(id){
+mod_obs_L1L2_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("TabPanel"))
@@ -17,18 +17,16 @@ mod_obs_L1L2_ui <- function(id){
 #' L1L2_obs Server Functions
 #'
 #' @noRd
-mod_obs_L1L2_server <- function(id, L1b, Obs){
+mod_obs_L1L2_server <- function(id, L1b, Obs) {
+  # stopifnot(is.reactive(L1b$Data))
 
-  #stopifnot(is.reactive(L1b$Data))
-
-  moduleServer( id, function(input, output, session){
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
 
 
-# Tab panel ---------------------------------------------------------------
+    # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
-
       req(nrow(Obs$Metadata) != 0)
 
       tabsetPanel(
@@ -38,14 +36,14 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
           "Observation",
           uiOutput(ns("ObsTab"))
         ),
-        tabPanel("HOCR",
-                 plotlyOutput(ns("HOCRL1b"), height = 320),
-                 actionButton(ns("ProcessL2"), "Process L2"),
-                 plotlyOutput(ns("AOPs"), height = 250)
-                 #mod_obs_hocr_ui(ns("obs_hocr"))
-                 )
+        tabPanel(
+          "HOCR",
+          plotlyOutput(ns("HOCRL1b"), height = 320),
+          actionButton(ns("ProcessL2"), "Process L2"),
+          plotlyOutput(ns("AOPs"), height = 250)
+          # mod_obs_hocr_ui(ns("obs_hocr"))
+        )
       )
-
     })
 
     # Keep that for dev purpose
@@ -62,97 +60,95 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
     #     appendTab(inputId ="Tabset", tabPanel("HOCR", mod_obs_hocr_ui(ns("obs_hocr"))))
     #   })
 
-# Obs tab -------------------------------------------------------------
+    # Obs tab -------------------------------------------------------------
     ObsTbl <- reactiveVal({})
 
     observeEvent(
       L1b$ProcessL1b(), # This one create even if L1b processing fail
-      #Obs$HOCR$L1b, # This one doesnt update if L1b doesn't change
+      # Obs$HOCR$L1b, # This one doesnt update if L1b doesn't change
       {
-          Obs$Metadata <- tibble(
-            ObsName = "NA",
-            ObsType = "NA",
-            ObsFlag = "NA",
-            DateTime = as.character(mean(L1b$SelApla()$DateTime, na.rm = T)),
-            DateTimeMin = as.character(min(L1b$SelApla()$DateTime, na.rm = T)),
-            DateTimeMax = as.character(max(L1b$SelApla()$DateTime, na.rm = T)),
-            TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
-            Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
-            Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T),
-            LatMin = min_geo(L1b$SelApla()$Lat_DD, na.rm = T),
-            LatMax = max_geo(L1b$SelApla()$Lat_DD, na.rm = T),
-            LonMin = min_geo(L1b$SelApla()$Lon_DD, na.rm = T),
-            LonMax = max_geo(L1b$SelApla()$Lon_DD, na.rm = T),
-            DistanceRun = pracma::haversine(c(LatMin,LonMin), c(LatMax,LonMax))*1000, # in meter
-            BoatSolAzm = mean(L1b$SelApla()$BoatSolAzm, na.rm =T),
-            Comment = "NA",
-            UUID = "NA"
-          )
-
+        Obs$Metadata <- tibble(
+          ObsName = "NA",
+          ObsType = "NA",
+          ObsFlag = "NA",
+          DateTime = as.character(mean(L1b$SelApla()$DateTime, na.rm = T)),
+          DateTimeMin = as.character(min(L1b$SelApla()$DateTime, na.rm = T)),
+          DateTimeMax = as.character(max(L1b$SelApla()$DateTime, na.rm = T)),
+          TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
+          Lat = mean(L1b$SelApla()$Lat_DD, na.rm = T),
+          Lon = mean(L1b$SelApla()$Lon_DD, na.rm = T),
+          LatMin = min_geo(L1b$SelApla()$Lat_DD, na.rm = T),
+          LatMax = max_geo(L1b$SelApla()$Lat_DD, na.rm = T),
+          LonMin = min_geo(L1b$SelApla()$Lon_DD, na.rm = T),
+          LonMax = max_geo(L1b$SelApla()$Lon_DD, na.rm = T),
+          DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
+          BoatSolAzm = mean(L1b$SelApla()$BoatSolAzm, na.rm = T),
+          Comment = "NA",
+          UUID = "NA"
+        )
       }
     )
 
-    #DataTable used to display Obs information
+    # DataTable used to display Obs information
     output$DataTable <- DT::renderDataTable(
       DT::datatable(Obs$Metadata,
-                    extensions = c("Buttons", "Scroller", "Select"),
-                    #filter = "top",
-                    escape = TRUE, rownames = FALSE,
-                    style = "bootstrap",
-                    class = "compact",
-                    options = list(
-                      dom = "Brtip",
-                      select = list(style = 'os', items = 'row'),
-                      buttons = list(I("colvis"),"selectNone","csv"),
-                      columnDefs = list(
-                      list(
-                      visible = FALSE,
-                      targets = c(0,1,2,3,4,5,7,8,9,10,11,12)
-                      )),
-                      deferRender = TRUE,
-                      scrollY = 100,
-                      pageLength = 10,
-                      scroller = TRUE
-                    ),
-                    selection = "none",
-                    editable = F
+        extensions = c("Buttons", "Scroller", "Select"),
+        # filter = "top",
+        escape = TRUE, rownames = FALSE,
+        style = "bootstrap",
+        class = "compact",
+        options = list(
+          dom = "Brtip",
+          select = list(style = "os", items = "row"),
+          buttons = list(I("colvis"), "selectNone", "csv"),
+          columnDefs = list(
+            list(
+              visible = FALSE,
+              targets = c(0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12)
+            )
+          ),
+          deferRender = TRUE,
+          scrollY = 100,
+          pageLength = 10,
+          scroller = TRUE
+        ),
+        selection = "none",
+        editable = F
       ),
-      server=FALSE,
-      editable=F
+      server = FALSE,
+      editable = F
     )
 
     output$ObsTab <- renderUI({
-
-        tagList(
-          DT::DTOutput(ns("DataTable")),
-          textAreaInput(
-            ns("Comment"),
-            "Comment",
-            value = "No comment",
-            width = NULL,
-            height = NULL,
-            cols = NULL,
-            rows = NULL,
-            placeholder = NULL,
-            resize = NULL
-          ),
-
-          mod_manage_obs_ui("manage_obs")
-
-        )
+      tagList(
+        DT::DTOutput(ns("DataTable")),
+        textAreaInput(
+          ns("Comment"),
+          "Comment",
+          value = "No comment",
+          width = NULL,
+          height = NULL,
+          cols = NULL,
+          rows = NULL,
+          placeholder = NULL,
+          resize = NULL
+        ),
+        mod_manage_obs_ui("manage_obs")
+      )
     })
 
     observeEvent(
       input$Save,
       {
         Obs$Metadata <- Obs$Metadata %>% mutate(Comment = input$Comment)
-      })
+      }
+    )
 
-# HOCR tab ----------------------------------------------------------------
+    # HOCR tab ----------------------------------------------------------------
 
     # Have to call this module inside a reactive consumer, why ?
     # Because a reactiveVal is not a reactive consumer
-    #mod_obs_hocr_server("obs_hocr", L1b$Data, Obs)
+    # mod_obs_hocr_server("obs_hocr", L1b$Data, Obs)
 
     # Then have to force computation of HOCRL2 ...
     # observe({
@@ -174,11 +170,11 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
     # Get the ID of HOCR spectra selected in: selected()$customdata
 
     observeEvent(
-      event_data('plotly_click', source = "HOCRL1b"),
+      event_data("plotly_click", source = "HOCRL1b"),
       label = "QC HOCR",
       ignoreInit = TRUE,
       {
-        Selected <- event_data('plotly_click', source = "HOCRL1b")$customdata
+        Selected <- event_data("plotly_click", source = "HOCRL1b")$customdata
 
         # tmp <- QCData()
         #
@@ -195,8 +191,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
         #   select(Instrument, SN, AproxData) %>%
         #   mutate(AproxData = purrr::map(AproxData, ~ left_join(., tmp, by = c("DateTime", "ID"))))
 
-        qc_shift <- function(df, Selected){
-
+        qc_shift <- function(df, Selected) {
           df %>%
             filter(ID == Selected) %>%
             mutate(QC = if_else(QC == "1", "0", "1")) %>%
@@ -212,7 +207,6 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
           # } else if (.$QC[.$ID %in% Selected] == "0") {
           #   .$QC[.$ID %in% Selected] <- 1
           # }
-
         }
 
         Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
@@ -229,13 +223,12 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
     # HOCR Es and Lu plot -----------------------------------------------------
     output$HOCRL1b <- renderPlotly({
+      # req(L1bHOCR())
+      # req(QCData())
 
-      #req(L1bHOCR())
-      #req(QCData())
+      # browser()
 
-      #browser()
-
-      PlyFont <- list(family="Times New Roman", size = 18)
+      PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -249,19 +242,19 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
       )
 
       ply <- Obs$HOCR$L1b %>%
-        #filter(str_detect(Instrument, "HPL")) %>%
+        # filter(str_detect(Instrument, "HPL")) %>%
         mutate(
           Plot = purrr::map2(
             .x = AproxData,
             .y = SN,
-            ~plot_ly(
+            ~ plot_ly(
               .x,
               text = ~ID,
               customdata = ~ID
             ) %>%
               add_lines(
                 x = ~Wavelength,
-                y = ~Channels ,
+                y = ~Channels,
                 name = ~QC,
                 showlegend = F,
                 color = ~QC,
@@ -280,12 +273,14 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
               ) %>%
               layout(
                 shapes = BlackSquare,
-                yaxis = list(rangemode = "nonnegative"
-                             #title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
+                yaxis = list(
+                  rangemode = "nonnegative"
+                  # title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
                 ),
                 xaxis = list(rangemode = "nonnegative")
               )
-          ))
+          )
+        )
 
       Lu <- ply %>%
         filter(str_detect(Instrument, "HPL")) %>%
@@ -298,7 +293,7 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
 
       p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.035) %>%
         add_annotations(
-          text = ~TeX("\\text{Wavelength [nm]}"),
+          text = ~ TeX("\\text{Wavelength [nm]}"),
           x = 0.5,
           y = -0.1,
           yref = "paper",
@@ -311,11 +306,11 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
         layout(
           font = PlyFont,
           yaxis = list(title = list(text = TeX("\\text{E}_\\text{s}"))),
-          yaxis2 = list(title = list(text = TeX("\\text{L}_\\text{u}")))#,
-          #xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
+          yaxis2 = list(title = list(text = TeX("\\text{L}_\\text{u}"))) # ,
+          # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
         config(mathjax = "local", displayModeBar = T) %>%
-        event_register('plotly_click')
+        event_register("plotly_click")
 
       # Set source for selection event
       p$x$source <- "HOCRL1b"
@@ -333,10 +328,9 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
     )
 
     output$AOPs <- renderPlotly({
+      # req(L2Data())
 
-      #req(L2Data())
-
-      #browser()
+      # browser()
 
       validate(need(nrow(Obs$HOCR$L2) != 0, "Process L2 to display AOPs"))
 
@@ -351,19 +345,18 @@ mod_obs_L1L2_server <- function(id, L1b, Obs){
       subplot(Rrsplot, KLuplot)
     })
 
-# BB3 tab -----------------------------------------------------------------
+    # BB3 tab -----------------------------------------------------------------
 
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
 
-  list(
-    #Save = reactive(input$Save),
-    #Delete = reactive(input$Delete)
-    #ObsTbl = ObsTbl,
-    #HOCR = HOCRL2
-  )
-
-   })
+    list(
+      # Save = reactive(input$Save),
+      # Delete = reactive(input$Delete)
+      # ObsTbl = ObsTbl,
+      # HOCR = HOCRL2
+    )
+  })
 }
 
 ## To be copied in the UI

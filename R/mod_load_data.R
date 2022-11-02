@@ -7,20 +7,17 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_load_data_ui <- function(id){
+mod_load_data_ui <- function(id) {
   ns <- NS(id)
-  tagList(
-
-  )
+  tagList()
 }
 
 #' load_data Server Functions
 #'
 #' @noRd
-mod_load_data_server <- function(id){
-  moduleServer( id, function(input, output, session){
+mod_load_data_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
   })
 }
 

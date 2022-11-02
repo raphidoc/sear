@@ -10,38 +10,35 @@
 #' @import shinyFiles
 #' @import shinyWidgets
 #'
-mod_manage_project_ui <- function(id){
+mod_manage_project_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     dropdownButton(
-      shinyDirButton(id = ns('Select'), label = 'Select', title = 'Open or create a project root folder', multiple = FALSE),
+      shinyDirButton(id = ns("Select"), label = "Select", title = "Open or create a project root folder", multiple = FALSE),
       circle = F,
       label = textOutput(ns("ProjectName")),
       tootltip = textOutput(ns("ProjectPath"))
-      )
-
+    )
   )
 }
 
 #' project_manager Server Functions
 #'
 #' @noRd
-mod_manage_project_server <- function(id){
-  moduleServer( id, function(input, output, session){
+mod_manage_project_server <- function(id) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Server side function of shinyDirButton
-    shinyDirChoose(input, id = 'Select', allowDirCreate = T, roots=c(Data='/D/Data',root='/'))
+    shinyDirChoose(input, id = "Select", allowDirCreate = T, roots = c(Data = "/D/Data", root = "/"))
 
     # Store project Name and path in a reactive value
     Project <- reactive({
-
       # input$Select gets cumputed as soon as the button is clicked (before a folder is choosed),
       # this early computation leed to error as input$Select is first an integer then a list.
       req(is.list(input$Select))
 
-      Path <- parseDirPath(roots=c(Data='/D/Data',root='/'), input$Select)
+      Path <- parseDirPath(roots = c(Data = "/D/Data", root = "/"), input$Select)
 
       Name <- str_extract(Path, "(?<=/)[^/]*$")
 
@@ -69,7 +66,7 @@ mod_manage_project_server <- function(id){
     SearTbl <- reactive({
       req(Project())
 
-      searproj <- file.path(Project()$Path, glue::glue(Project()$Name,".searproj"))
+      searproj <- file.path(Project()$Path, glue::glue(Project()$Name, ".searproj"))
 
       if (file.exists(searproj)) {
         message("Reading ", searproj)
@@ -82,11 +79,10 @@ mod_manage_project_server <- function(id){
             Updated = Sys.time()
           )
 
-        write_csv(SearTbl ,searproj)
+        write_csv(SearTbl, searproj)
 
         # return SearTble pbject
         SearTbl
-
       } else {
         message("Creating ", searproj)
 
@@ -96,15 +92,12 @@ mod_manage_project_server <- function(id){
           ProjPath = Project()$Path
         )
 
-        write_csv(SearTbl ,searproj)
+        write_csv(SearTbl, searproj)
 
         # return SearTble object
         SearTbl
-
       }
-
     })
-
   })
 }
 

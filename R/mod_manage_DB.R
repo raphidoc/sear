@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_manage_DB_ui <- function(id){
+mod_manage_DB_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("ObsList"))
@@ -17,8 +17,8 @@ mod_manage_DB_ui <- function(id){
 #' manage_DB Server Functions
 #'
 #' @noRd
-mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
-  moduleServer( id, function(input, output, session){
+mod_manage_DB_server <- function(id, SearTbl, SelData, Obs) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     ObsMeta <- reactiveVal({
@@ -34,14 +34,13 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
       )
     })
 
-# Connect project SQLite DB -----------------------------------------------
+    # Connect project SQLite DB -----------------------------------------------
     Con <- eventReactive(
       req(SearTbl()$ProjPath),
       {
+        L2dir <- file.path(SearTbl()$ProjPath, "L2")
 
-        L2dir <- file.path(SearTbl()$ProjPath,"L2")
-
-        PotSQLite <- file.path(L2dir, paste0(SearTbl()$ProjName,"_sear.sqlite"))
+        PotSQLite <- file.path(L2dir, paste0(SearTbl()$ProjName, "_sear.sqlite"))
 
         if (!dir.exists(L2dir)) {
           dir.create(L2dir)
@@ -117,42 +116,43 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
 
         # Return Con
         Con
-      })
+      }
+    )
 
 
-# Fetch MetaData ----------------------------------------------------------
-#
-#     ObsMeta <- reactiveVal({
-#       reactive({
-#         req(Con())
-#
-#         # if DB is not empty list UUID and get current index
-#         if (
-#           !identical(DBI::dbListTables(Con()), character(0)) #&
-#           #str_detect(DBI::dbListTables(Con), "ObsMeta")
-#         ) {
-#           message("Listing Obs")
-#
-#           tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
-#
-#         } else {
-#           tibble(
-#             ObsType = character(),
-#             ObsName = character(),
-#             UUID = character(),
-#             Lat = numeric(),
-#             Lon = numeric(),
-#             DateTime = character(),
-#           )
-#         }
-#       })
-#     })
+    # Fetch MetaData ----------------------------------------------------------
+    #
+    #     ObsMeta <- reactiveVal({
+    #       reactive({
+    #         req(Con())
+    #
+    #         # if DB is not empty list UUID and get current index
+    #         if (
+    #           !identical(DBI::dbListTables(Con()), character(0)) #&
+    #           #str_detect(DBI::dbListTables(Con), "ObsMeta")
+    #         ) {
+    #           message("Listing Obs")
+    #
+    #           tibble(DBI::dbGetQuery(Con(), "SELECT * FROM Metadata"))
+    #
+    #         } else {
+    #           tibble(
+    #             ObsType = character(),
+    #             ObsName = character(),
+    #             UUID = character(),
+    #             Lat = numeric(),
+    #             Lon = numeric(),
+    #             DateTime = character(),
+    #           )
+    #         }
+    #       })
+    #     })
 
     output$ObsList <- renderUI({
       req(Con())
       validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
 
-      selectizeInput(ns("ObsList"), "ObsList", choices = c("",ObsMeta()$UUID), selected = NULL, multiple = F)
+      selectizeInput(ns("ObsList"), "ObsList", choices = c("", ObsMeta()$UUID), selected = NULL, multiple = F)
     })
 
     list(
@@ -160,8 +160,6 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs){
       ObsSel = reactive(input$ObsList),
       Con = Con
     )
-
-
   })
 }
 
