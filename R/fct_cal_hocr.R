@@ -1,3 +1,8 @@
+# Necessary to make data making (Non Standard Evaluation) work with lintr
+
+
+
+
 #' cal_hocr
 #'
 #' @description A fct function
@@ -12,10 +17,11 @@
 #' @import dplyr
 #' @import tidyr
 #' @import readr
+#' @importFrom rlang .data
 #'
 #' @noRd
 
-read_cal_hocr <- function(CalFiles){
+read_cal_hocr <- function(CalFiles) {
   # CalFiles is a list of calibration files
 
   # Fit type specific coefficients
@@ -27,17 +33,17 @@ read_cal_hocr <- function(CalFiles){
 
   CalFile <- readr::read_lines(CalFiles, skip_empty_rows = T)
 
-  CalFile <- CalFile[!str_detect(CalFile, "#")]
+  CalFile <- CalFile[!stringr::str_detect(CalFile, "#")]
 
   # Cal file have tow types of delimiter ... space for definition line and tab for calibration coefficient
 
   # Working code over there !
-  CalFile <- str_replace_all(CalFile, "\\t", " ")
+  CalFile <- stringr::str_replace_all(CalFile, "\\t", " ")
 
   # Get index of definition file
-  indi <- purrr::imap_dbl(CalFile, ~  ifelse(str_detect(.x, "1 (OPTIC3|THERM1|POLYU)"), .y, NA))
+  indi <- purrr::imap_dbl(CalFile, ~ ifelse(str_detect(.x, "1 (OPTIC3|THERM1|POLYU)"), .y, NA))
   # Calibration data is on the next line
-  CalData <- CalFile[indi+1]
+  CalData <- CalFile[indi + 1]
   # Put definition and calibration on the same line
   CalFile <- tibble(Def = CalFile, Cal = CalData)
   # Dirty Stuff to remove calibration lines: offset index by one to match calibration lines and logically remove them
@@ -45,73 +51,70 @@ read_cal_hocr <- function(CalFiles){
 
   CalFile <- CalFile %>%
     separate(
-      col = Def,
+      col = .data$Def,
       into = c("Type", "ID", "Units", "FieldLength", "DataType", "CalLines", "FitType"),
       sep = " ",
-      remove = T,
-      convert = T
+      remove = TRUE,
+      convert = TRUE
     )
 
   CalID <- CalFile %>%
-    filter(Type %in% c("INSTRUMENT", "SN")) %>%
-    select(Type, ID) %>%
+    filter(.data$Type %in% c("INSTRUMENT", "SN")) %>%
+    select(.data$Type, .data$ID) %>%
     pivot_wider(
-      names_from = Type,
-      values_from = ID) %>%
-    rename(Instrument = INSTRUMENT)
+      names_from = .data$Type,
+      values_from = .data$ID
+    ) %>%
+    rename(Instrument = .data$INSTRUMENT)
 
   OPTIC3 <- CalFile %>%
-    filter(Type == "ES" | Type == "LU") %>%
+    filter(.data$Type == "ES" | .data$Type == "LU") %>%
     separate(
-      col = Cal,
-      into = c("a0", "a1","im","cint"),
+      col = .data$Cal,
+      into = c("a0", "a1", "im", "cint"),
       sep = " ",
-      remove = T,
-      convert = T
+      remove = TRUE,
+      convert = TRUE
     ) %>%
     bind_cols(CalID) %>%
     rename(Wavelength = "ID") %>%
-    mutate(Wavelength = as.numeric(Wavelength))
+    mutate(Wavelength = as.numeric(.data$Wavelength))
 
   THERM1 <- CalFile %>%
-    filter(FitType == "THERM1") %>%
+    filter(.data$FitType == "THERM1") %>%
     separate(
-      col = Cal,
-      into = c("m0", "m1","m2","m3","Tr"),
+      col = .data$Cal,
+      into = c("m0", "m1", "m2", "m3", "Tr"),
       sep = " ",
-      remove = T,
-      convert = T
+      remove = TRUE,
+      convert = TRUE
     ) %>%
     bind_cols(CalID)
 
   # POLYU span from a0 to an, should write code to take that into account
   # Sep in cal file appear to be two spaces ... cloud manage all those with "[[:blank:]]"
   POLYU <- CalFile %>%
-    filter(FitType == "POLYU") %>%
+    filter(.data$FitType == "POLYU") %>%
     separate(
-      col = Cal,
+      col = .data$Cal,
       into = c("a0", "a1"),
       sep = "[[:blank:]]{2}",
-      remove = T,
-      convert = T
+      remove = TRUE,
+      convert = TRUE
     ) %>%
     bind_cols(CalID)
-
-  #tibble(FitType = c("OPTIC3","THERM1","POLYU"), CalData = list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
 
   return(list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
 }
 
-tidy_cal_hocr <- function(){
-
-
+tidy_cal_hocr <- function() {
   # HOCR calibration data ---------------------------------------------------
 
-  CalFiles <- list.files(system.file("cal","hocr", package = "sear"), full.names = T)
+  CalFiles <- list.files(system.file("cal", "hocr", package = "sear"), full.names = TRUE)
 
   CalList <- purrr::map(CalFiles, read_cal_hocr)
 
-  FlatCal <- unlist(CalList, recursive = F)
+  FlatCal <- unlist(CalList, recursive = FALSE)
 
   OPTIC3 <- bind_rows(FlatCal[names(FlatCal) == "OPTIC3"])
 
@@ -119,13 +122,23 @@ tidy_cal_hocr <- function(){
 
   POLYU <- bind_rows(FlatCal[names(FlatCal) == "POLYU"])
 
-  OPTIC3 <- OPTIC3 %>% group_by(Instrument, SN) %>% nest(OPTIC3 = !matches("Instrument|SN"))
+  OPTIC3 <- OPTIC3 %>%
+    group_by(.data$Instrument, .data$SN) %>%
+    nest(OPTIC3 = !matches("Instrument|SN"))
 
-  THERM1 <- THERM1 %>% group_by(Instrument, SN) %>% nest(THERM1 = !matches("Instrument|SN"))
+  THERM1 <- THERM1 %>%
+    group_by(.data$Instrument, .data$SN) %>%
+    nest(THERM1 = !matches("Instrument|SN"))
 
-  INTTIME <- POLYU %>% filter(Type == "INTTIME") %>% group_by(Instrument, SN) %>% nest(INTTIME = !matches("Instrument|SN"))
+  INTTIME <- POLYU %>%
+    filter(.data$Type == "INTTIME") %>%
+    group_by(.data$Instrument, .data$SN) %>%
+    nest(INTTIME = !matches("Instrument|SN"))
 
-  SAMPLE <- POLYU %>% filter(Type == "SAMPLE") %>% group_by(Instrument, SN) %>% nest(SAMPLE = !matches("Instrument|SN"))
+  SAMPLE <- POLYU %>%
+    filter(.data$Type == "SAMPLE") %>%
+    group_by(.data$Instrument, .data$SN) %>%
+    nest(SAMPLE = !matches("Instrument|SN"))
 
 
   # List of calibration data by instrument ----------------------------------
