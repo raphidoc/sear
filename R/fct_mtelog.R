@@ -165,8 +165,8 @@ read_bbfl2 <- function(MainLog) {
       col = Data,
       sep = "(?!^)\\s",
       into = c(
-        "ECODate",
-        "ECOTime",
+        "BBFL2Date",
+        "BBFL2Time",
         "a",
         "b",
         "c",
@@ -227,10 +227,10 @@ read_sbe19 <- function(MainLog) {
       sep = ",\\s",
       into = c(
         "Temperature", # Celsius ITS-90
-        "Conductivity", # S/m
+        "Conductivity", # S/m, multiply by 10 to get mS/cm
         "Pressure", # decibars
-        "UNKNWON1", # Volt0 ? = OXY
-        "UNKNWON2" # Volt2 ? = PH
+        "Volt0", # Volt0 ? = OXY
+        "Volt2" # Volt2 ? = pH
       ),
       convert = T,
       extra = "merge"

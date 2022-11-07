@@ -80,8 +80,6 @@ mod_obs_hocr_server <- function(id, L1bData, Obs) {
       # req(L1bHOCR())
       # req(QCData())
 
-      browser()
-
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
@@ -183,8 +181,6 @@ mod_obs_hocr_server <- function(id, L1bData, Obs) {
 
     output$AOPs <- renderPlotly({
       # req(L2Data())
-
-      browser()
 
       Rrsplot <- Obs$HOCR$L2() %>%
         plot_ly() %>%

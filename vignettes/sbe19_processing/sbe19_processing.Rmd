@@ -1,0 +1,285 @@
+---
+title: "sbe19_processing"
+output: html_document
+date: "2022-11-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+golem::document_and_reload()
+
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(readr)
+library(sear)
+```
+
+## Calibration data
+
+### SBE19
+
+```{r}
+SBE19CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
+
+read_sbe19_cal <- function(CalFile) {
+  
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+  
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      TCALDATE = dmy(TCALDATE),
+      TA0 = as.numeric(TA0),
+      TA1 = as.numeric(TA1),
+      TA2 = as.numeric(TA2),
+      TA3 = as.numeric(TA3),
+      CCALDATE = dmy(CCALDATE),
+      CG = as.numeric(CG),
+      CH = as.numeric(CH),
+      CI = as.numeric(CI),
+      CJ = as.numeric(CJ),
+      CTCOR = as.numeric(CTCOR),
+      CPCOR = as.numeric(CPCOR),
+      PCALDATE = dmy(PCALDATE),
+      PA0 = as.numeric(PA0),
+      PA1 = as.numeric(PA1),
+      PA2 = as.numeric(PA2),
+      PTCA0 = as.numeric(PTCA0),
+      PTCA1 = as.numeric(PTCA1),
+      PTCA2 = as.numeric(PTCA2),
+      PTCB0 = as.numeric(PTCB0),
+      PTCB1 = as.numeric(PTCB1),
+      PTCB2 = as.numeric(PTCB2),
+      PTEMPA0 = as.numeric(PTEMPA0),
+      PTEMPA1 = as.numeric(PTEMPA1),
+      PTEMPA2 = as.numeric(PTEMPA2)
+    )
+  
+}
+
+SBE19CalData <- read_sbe19_cal(SBE19CalFile)
+```
+
+### SBE43
+
+```{r}
+SBE43CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
+
+read_sbe43_cal <- function(CalFile) {
+  
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+  
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      OCALDATE = dmy(OCALDATE),
+      SOC = as.numeric(SOC),
+      VOFFSET = as.numeric(VOFFSET),
+      A = as.numeric(A),
+      B = as.numeric(B),
+      C = as.numeric(C),
+      E = as.numeric(E),
+      Tau20 = as.numeric(Tau20),
+    )
+}
+
+SBE43CalData <- read_sbe43_cal(SBE43CalFile)
+```
+
+### SBE18
+
+```{r}
+SBE18CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
+
+read_sbe18_cal <- function(CalFile) {
+  
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+  
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      PHCALDATE = dmy(PHCALDATE),
+      SLOPE = as.numeric(SLOPE),
+      OFFSET = as.numeric(OFFSET)
+    )
+}
+
+SBE18CalData <- read_sbe18_cal(SBE18CalFile)
+```
+
+## Load data
+
+SBE19 data consist of Temperature Pressure and Conductivity which can be converted in Practical Salinity Unit (PSU). Additionally the SBE19 can record voltage send by optional instrument such as Oxygen (SBE43) and pH (SBE18, case on the UQAR SeaDoo). To manage different instruments configurations it could be a solution to provide an instrument definition file to determine how the data should parsed.
+
+```{r}
+Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
+
+DataFile <- sear:::app_sys("extdata", "DATA_20220705_105732.txt")
+
+MTELog <- sear:::read_mtelog(DataFile)
+
+MTELog <- MTELog %>% filter(DateTime %within% Station)
+
+SBE19Data <- sear:::read_sbe19(MTELog)
+
+Apla <- sear:::read_apla(MTELog) %>%
+  summarise(
+    Lat = mean(Lat_DD),
+    Lon = mean(Lon_DD)
+    )
+```
+
+## Salinity calibration
+
+```{r}
+# oxygen solubility in ml/l from Garcia and Gordon 1992
+oxy_sol <- function(Temperature, SP) {
+  
+  A0 = 2.00907; A1 = 3.22014; A2 = 4.0501; A3 = 4.94457; A4 = -0.256847; A5 = 3.88767
+  B0 = -0.00624523; B1 = -0.00737614; B2 = -0.010341; B3 = -0.00817083
+  C0 = -0.000000488682
+  
+  Ts = log((298.15 - Temperature)/(273.15 + Temperature))
+  
+  OxSol <- exp({
+        A0 + (A1*Ts) + (A2*Ts)^2 + (A3*Ts)^3 + (A4*Ts)^4 + (A5*Ts)^5 +
+      SP * (B0 + (B1*Ts) + (B2*Ts)^2 + (B3*Ts)^3) + (C0*SP)^2
+  })
+}
+```
+
+EOS-80 (calculating PSU) have been replaced by TEOS-10 (calculating absolute salinity in g/kg), the package `gsw` implement the TEOS-10 algorithm.
+
+The function `gsw::gsw_SP_from_C()` allow to compute practical salinity from conductivity.
+
+```{r}
+SBE19Data <- SBE19Data %>%
+  mutate(
+    SP = gsw::gsw_SP_from_C( # Salinity Practical in PSU
+      C = Conductivity*10,
+      t = Temperature,
+      p = Pressure
+    ),
+    SA = gsw::gsw_SA_from_SP( # Salinity Absolute in g/Kg
+      SP = SP,
+      p = Pressure,
+      long = Apla$Lon,
+      lat = Apla$Lat
+      ),
+    CT = gsw::gsw_CT_from_t( # Conservative Temperature in deg C
+      SA = SA,
+      t = Temperature,
+      p = Pressure
+      ),
+    O2Sol = gsw::gsw_O2sol( # Oxygen solubility in umol/kg
+      SA = SA,
+      CT = CT,
+      p = Pressure,
+      longitude = Apla$Lon,
+      latitude = Apla$Lat
+      ),
+    OxSol = oxy_sol(
+      Temperature = Temperature,
+      SP = SP
+    )
+  )
+```
+
+## Oxygen concentration calibration
+
+The calibration equation is given in the Application Note 64-2.
+![SBE43 calibration equation](oxy_equation.png)
+
+How to cumpute `tau(T, P)` sensor time constant at temperature and pressure ? Terms D1 and D2 are not present in the calibration file.
+
+From "SBE43_ApplicationNote64_RevJun2013.pdf" the [tau(T,P) * δV/δt] derivative can be disabled.
+
+the `Oxsol` parameter can be computed with `gsw::gsw_O2sol(SA, CT, p, longitude, latitude)`. SBE use Oxygen saturation value after Garcia and Gordon (1992), should validate that I can use another method.
+The absolute salinity (`SA`) can be computed with `gsw_SA_from_SP(SP, p, long, lat)`.
+The conservative temperature (`CT`) can be computed with `gsw::gsw_CT_from_t`.
+
+```{r}
+cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, Soc, Voffset, A, B, C, E) {
+  
+  Tkelvin <- Tcelsius + 273.15
+  
+  Oxygen <- (Soc * (Volt + Voffset)) * OxSol * (1.0 + A*Tcelsius + B*Tcelsius^2 + C*Tcelsius^3) * exp(1)^(E*Pressure/Tkelvin)
+  
+}
+
+SBE19Data <- SBE19Data %>%
+  mutate(
+    Oxygen = cal_sbe43( # Oxygen in ml/l multiply by 1.42903 to get mg/l
+      Volt = Volt0,
+      Tcelsius = Temperature,
+      Pressure = Pressure,
+      OxSol = OxSol,
+      Soc = SBE43CalData$SOC,
+      Voffset = SBE43CalData$VOFFSET,
+      A = SBE43CalData$A,
+      B = SBE43CalData$B,
+      C = SBE43CalData$C,
+      E = SBE43CalData$E
+    )
+  )
+```
+
+## pH calibration
+
+```{r}
+cal_sbe18 <- function(Volt, Tcelsius, Voffset, Slope) {
+  
+  Tkelvin <- Tcelsius + 273.15
+  
+  pH <- 7.0 + (Volt - Voffset)/(Slope * Tkelvin * 1.98416e-4)
+}
+
+SBE19Data <- SBE19Data %>%
+  mutate(
+    pH = cal_sbe18(
+      Volt = Volt2,
+      Tcelsius = Temperature,
+      Voffset = SBE18CalData$OFFSET,
+      Slope = SBE18CalData$SLOPE
+    )
+  )
+```
+

@@ -226,8 +226,6 @@ mod_obs_L1L2_server <- function(id, L1b, Obs) {
       # req(L1bHOCR())
       # req(QCData())
 
-      # browser()
-
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
@@ -329,8 +327,6 @@ mod_obs_L1L2_server <- function(id, L1b, Obs) {
 
     output$AOPs <- renderPlotly({
       # req(L2Data())
-
-      # browser()
 
       validate(need(nrow(Obs$HOCR$L2) != 0, "Process L2 to display AOPs"))
 

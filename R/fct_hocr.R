@@ -160,7 +160,8 @@ approx_tbl <- function(., TimeSeq) {
 
 #' cal_dark
 #'
-#' @description Calibrate HOCR dark packets to L1b
+#' @description Calibrate HOCR dark packets to L1b, is mostly a copy and paste
+#' of \code{\link{cal_hocr}}), should improve that ...
 #'
 #' @return Return a wide data frame for HOCR dark offset
 #'

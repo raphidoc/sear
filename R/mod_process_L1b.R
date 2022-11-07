@@ -47,8 +47,6 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs) {
         waiter$show()
         on.exit(waiter$hide())
 
-        browser()
-
         if (is.null(Instrument$ToProcess())) {
           showModal(modalDialog(
             title = "No instrument selected",
@@ -57,11 +55,13 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs) {
           invalidateLater(1)
         }
 
-        if (any(str_detect(Instrument$ToProcess(), "HOCR"))) {
-          # Filter data point before processing to optimize execution time
+        # Filter data point before processing to optimize execution time
+        SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
+        TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 
-          SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
-          TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
+# HOCR L1b ----------------------------------------------------------------
+
+        if (any(str_detect(Instrument$ToProcess(), "HOCR"))) {
 
           FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
 
@@ -74,7 +74,12 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs) {
             select(SN, DarkAproxData)
 
           Obs$HOCR$L1b <- spsComps::shinyCatch(
-            cal_hocr(RawHOCR = FiltRawHOCR, CalHOCR = CalData()$HOCR, DarkHOCR = DarkHOCR, AplaDate = unique(date(SelData$SelApla()$DateTime))),
+            cal_hocr(
+              RawHOCR = FiltRawHOCR,
+              CalHOCR = CalData()$HOCR,
+              DarkHOCR = DarkHOCR,
+              AplaDate = unique(date(SelData$SelApla()$DateTime))
+              ),
             shiny = T,
             trace_back = TRUE
           )
@@ -83,21 +88,33 @@ mod_process_L1b_server <- function(id, L1, SelData, CalData, Obs) {
           Obs$HOCR$L2 <- tibble()
         }
 
+# SBE19 L1b ---------------------------------------------------------------
+
         if (any(str_detect(Instrument$ToProcess(), "SBE19"))) {
-          L1$SBE19()
+          browser()
+
+          test <- L1$SBE19()
         }
 
+# BBFL2 L1b ---------------------------------------------------------------
+
         if (any(str_detect(Instrument$ToProcess(), "BBFL2"))) {
+          browser()
+
           L1$BBFL2()
         }
 
+# SeaOWL L1b --------------------------------------------------------------
+
         if (any(str_detect(Instrument$ToProcess(), "SeaOWL"))) {
+          browser()
+
           L1$SeaOWL()
         }
       }
     )
 
-    # Module output -----------------------------------------------------------
+# Module output -----------------------------------------------------------
     list(
       SelApla = SelData$SelApla,
       Map = SelData$Map,

@@ -1,0 +1,157 @@
+---
+title: "sear_dev"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{sear_dev}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette intend to document the development and the functionality of the 
+`sear_app()` function. This function is the top level function that call the
+shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
+
+```{r setup}
+golem::document_and_reload()
+
+library(sear)
+library(dplyr)
+library(lubridate)
+library(purrr)
+library(plotly)
+library(readr)
+library(stringr)
+library(tidyr)
+library(suncalc)
+```
+
+```{r}
+ConFile <- system.file("extdata", "DATA_20211111_171729.txt", package = "sear", mustWork = T)
+
+MTELog <- sear:::read_mtelog(ConFile)
+
+Apla <- sear:::read_apla(MTELog)
+```
+
+# UI
+
+## Style
+
+The UI use the 'norwegian blue' (The dead parrot) #4f89b0 as theme color
+
+## Project workflow
+
+The first step to work with `sear` is to select a project folder. A project folder is identified by the presence of a `.searproj` file, this file additionally contain relevant metadata such as the project path, date of creation and last update. Other useful information could be added.
+If the selected folder does not contains `.searproj` file, one is created. The root of the project is set as the folder in which this file live.
+
+The app will also look for folder and data files to re-initiate the app state as it was in the last processing save. 
+
+## Load Data
+
+If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw bulk MTE files are saved in `project/bulk`. On load, the app will parse and filter data (speed < 4 knt) and save the resulting applanix data, HOCR packet list and HOCR Time index in `project/L1`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time.
+
+## Selection display
+
+When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second ?) data point, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot representing the solar azimuth relative to the boat heading of points selected on the map.
+
+An observation type `ObsType` (Station, Transect) and an observation name `ObsName` can be attributed to the selected point which will be processed with the `Process to L1b` button.
+
+NEED: Think about the required and optional NMEA string that sear will use.
+
+### Azimuth polar plot
+
+First compute the sun azimuth.
+
+```{r}
+# Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
+#
+# # Solar altitude above the horizon in radian and azimuth in radian from south to west
+# PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
+#
+# Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
+#   rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
+#   mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
+#          SolAlt = SolAlt * 180/pi)
+```
+
+Take the boat azimuth (relative to true north) from the applanix, then subtract one by the other to find boat azimuth from the sun.
+
+```{r}
+Station1PaP <- interval(ymd_hms("2021-11-11 17:50:31"), ymd_hms("2021-11-11 17:50:40"))
+
+temp <- Apla %>% filter(DateTime %within% Station1PaP)
+
+# Apla <- Apla %>% mutate(
+#   BoatSolAzm = SolAzm-Course_TN
+# )
+
+m <- list(
+  l = 40,
+  r = 30,
+  b = 30,
+  t = 30,
+  pad = 0
+)
+
+temp %>%
+  plot_ly(
+    type = "scatterpolar",
+    r = ~Speed_N,
+    theta = ~BoatSolAzm,
+    mode = "markers"
+  ) %>%
+  layout(
+    autosize = F,
+    margin = m,
+    polar = list(
+      angularaxis = list(
+        # rotation = ~mean(Course_TN, na.rm = T)+90,
+        direction = "clockwise"
+      )
+    )
+  )
+```
+
+
+# Server
+
+## golem organization 
+
+This shiny app will become quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task. 
+
+* fct_ : files containing the function of the app, they defined the data parsing, tidying and computation logic.
+* mod_ : files containing both frontend (`_ui` function) and backend (`_server` function) shiny logic. Inputs, reactive value, observer and consumer are defined here.
+* utils_ : files containing helpers functions that doesn't really belong exclusively to this app.
+* app_ : files to wrap ui and server, configure and run the app.
+* zzz.R : file containing the call to `.onLoad()`
+
+# SQLite backend
+
+Present the DB schema here
+
+## Save
+
+When an `UUID` already exist and the `Save` button is pressed, the records in the SQLite DB are uptaded. For the `Metadata` table, the following fields are updated:
+* `Comment`
+* `ProTime`
+* `Analyst`
+* `Mail`
+
+For the `HOCRL1b` table only the `QC` field is updated, it is uniquely identified by the (UUID, ID) pair. THIS PAIR IS NOT A PRIMARY KEY as it doesn't uniquely identifies the entry of the table. The PRIMARY KEY of the HOCRL1b table is (UUID, ID, SN, Wavelength).
+QUESTION: Would it be relevant to separate the `QC` in it's own table ?
+
+When the `Save` button is pressed, feedback is given to the user in the form of a `session$sendCustomMessage`.
+
+Note reagarding diffference bettwen the `WHERE` and the `CASE WHEN` approach for updating SQLite.
+Whith 
+
+## Delete
+
+When the delete button is pressed, if the active data point (station) has an `UUID`, it's suppressed in the `Metadata` table. As the FOREIGN KEY constraint is activated in the DB schema (`PRAGMA foreign_keys=ON`) and `HOCRL1b` and `HOCRL2` are child table build with the `ON DELETE CASCADE` constraints, matching record are automatically deleted.
