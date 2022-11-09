@@ -1,0 +1,57 @@
+---
+title: "seaowl_processing"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+golem::document_and_reload()
+
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(readr)
+library(sear)
+```
+
+## Calibration data
+
+```{r}
+SeaOWLCalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
+
+SeaOWLCal <- sear:::read_seaowl_cal(SeaOWLCalFile)
+```
+
+## Load data
+
+```{r}
+Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
+
+DataFile <- sear:::app_sys("extdata", "DATA_20220705_105732.txt")
+
+MTELog <- sear:::read_mtelog(DataFile)
+
+MTELog <- MTELog %>% filter(DateTime %within% Station)
+
+SeaOWLData <- sear:::read_seaowl(MTELog)
+```
+
+## Calibrate data
+
+```{r}
+cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
+  
+  SeaOWLData %>%
+    mutate(
+      Bb_700 = SeaOWLCal$BbScaleFactor * (Bb700Output - SeaOWLCal$BbDarkCounts),
+      Chl = SeaOWLCal$ChlScaleFactor * (ChlOutput - SeaOWLCal$ChlDarkCounts),
+      FDOM = SeaOWLCal$FDOMScaleFactor * (FDOMOutput - SeaOWLCal$FDOMDarkCounts),
+      .after = SN
+    )
+}
+
+SeaOWLL2 <- cal_seaowl(SeaOWLData, SeaOWLCal)
+```
+

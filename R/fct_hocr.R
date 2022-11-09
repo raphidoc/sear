@@ -271,6 +271,7 @@ cal_dark <- function(RawHOCR, CalHOCR, AplaDate) {
 #'
 #' @noRd
 cal_hocr <- function(RawHOCR, CalHOCR, DarkHOCR, AplaDate) {
+
   RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., AplaDate))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------

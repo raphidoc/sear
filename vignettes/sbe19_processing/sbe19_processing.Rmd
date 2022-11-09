@@ -1,7 +1,7 @@
 ---
 title: "sbe19_processing"
 output: html_document
-date: "2022-11-05"
+date: "`r Sys.Date()`"
 ---
 
 ```{r setup, include=FALSE}
@@ -23,55 +23,7 @@ library(sear)
 ```{r}
 SBE19CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
 
-read_sbe19_cal <- function(CalFile) {
-  
-  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
-  
-  CalData <- tibble(CalRaw) %>%
-    separate(
-      col = CalRaw,
-      sep = "=",
-      into = c(
-        "Parameter",
-        "Value"
-      ),
-      convert = FALSE
-    ) %>%
-    pivot_wider(
-      names_from = "Parameter",
-      values_from = "Value"
-    ) %>%
-    mutate(
-      TCALDATE = dmy(TCALDATE),
-      TA0 = as.numeric(TA0),
-      TA1 = as.numeric(TA1),
-      TA2 = as.numeric(TA2),
-      TA3 = as.numeric(TA3),
-      CCALDATE = dmy(CCALDATE),
-      CG = as.numeric(CG),
-      CH = as.numeric(CH),
-      CI = as.numeric(CI),
-      CJ = as.numeric(CJ),
-      CTCOR = as.numeric(CTCOR),
-      CPCOR = as.numeric(CPCOR),
-      PCALDATE = dmy(PCALDATE),
-      PA0 = as.numeric(PA0),
-      PA1 = as.numeric(PA1),
-      PA2 = as.numeric(PA2),
-      PTCA0 = as.numeric(PTCA0),
-      PTCA1 = as.numeric(PTCA1),
-      PTCA2 = as.numeric(PTCA2),
-      PTCB0 = as.numeric(PTCB0),
-      PTCB1 = as.numeric(PTCB1),
-      PTCB2 = as.numeric(PTCB2),
-      PTEMPA0 = as.numeric(PTEMPA0),
-      PTEMPA1 = as.numeric(PTEMPA1),
-      PTEMPA2 = as.numeric(PTEMPA2)
-    )
-  
-}
-
-SBE19CalData <- read_sbe19_cal(SBE19CalFile)
+SBE19CalData <- sear:::read_sbe19_cal(SBE19CalFile)
 ```
 
 ### SBE43
@@ -79,37 +31,7 @@ SBE19CalData <- read_sbe19_cal(SBE19CalFile)
 ```{r}
 SBE43CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
 
-read_sbe43_cal <- function(CalFile) {
-  
-  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
-  
-  CalData <- tibble(CalRaw) %>%
-    separate(
-      col = CalRaw,
-      sep = "=",
-      into = c(
-        "Parameter",
-        "Value"
-      ),
-      convert = FALSE
-    ) %>%
-    pivot_wider(
-      names_from = "Parameter",
-      values_from = "Value"
-    ) %>%
-    mutate(
-      OCALDATE = dmy(OCALDATE),
-      SOC = as.numeric(SOC),
-      VOFFSET = as.numeric(VOFFSET),
-      A = as.numeric(A),
-      B = as.numeric(B),
-      C = as.numeric(C),
-      E = as.numeric(E),
-      Tau20 = as.numeric(Tau20),
-    )
-}
-
-SBE43CalData <- read_sbe43_cal(SBE43CalFile)
+SBE43CalData <- sear:::read_sbe43_cal(SBE43CalFile)
 ```
 
 ### SBE18
@@ -117,32 +39,7 @@ SBE43CalData <- read_sbe43_cal(SBE43CalFile)
 ```{r}
 SBE18CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
 
-read_sbe18_cal <- function(CalFile) {
-  
-  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
-  
-  CalData <- tibble(CalRaw) %>%
-    separate(
-      col = CalRaw,
-      sep = "=",
-      into = c(
-        "Parameter",
-        "Value"
-      ),
-      convert = FALSE
-    ) %>%
-    pivot_wider(
-      names_from = "Parameter",
-      values_from = "Value"
-    ) %>%
-    mutate(
-      PHCALDATE = dmy(PHCALDATE),
-      SLOPE = as.numeric(SLOPE),
-      OFFSET = as.numeric(OFFSET)
-    )
-}
-
-SBE18CalData <- read_sbe18_cal(SBE18CalFile)
+SBE18CalData <- sear:::read_sbe18_cal(SBE18CalFile)
 ```
 
 ## Load data

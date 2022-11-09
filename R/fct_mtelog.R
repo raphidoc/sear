@@ -208,6 +208,7 @@ read_seaowl <- function(MainLog) {
         "FDOMHighGainRawCounts",
         "FDOMOutput"
       ),
+      convert = T,
       extra = "merge"
     ) %>%
     mutate(

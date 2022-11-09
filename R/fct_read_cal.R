@@ -1,9 +1,4 @@
-# Necessary to make data making (Non Standard Evaluation) work with lintr
-
-
-
-
-#' cal_hocr
+#' hocr_cal
 #'
 #' @description A fct function
 #'
@@ -108,7 +103,6 @@ read_hocr_cal <- function(CalFiles) {
 }
 
 tidy_cal_hocr <- function() {
-  # HOCR calibration data ---------------------------------------------------
 
   CalFiles <- list.files(system.file("cal", "hocr", package = "sear"), full.names = TRUE)
 
@@ -140,8 +134,168 @@ tidy_cal_hocr <- function() {
     group_by(.data$Instrument, .data$SN) %>%
     nest(SAMPLE = !matches("Instrument|SN"))
 
-
-  # List of calibration data by instrument ----------------------------------
-
   list("HOCR" = list("OPTIC3" = OPTIC3, "THERM1" = THERM1, "INTTIME" = INTTIME, "SAMPLE" = SAMPLE))
 }
+
+#' sbe19_cal
+#'
+#' @description Read SBE19 cal file
+#'
+#' @return tibble with calibration data
+#'
+#' @noRd
+read_sbe19_cal <- function(CalFile) {
+
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      TCALDATE = dmy(TCALDATE),
+      TA0 = as.numeric(TA0),
+      TA1 = as.numeric(TA1),
+      TA2 = as.numeric(TA2),
+      TA3 = as.numeric(TA3),
+      CCALDATE = dmy(CCALDATE),
+      CG = as.numeric(CG),
+      CH = as.numeric(CH),
+      CI = as.numeric(CI),
+      CJ = as.numeric(CJ),
+      CTCOR = as.numeric(CTCOR),
+      CPCOR = as.numeric(CPCOR),
+      PCALDATE = dmy(PCALDATE),
+      PA0 = as.numeric(PA0),
+      PA1 = as.numeric(PA1),
+      PA2 = as.numeric(PA2),
+      PTCA0 = as.numeric(PTCA0),
+      PTCA1 = as.numeric(PTCA1),
+      PTCA2 = as.numeric(PTCA2),
+      PTCB0 = as.numeric(PTCB0),
+      PTCB1 = as.numeric(PTCB1),
+      PTCB2 = as.numeric(PTCB2),
+      PTEMPA0 = as.numeric(PTEMPA0),
+      PTEMPA1 = as.numeric(PTEMPA1),
+      PTEMPA2 = as.numeric(PTEMPA2)
+    )
+
+}
+
+#' sbe43_cal
+#'
+#' @description read SBE43 cal file
+#'
+#' @return tibble with calibration data
+#'
+#' @noRd
+read_sbe43_cal <- function(CalFile) {
+
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      OCALDATE = dmy(OCALDATE),
+      SOC = as.numeric(SOC),
+      VOFFSET = as.numeric(VOFFSET),
+      A = as.numeric(A),
+      B = as.numeric(B),
+      C = as.numeric(C),
+      E = as.numeric(E),
+      Tau20 = as.numeric(Tau20),
+    )
+}
+
+#' sbe18_cal
+#'
+#' @description read SBE18 cal file
+#'
+#' @return tibble with calibration data
+#'
+#' @noRd
+read_sbe18_cal <- function(CalFile) {
+
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      PHCALDATE = dmy(PHCALDATE),
+      SLOPE = as.numeric(SLOPE),
+      OFFSET = as.numeric(OFFSET)
+    )
+}
+
+#' seaowl_cal
+#'
+#' @description read SeaOWL cal file
+#'
+#' @return tibble with calibration data
+#'
+#' @noRd
+read_seaowl_cal <- function(CalFile){
+
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      CALDATE = dmy(CALDATE),
+      BbScaleFactor = as.numeric(BbScaleFactor),
+      BbDarkCounts = as.numeric(BbDarkCounts),
+      ChlScaleFactor = as.numeric(ChlScaleFactor),
+      ChlDarkCounts = as.numeric(ChlDarkCounts),
+      OilScaleFactor = as.numeric(OilScaleFactor),
+      OilDarkCounts = as.numeric(OilDarkCounts),
+      FDOMScaleFactor = as.numeric(FDOMScaleFactor),
+      FDOMDarkCounts = as.numeric(FDOMDarkCounts)
+    )
+}
+
