@@ -13,9 +13,10 @@ app_ui <- function(request) {
     dashboardPage(
       dashboardHeader(
         title = tags$a(
+          id = "app-name",
           href = "https://github.com/raphidoc/sear",
           tags$img(src = "www/logo_sear.png", width = "100px", height = "40px"),
-          "seaR"
+          "sear"
         )
       ),
       dashboardSidebar(
@@ -70,7 +71,8 @@ golem_add_external_resources <- function() {
     bundle_resources(
       path = app_sys("app/www"),
       app_title = "sear"
-    )
+    ),
+    tags$link(rel="stylesheet", type="text/css", href="www/custom.css")
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
   )

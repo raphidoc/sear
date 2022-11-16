@@ -44,7 +44,7 @@ Apla <- sear:::read_apla(MTELog)
 
 ## Style
 
-The UI use the 'norwegian blue' (The dead parrot) #4f89b0 as theme color
+The UI use the 'norwegian blue' (The dead parrot) #4f89b0, rgb(79, 137, 176) as theme color
 
 ## Project workflow
 
@@ -55,17 +55,39 @@ The app will also look for folder and data files to re-initiate the app state as
 
 ## Load Data
 
-If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw bulk MTE files are saved in `project/bulk`. On load, the app will parse and filter data (speed < 4 knt) and save the resulting applanix data, HOCR packet list and HOCR Time index in `project/L1`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time.
+### MTE data logger
+
+If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw bulk MTE files are saved in `project/bulk`. On load, the app will parse and save the resulting applanix data, HOCR packet list and HOCR Time index in `project/L1`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time.
+
+### BioSonic
+
+*TO BE DONE*
+
+### Hydroball
+
+*COULD BE DONE*
 
 ## Selection display
 
-When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second ?) data point, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot representing the solar azimuth relative to the boat heading of points selected on the map.
+When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second) data point, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot representing the solar azimuth relative to the boat heading of points selected on the map.
 
-An observation type `ObsType` (Station, Transect) and an observation name `ObsName` can be attributed to the selected point which will be processed with the `Process to L1b` button.
+The points selected on the plotly map (lasso or box) will be processed when the `Process to L1b` button is clicked.
 
-NEED: Think about the required and optional NMEA string that sear will use.
+NEED: List the required and optional NMEA string that sear will use.
+
+-GPGGA
+
+### DateTime filtering
+
+*MANDATORY*
+
+### Speed
+
+*MANDATORY*: can be directly taken from the appropriate (GPVTG) NMEA string, or could be computed (from GPGGA ?)
 
 ### Azimuth polar plot
+
+*MANDATORY*: boat azimuth can be taken from the appropriate (GPVTG) NMEA string, or could be computed (from GPGGA ?)
 
 First compute the sun azimuth.
 
@@ -119,6 +141,15 @@ temp %>%
   )
 ```
 
+### Pitch and roll
+
+*OPTIONAL*
+
+## Instruments selection and processing
+
+Instrument available to process are detected from the loaded files. For now the processing is tailored to the SeaDoo configuration.
+
+*NEED* think about generalization of processing with different instruments configuration, usage of \*.con files (similar to ProSoft)
 
 # Server
 
