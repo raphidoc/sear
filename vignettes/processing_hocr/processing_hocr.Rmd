@@ -561,7 +561,7 @@ The steps for shutter dark correction are defined in prosoft manual as the follo
 1. Correct shutter dark by dark offset, computed as the difference between shutter dark and capped dark:
 $L_{CountsDarkDat} =  L_{CountsDarkDat} - L_{CountsDarkOffset}$
 First question, do we usually compute the dark offset on the field ?
-*The dark offset for HOCR is disregarded*
+*After discussion with Simon, the dark offset for HOCR is disregarded*
 
 2. Convert numerical count to engineering units, same OPTIC3 fit type as for light data.
 

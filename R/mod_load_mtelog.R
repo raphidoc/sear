@@ -20,13 +20,11 @@ mod_load_mtelog_ui <- function(id) {
 #'
 #' @noRd
 mod_load_mtelog_server <- function(id, SearTbl) {
-  stopifnot(is.reactive(SearTbl))
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$LoadButton <- renderUI({
-      req(SearTbl)
 
       shinyFilesButton(ns("MTEfiles"), label = "MTEfiles", title = "Select MTE .txt and .bin files", multiple = T)
     })

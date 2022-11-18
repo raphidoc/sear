@@ -163,6 +163,11 @@ This shiny app will become quite large. A clear organisation is the key to devel
 * app_ : files to wrap ui and server, configure and run the app.
 * zzz.R : file containing the call to `.onLoad()`
 
+## app_server
+
+The app_server.R wrap up the application server side, it's where all modules are put together and communication between them is defined.
+It's also there than global options such as `options(digits.secs = 3)` (to display and save time at the millisecond with 3 digit accuracy) are located.
+
 # SQLite backend
 
 Present the DB schema here

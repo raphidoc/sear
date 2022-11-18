@@ -102,7 +102,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, CalData, Apla) {
 
         DarkRawHocr <- Hocr[purrr::map_lgl(Hocr, ~ str_detect(.$instrument, "HED|PLD"))]
 
-        DarkHocr <- cal_dark(DarkRawHocr, CalHOCR = CalData()$HOCR, AplaDate)
+        DarkHocr <- cal_dark(DarkRawHocr, CalHOCR = CalData$CalHOCR(), AplaDate)
 
         # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
         # Computation time arround 2/3 minutes

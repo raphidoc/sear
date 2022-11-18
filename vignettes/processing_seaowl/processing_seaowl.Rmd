@@ -11,9 +11,10 @@ golem::document_and_reload()
 
 library(dplyr)
 library(lubridate)
-library(tidyr)
+library(plotly)
 library(readr)
 library(sear)
+library(tidyr)
 ```
 
 ## Calibration data
@@ -21,7 +22,7 @@ library(sear)
 ```{r}
 SeaOWLCalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
 
-SeaOWLCal <- sear:::read_seaowl_cal(SeaOWLCalFile)
+SeaOWLCal <- sear:::read_seaowl_cal()
 ```
 
 ## Load data
@@ -43,15 +44,73 @@ SeaOWLData <- sear:::read_seaowl(MTELog)
 ```{r}
 cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
   
+  # Test that calibration and data have the same serial number
+  if (!all(SeaOWLCal$SERIALNO == stringr::str_extract(SeaOWLData$SN, "(?<=-).*"))) {
+    stop("Calibration and SeaOWL have different serial number")
+  }
+  
   SeaOWLData %>%
     mutate(
       Bb_700 = SeaOWLCal$BbScaleFactor * (Bb700Output - SeaOWLCal$BbDarkCounts),
       Chl = SeaOWLCal$ChlScaleFactor * (ChlOutput - SeaOWLCal$ChlDarkCounts),
       FDOM = SeaOWLCal$FDOMScaleFactor * (FDOMOutput - SeaOWLCal$FDOMDarkCounts),
       .after = SN
-    )
+    ) %>% 
+    select(DateTime, SN, Bb_700, Chl, FDOM)
 }
 
-SeaOWLL2 <- cal_seaowl(SeaOWLData, SeaOWLCal)
+SeaOWLL1b <- cal_seaowl(SeaOWLData, SeaOWLCal)  %>%
+  mutate(
+    ID = seq_along(rownames(SeaOWLData)),
+    QC = "1"
+  )
+```
+
+## Plot data
+
+### L1b
+
+```{r}
+SeaOWLL1bNest <- SeaOWLL1b %>%
+  select(!any_of(c("SN")))%>%
+  pivot_longer(
+    cols = any_of(c("Bb_700", "Chl", "FDOM")),
+    names_to = "Parameter",
+    values_to = "Value"
+  ) %>%
+  group_by(Parameter) %>%
+  nest()
+
+
+PlyFont <- list(family = "Times New Roman", size = 18)
+BlackSquare <- list(
+  type = "rect",
+  fillcolor = "transparent",
+  line = list(width = 0.5),
+  xref = "paper",
+  yref = "paper",
+  x0 = 0,
+  x1 = 1,
+  y0 = 0,
+  y1 = 1
+)
+
+
+SeaOWLL1bNest <- SeaOWLL1bNest %>%
+  mutate(
+    Plot = purrr::map2(.x = data, .y = Parameter, ~
+      plot_ly(.x, text = ~ID) %>%
+        add_markers(x = ~DateTime, y = ~Value) %>%
+        layout(
+          shapes = BlackSquare,
+          yaxis = list(title = list(text = .y))
+        )
+    )
+  )
+
+
+#format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
+
+subplot(SeaOWLL1bNest$Plot, nrows = nrow(SeaOWLL1bNest), shareX = TRUE, titleY = TRUE)
 ```
 

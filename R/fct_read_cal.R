@@ -134,7 +134,7 @@ tidy_cal_hocr <- function() {
     group_by(.data$Instrument, .data$SN) %>%
     nest(SAMPLE = !matches("Instrument|SN"))
 
-  list("HOCR" = list("OPTIC3" = OPTIC3, "THERM1" = THERM1, "INTTIME" = INTTIME, "SAMPLE" = SAMPLE))
+  list("OPTIC3" = OPTIC3, "THERM1" = THERM1, "INTTIME" = INTTIME, "SAMPLE" = SAMPLE)
 }
 
 #' sbe19_cal
@@ -144,7 +144,9 @@ tidy_cal_hocr <- function() {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_sbe19_cal <- function(CalFile) {
+read_sbe19_cal <- function() {
+
+  CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -199,7 +201,9 @@ read_sbe19_cal <- function(CalFile) {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_sbe43_cal <- function(CalFile) {
+read_sbe43_cal <- function() {
+
+  CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -236,7 +240,9 @@ read_sbe43_cal <- function(CalFile) {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_sbe18_cal <- function(CalFile) {
+read_sbe18_cal <- function() {
+
+  CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -268,7 +274,9 @@ read_sbe18_cal <- function(CalFile) {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_seaowl_cal <- function(CalFile){
+read_seaowl_cal <- function(){
+
+  CalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 

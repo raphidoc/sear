@@ -83,6 +83,7 @@ mod_manage_project_server <- function(id) {
 
         # return SearTble pbject
         SearTbl
+
       } else {
         message("Creating ", searproj)
 
@@ -97,7 +98,9 @@ mod_manage_project_server <- function(id) {
         # return SearTble object
         SearTbl
       }
+
     })
+
   })
 }
 

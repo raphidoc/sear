@@ -21,15 +21,10 @@ app_ui <- function(request) {
       ),
       dashboardSidebar(
         mod_manage_project_ui("manage_project"),
-        dropdownButton(
-          mod_load_mtelog_ui("load_mtelog"),
-          circle = F,
-          label = "Load data",
-          tootltip = "path to go here"
-        ),
+        mod_load_data_ui("load_data"),
         # mod_filter_trim_ui("filter_trim"),
         # mod_discretize_ui("discretize"),
-        mod_process_L1b_ui("process_L1b"),
+        mod_L1b_process_ui("L1b_process"),
         mod_manage_DB_ui("manage_DB")
       ),
       dashboardBody(
@@ -41,7 +36,7 @@ app_ui <- function(request) {
           ),
           column(
             width = 6,
-            mod_obs_L1L2_ui("obs_L1L2")
+            mod_L1L2_ui("L1L2")
           )
         )
       )

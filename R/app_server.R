@@ -5,6 +5,10 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
+
+  #format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")
+  options(digits.secs = 3)
+
   # Global objects ----------------------------------------------------------
 
   Apla <- reactiveVal()
@@ -48,11 +52,14 @@ app_server <- function(input, output, session) {
     )
   )
 
+
+# Modules logic -----------------------------------------------------------
+
   SearTbl <- mod_manage_project_server("manage_project")
 
   DB <- mod_manage_DB_server("manage_DB", SearTbl, SelData, Obs)
 
-  DataFiles <- mod_load_mtelog_server("load_mtelog", SearTbl)
+  DataFiles <- mod_load_data_server("load_data", SearTbl)
 
   L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, CalData, Apla)
 
@@ -62,11 +69,11 @@ app_server <- function(input, output, session) {
 
   mod_discretize_server("discretize", Apla)
 
-  CalData <- mod_load_cal_server("HOCRCal")
+  CalData <- mod_load_cal_server("CalData")
 
-  L1b <- mod_process_L1b_server("process_L1b", L1, SelData, CalData, Obs)
+  L1b <- mod_L1b_process_server("L1b_process", L1, SelData, CalData, Obs)
 
-  L2 <- mod_obs_L1L2_server("obs_L1L2", L1b, Obs)
+  L2 <- mod_L1L2_server("L1L2", L1b, Obs)
 
   ManObs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
 }

@@ -20,9 +20,36 @@ mod_load_cal_server <- function(id) {
     ns <- session$ns
 
     # HOCR Calibration reactive value
-    reactiveVal({
+    CalHOCR <- reactiveVal({
       tidy_cal_hocr()
     })
+
+    CalSBE19 <- reactiveVal({
+      read_sbe19_cal()
+    })
+
+    CalSBE18 <- reactiveVal({
+      read_sbe18_cal()
+    })
+
+    CalSBE43 <- reactiveVal({
+      read_sbe43_cal()
+    })
+
+    CalSeaOWL <- reactiveVal({
+      read_seaowl_cal()
+    })
+
+
+# Module output -----------------------------------------------------------
+  list(
+    CalHOCR = CalHOCR,
+    CalSBE19 = CalSBE19,
+    CalSBE18 = CalSBE18,
+    CalSBE43 = CalSBE43,
+    CalSeaOWL = CalSeaOWL
+  )
+
   })
 }
 

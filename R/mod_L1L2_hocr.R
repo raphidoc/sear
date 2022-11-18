@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_obs_hocr_ui <- function(id) {
+mod_L1L2_hocr_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 320),
@@ -19,36 +19,13 @@ mod_obs_hocr_ui <- function(id) {
 #' obs_hocr Server Functions
 #'
 #' @noRd
-mod_obs_hocr_server <- function(id, L1bData, Obs) {
+mod_L1L2_hocr_server <- function(id, Obs) {
   # stopifnot(is.reactive(L1bData))
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # HOCR tab ----------------------------------------------------------------
-    # output$HOCR <- renderUI({
-    #
-    #   req(L1bData())
-    #
-    #   tagList(
-    #     plotlyOutput(ns("HOCRL1b"), height = 320),
-    #     actionButton(ns("ProcessL2"), "ProcessL2"),
-    #     plotlyOutput(ns("AOPs"), height = 250)
-    #   )
-    # })
-
-    # QC flag for HOCR --------------------------------------------------------
-    QCData <- reactiveVal({
-      reactive({
-        L1bData()$HOCR$AproxData[[1]] %>%
-          select(DateTime, ID) %>%
-          unique() %>%
-          mutate(QC = "1")
-      })
-    })
-
     # Get the ID of HOCR spectra selected in: selected()$customdata
-
     observeEvent(
       event_data("plotly_click", source = "HOCRL1b"),
       label = "QC HOCR",
@@ -56,29 +33,12 @@ mod_obs_hocr_server <- function(id, L1bData, Obs) {
       {
         Selected <- event_data("plotly_click", source = "HOCRL1b")$customdata
 
-        tmp <- QCData()
-
-        # Change value for selected spectrum ID
-        if (tmp$QC[tmp$ID %in% Selected] == "1") {
-          tmp$QC[tmp$ID %in% Selected] <- 0
-        } else if (tmp$QC[tmp$ID %in% Selected] == "0") {
-          tmp$QC[tmp$ID %in% Selected] <- 1
-        }
-
-        QCData(tmp)
+        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
       }
     )
 
-    L1bHOCR <- reactive({
-      L1bData()$HOCR %>%
-        select(Instrument, SN, AproxData) %>%
-        mutate(AproxData = purrr::map(AproxData, ~ left_join(., QCData(), by = c("DateTime", "ID"))))
-    })
-
-    # HOCR Es and Lu plot -----------------------------------------------------
+    # HOCR Es and Lu plot
     output$HOCRL1b <- renderPlotly({
-      # req(L1bHOCR())
-      # req(QCData())
 
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(
@@ -161,7 +121,7 @@ mod_obs_hocr_server <- function(id, L1bData, Obs) {
           yaxis2 = list(title = list(text = TeX("\\text{L}_\\text{u}"))) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
-        config(mathjax = "local", displayModeBar = T) %>%
+        config(mathjax = "cdn", displayModeBar = T) %>%
         event_register("plotly_click")
 
       # Set source for selection event
@@ -171,18 +131,20 @@ mod_obs_hocr_server <- function(id, L1bData, Obs) {
       widgetframe::frameableWidget(p)
     })
 
-    # HOCR AOPs computation ---------------------------------------------------
+    # HOCR AOPs computation
     observeEvent(
       input$ProcessL2,
       {
-        Obs$HOCR$L2 <- L2_hocr(L1bHOCR())
+        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b)
       }
     )
 
     output$AOPs <- renderPlotly({
       # req(L2Data())
 
-      Rrsplot <- Obs$HOCR$L2() %>%
+      validate(need(nrow(Obs$HOCR$L2) != 0, "Process L2 to display AOPs"))
+
+      Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 
@@ -193,17 +155,11 @@ mod_obs_hocr_server <- function(id, L1bData, Obs) {
       subplot(Rrsplot, KLuplot)
     })
 
-    # Module output -----------------------------------------------------------
-
-    list(
-      L1bHOCR = L1bHOCR
-      # AOPs = Obs$HOCR$L2
-    )
   })
 }
 
 ## To be copied in the UI
-# mod_obs_hocr_ui("obs_hocr")
+# mod_L1L2_hocr_ui("L1L2_hocr")
 
 ## To be copied in the server
-# mod_obs_hocr_server("obs_hocr")
+# mod_L1L2_hocr_server("L1L2_hocr")
