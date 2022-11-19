@@ -83,9 +83,6 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
             shiny = T,
             trace_back = TRUE
           )
-
-          # Empty L2 on new processing to avoid confusion
-          Obs$HOCR$L2 <- tibble()
         }
 
         # SBE19 L1b ---------------------------------------------------------------
@@ -132,10 +129,15 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
               QC = "1"
             )
 
-          Obs$SBE19$L1b <- CTD
-
-          # Empty L2 on new processing to avoid confusion
-          Obs$SBE19$L2 <- tibble()
+          Obs$SBE19$L1b <- CTD %>%
+            select(!any_of(c("Conductivity", "CT", "O2Sol")))%>%
+            pivot_longer(
+              cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
+              names_to = "Parameter",
+              values_to = "Value"
+            ) %>%
+            group_by(Parameter) %>%
+            nest(Data = !matches("Parameter"))
 
         }
 
@@ -152,9 +154,6 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
             )
 
           Obs$SeaOWL$L1b <- SeaOWLL1b
-
-          # Empty L2 on new processing to avoid confusion
-          Obs$SeaOWL$L2 <- tibble()
         }
 
         # BBFL2 L1b ---------------------------------------------------------------
@@ -163,6 +162,11 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
           #browser()
 
         }
+
+        # Empty L2 on new processing to avoid confusion
+        Obs$HOCR$L2 <- tibble()
+        Obs$SBE19$L2 <- tibble()
+        Obs$SeaOWL$L2 <- tibble()
 
       }
     )

@@ -21,22 +21,33 @@ app_ui <- function(request) {
       ),
       dashboardSidebar(
         mod_manage_project_ui("manage_project"),
-        mod_load_data_ui("load_data"),
+        sidebarMenu(
+          menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
+          menuItem("Processing", tabName = "Processing", icon = icon("gears"))
+        ),
         # mod_filter_trim_ui("filter_trim"),
         # mod_discretize_ui("discretize"),
         mod_L1b_process_ui("L1b_process"),
         mod_manage_DB_ui("manage_DB")
       ),
       dashboardBody(
-        mod_parse_mtelog_ui("parse_mtelog"),
-        fluidRow(
-          column(
-            width = 6,
-            mod_select_data_ui("select_data")
+        tabItems(
+          tabItem(tabName = "Settings",
+                  mod_load_data_ui("load_data"),
+                  mod_parse_mtelog_ui("parse_mtelog")
           ),
-          column(
-            width = 6,
-            mod_L1L2_ui("L1L2")
+
+          tabItem(tabName = "Processing",
+                  fluidRow(
+                    column(
+                      width = 6,
+                      mod_select_data_ui("select_data")
+                    ),
+                    column(
+                      width = 6,
+                      mod_L1L2_ui("L1L2")
+                    )
+                  )
           )
         )
       )

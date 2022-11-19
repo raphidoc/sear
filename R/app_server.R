@@ -8,6 +8,7 @@ app_server <- function(input, output, session) {
 
   #format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")
   options(digits.secs = 3)
+  options(shiny.reactlog = TRUE)
 
   # Global objects ----------------------------------------------------------
 
