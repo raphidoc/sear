@@ -153,7 +153,15 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
               QC = "1"
             )
 
-          Obs$SeaOWL$L1b <- SeaOWLL1b
+          Obs$SeaOWL$L1b <- SeaOWLL1b %>%
+            select(!any_of(c("SN")))%>%
+            pivot_longer(
+              cols = any_of(c("Bb_700", "Chl", "FDOM")),
+              names_to = "Parameter",
+              values_to = "Value"
+            ) %>%
+            group_by(Parameter) %>%
+            nest(Data = !matches("Parameter"))
         }
 
         # BBFL2 L1b ---------------------------------------------------------------

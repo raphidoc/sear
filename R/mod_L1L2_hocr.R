@@ -11,7 +11,7 @@ mod_L1L2_hocr_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 320),
-    actionButton(ns("ProcessL2"), "ProcessL2"),
+    actionButton(ns("ProcessL2"), "Process L2"),
     plotlyOutput(ns("AOPs"), height = 250)
   )
 }
@@ -24,18 +24,6 @@ mod_L1L2_hocr_server <- function(id, Obs) {
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
-    # Get the ID of HOCR spectra selected in: selected()$customdata
-    observeEvent(
-      event_data("plotly_click", source = "HOCRL1b"),
-      label = "QC HOCR",
-      ignoreInit = TRUE,
-      {
-        Selected <- event_data("plotly_click", source = "HOCRL1b")$customdata
-
-        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
-      }
-    )
 
     # HOCR Es and Lu plot
     output$HOCRL1b <- renderPlotly({
@@ -130,6 +118,18 @@ mod_L1L2_hocr_server <- function(id, Obs) {
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
     })
+
+    # Get the ID of HOCR spectra selected in: selected()$customdata
+    observeEvent(
+      event_data("plotly_click", source = "HOCRL1b"),
+      label = "QC HOCR",
+      ignoreInit = TRUE,
+      {
+        Selected <- event_data("plotly_click", source = "HOCRL1b")$customdata
+
+        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
+      }
+    )
 
     # HOCR AOPs computation
     observeEvent(

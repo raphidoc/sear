@@ -11,7 +11,8 @@ mod_L1L2_sbe19_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("SBE19L1b")),
-    actionButton(ns("ProcessL2"), "ProcessL2")
+    actionButton(ns("ProcessL2"), "Process L2"),
+    DT::DTOutput(ns("DataTable"))
   )
 }
 
@@ -55,7 +56,8 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
             ~ plot_ly(
                 .x,
                 text = ~ID,
-                customdata = ~paste0(.y,"_",ID)) %>%
+                customdata = ~paste0(.y,"_",ID)
+              ) %>%
               add_markers(
                 x = ~DateTime,
                 y = ~Value,
@@ -112,6 +114,57 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
 
       }
     )
+
+    observeEvent(
+      input$ProcessL2,
+      {
+        Obs$SBE19$L2 <- L2_param_val(Obs$SBE19$L1b)
+      }
+    )
+
+    output$DataTable <- DT::renderDataTable({
+
+      validate(need(nrow(Obs$SBE19$L2) != 0, "Process L2 to dispaly observation statistics"))
+
+      DT::datatable(Obs$SBE19$L2,
+                    extensions = c("Buttons", "Scroller", "Select"),
+                    # filter = "top",
+                    escape = TRUE, rownames = FALSE,
+                    style = "bootstrap",
+                    class = "compact",
+                    options = list(
+                      dom = "Brtip",
+                      select = list(style = "os", items = "row"),
+                      buttons = list(I("colvis"), "selectNone", "csv"),
+                      columnDefs = list(
+                        list(
+                          visible = FALSE,
+                          targets = c()
+                        )
+                      ),
+                      deferRender = TRUE,
+                      scrollY = 100,
+                      pageLength = 10,
+                      scroller = TRUE
+                    ),
+                    selection = "none",
+                    editable = F
+      ) %>%
+        DT::formatRound(c("OxSol", "Oxygen", "pH", "Pressure", "SA", "SP", "Temperature"), digits=3)
+
+      },
+      server = FALSE,
+      editable = F
+    )
+
+
+
+    # output$StatTable <- renderUI({
+    #   validate(need(nrow(Obs$SBE19$L2) != 0, "Process L2 to dispaly observation statistics"))
+    #
+    # })
+
+
 
   })
 }

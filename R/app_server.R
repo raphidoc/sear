@@ -58,7 +58,7 @@ app_server <- function(input, output, session) {
 
   SearTbl <- mod_manage_project_server("manage_project")
 
-  DB <- mod_manage_DB_server("manage_DB", SearTbl, SelData, Obs)
+  DB <- mod_manage_db_server("manage_db", SearTbl, SelData, Obs)
 
   DataFiles <- mod_load_data_server("load_data", SearTbl)
 

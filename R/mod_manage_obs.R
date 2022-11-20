@@ -71,7 +71,11 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
     observeEvent(
       req(input$Save),
       {
+
+        browser()
+
         # Does UUID is present in Metadata colnames ?
+        # Now it is initiated on start so always TRUE
         UUIDPresent <- any(str_detect(names(Obs$Metadata), "UUID"))
 
         # Does UUID exist in database, check ObsMeta
@@ -231,9 +235,27 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           HOCRL2 <- Obs$HOCR$L2 %>%
             mutate(UUID = ObsUUID)
 
+          SBE19L1b <- Obs$SBE19$L1b %>%
+            unnest(c(Data)) %>%
+            mutate(UUID = ObsUUID)
+
+          SBE19L2 <- Obs$SBE19$L2  %>%
+            mutate(UUID = ObsUUID)
+
+          SeaOWLL1b <- Obs$SeaOWL$L1b %>%
+            unnest(c(Data)) %>%
+            mutate(UUID = ObsUUID)
+
+          SeaOWLL2 <- Obs$SeaOWL$L2  %>%
+            mutate(UUID = ObsUUID)
+
           DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
 
           # Feedback to the user
           session$sendCustomMessage(

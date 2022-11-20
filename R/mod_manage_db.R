@@ -1,4 +1,4 @@
-#' manage_DB UI Function
+#' manage_db UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,17 +7,17 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_manage_DB_ui <- function(id) {
+mod_manage_db_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("ObsList"))
   )
 }
 
-#' manage_DB Server Functions
+#' manage_db Server Functions
 #'
 #' @noRd
-mod_manage_DB_server <- function(id, SearTbl, SelData, Obs) {
+mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -112,6 +112,71 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs) {
           )"
         )
 
+        # SBE19 L1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `SBE19L1b` (
+          `Parameter` TEXT,
+          `DateTime` TEXT,
+          `ID` INTEGER,
+          `QC` TEXT,
+          `Value` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # SBE19 L2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `SBE19L2` (
+          `OxSol` REAL,
+          `Oxygen` REAL,
+          `pH` REAL,
+          `Pressure` REAL,
+          `SA` REAL,
+          `SP` REAL,
+          `Temperature` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # SeaOWL L1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `SeaOWLL1b` (
+          `Parameter` TEXT,
+          `DateTime` TEXT,
+          `ID` INTEGER,
+          `QC` TEXT,
+          `Value` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # SeaOWL L2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `SeaOWLL2` (
+          `Bb_700` REAL,
+          `Chl` REAL,
+          `FDOM` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+
         ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM Metadata")))
 
         # Return Con
@@ -164,7 +229,7 @@ mod_manage_DB_server <- function(id, SearTbl, SelData, Obs) {
 }
 
 ## To be copied in the UI
-# mod_manage_DB_ui("manage_DB")
+# mod_manage_db_ui("manage_db")
 
 ## To be copied in the server
-# mod_manage_DB_server("manage_DB")
+# mod_manage_db_server("manage_db")
