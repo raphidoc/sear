@@ -1,0 +1,110 @@
+---
+title: "processing_bbfl2"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+golem::document_and_reload()
+
+library(dplyr)
+library(lubridate)
+library(plotly)
+library(readr)
+library(sear)
+library(tidyr)
+```
+
+## Calibration data
+
+```{r}
+BBFL2CalFile <- sear:::app_sys("cal", "bbfl2", "5745.cal")
+
+BBFL2Cal <- sear:::read_bbfl2_cal()
+```
+
+
+## Load data
+
+```{r}
+#Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
+Station <- interval(ymd_hms("2022-07-05 12:23:00"), ymd_hms("2022-07-05 12:24:00"))
+
+DataFile <- sear:::app_sys("extdata", "DATA_20220705_105732.txt")
+
+MTELog <- sear:::read_mtelog(DataFile)
+
+MTELog <- MTELog %>% filter(DateTime %within% Station)
+
+BBFL2Data <- sear:::read_bbfl2(MTELog)
+```
+
+## Calibrate data
+
+```{r}
+cal_bbfl2 <- function(BBFL2Data, BBFL2Cal) {
+  
+  BBFL2Data %>%
+    mutate(
+      NTU = BBFL2Cal$NTUScaleFactor * (NTUSig - BBFL2Cal$NTUDarkCounts),
+      PE = BBFL2Cal$PEScaleFactor * (PESig - BBFL2Cal$PEDarkCounts),
+      PC = BBFL2Cal$PCScaleFactor * (PCSig - BBFL2Cal$PCDarkCounts)
+    ) %>% 
+    select(DateTime, NTU, PE, PC)
+}
+
+BBFL2L1b <- cal_bbfl2(BBFL2Data, BBFL2Cal)  %>%
+  mutate(
+    ID = seq_along(rownames(BBFL2Data)),
+    QC = "1"
+  )
+```
+
+## Plot data
+
+### L1b
+
+```{r}
+BBFL2L1bNest <- BBFL2L1b %>%
+  pivot_longer(
+    cols = any_of(c("NTU", "PE", "PC")),
+    names_to = "Parameter",
+    values_to = "Value"
+  ) %>%
+  group_by(Parameter) %>%
+  nest(Data = !matches("Parameter"))
+
+
+PlyFont <- list(family = "Times New Roman", size = 18)
+BlackSquare <- list(
+  type = "rect",
+  fillcolor = "transparent",
+  line = list(width = 0.5),
+  xref = "paper",
+  yref = "paper",
+  x0 = 0,
+  x1 = 1,
+  y0 = 0,
+  y1 = 1
+)
+
+
+ply <- BBFL2L1bNest %>%
+  mutate(
+    Plot = purrr::map2(.x = Data, .y = Parameter, ~
+      plot_ly(.x, text = ~ID) %>%
+        add_markers(x = ~DateTime, y = ~Value) %>%
+        layout(
+          shapes = BlackSquare,
+          yaxis = list(title = list(text = .y))
+        )
+    )
+  )
+
+
+#format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
+
+subplot(ply$Plot, nrows = nrow(BBFL2L1bNest), shareX = TRUE, titleY = TRUE)
+```

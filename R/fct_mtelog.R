@@ -159,6 +159,7 @@ read_apla <- function(MainLog) {
 # BBFL2 extractor -----------------------------------------------------------
 
 read_bbfl2 <- function(MainLog) {
+
   BBFL2 <- MainLog %>%
     filter(Instrument == "ECO") %>%
     separate(
@@ -167,14 +168,15 @@ read_bbfl2 <- function(MainLog) {
       into = c(
         "BBFL2Date",
         "BBFL2Time",
-        "a",
-        "b",
-        "c",
-        "d",
-        "e",
-        "f",
+        "NTURef", # NTU
+        "NTUSig",
+        "PERef", # phycoerithrin
+        "PESig",
+        "PCRef", # phycocyanine
+        "PCSig",
         "g"
       ),
+      convert = T,
       extra = "merge"
     ) %>%
     mutate(

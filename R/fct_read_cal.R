@@ -307,3 +307,40 @@ read_seaowl_cal <- function(){
     )
 }
 
+#' seaowl_cal
+#'
+#' @description read SeaOWL cal file
+#'
+#' @return tibble with calibration data
+#'
+#' @noRd
+read_bbfl2_cal <- function(){
+
+  CalFile <- sear:::app_sys("cal", "bbfl2", "5745.cal")
+
+  CalRaw <- read_lines(CalFile, skip_empty_rows = T)
+
+  CalData <- tibble(CalRaw) %>%
+    separate(
+      col = CalRaw,
+      sep = "=",
+      into = c(
+        "Parameter",
+        "Value"
+      ),
+      convert = FALSE
+    ) %>%
+    pivot_wider(
+      names_from = "Parameter",
+      values_from = "Value"
+    ) %>%
+    mutate(
+      CalDate = dmy(CalDate),
+      NTUScaleFactor = as.numeric(NTUScaleFactor),
+      NTUDarkCounts = as.numeric(NTUDarkCounts),
+      PEScaleFactor = as.numeric(PEScaleFactor),
+      PEDarkCounts = as.numeric(PEDarkCounts),
+      PCScaleFactor = as.numeric(PCScaleFactor),
+      PCDarkCounts = as.numeric(PCDarkCounts)
+    )
+}

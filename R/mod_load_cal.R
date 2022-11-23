@@ -40,6 +40,10 @@ mod_load_cal_server <- function(id) {
       read_seaowl_cal()
     })
 
+    CalBBFL2 <- reactiveVal({
+      read_bbfl2_cal()
+    })
+
 
 # Module output -----------------------------------------------------------
   list(
@@ -47,7 +51,8 @@ mod_load_cal_server <- function(id) {
     CalSBE19 = CalSBE19,
     CalSBE18 = CalSBE18,
     CalSBE43 = CalSBE43,
-    CalSeaOWL = CalSeaOWL
+    CalSeaOWL = CalSeaOWL,
+    CalBBFL2 = CalBBFL2
   )
 
   })

@@ -43,11 +43,11 @@ app_server <- function(input, output, session) {
       L1b = tibble(),
       L2 = tibble()
     ),
-    BBFL2 = reactiveValues(
+    SeaOWL = reactiveValues(
       L1b = tibble(),
       L2 = tibble()
     ),
-    SeaOWL = reactiveValues(
+    BBFL2 = reactiveValues(
       L1b = tibble(),
       L2 = tibble()
     )

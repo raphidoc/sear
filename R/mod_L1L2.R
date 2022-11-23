@@ -50,8 +50,13 @@ mod_L1L2_server <- function(id, L1b, Obs) {
         tabPanel(
           "SeaOWL",
           mod_L1L2_seaowl_ui(ns("L1L2_seaowl"))
+        ),
+        tabPanel(
+          "BBFL2",
+          mod_L1L2_bbfl2_ui(ns("L1L2_bbfl2"))
         )
       )
+
     })
 
     # Keep that for dev purpose
@@ -166,6 +171,7 @@ mod_L1L2_server <- function(id, L1b, Obs) {
 
     # BBFL2 tab ---------------------------------------------------------------
 
+    mod_L1L2_bbfl2_server("L1L2_bbfl2", Obs)
 
 
 # Module output -----------------------------------------------------------

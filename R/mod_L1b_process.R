@@ -167,7 +167,23 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         # BBFL2 L1b ---------------------------------------------------------------
 
         if (any(str_detect(Instrument$ToProcess(), "BBFL2"))) {
-          #browser()
+
+          BBFL2 <- L1$BBFL2() %>% filter(DateTime %within% TimeInt)
+
+          BBFL2L1b <- cal_bbfl2(BBFL2, CalData$CalBBFL2()) %>%
+            mutate(
+              ID = seq_along(rownames(BBFL2)),
+              QC = "1"
+            )
+
+          Obs$BBFL2$L1b <- BBFL2L1b %>%
+            pivot_longer(
+              cols = any_of(c("NTU", "PE", "PC")),
+              names_to = "Parameter",
+              values_to = "Value"
+            ) %>%
+            group_by(Parameter) %>%
+            nest(Data = !matches("Parameter"))
 
         }
 
@@ -175,6 +191,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         Obs$HOCR$L2 <- tibble()
         Obs$SBE19$L2 <- tibble()
         Obs$SeaOWL$L2 <- tibble()
+        Obs$BBFL2$L2 <- tibble()
 
       }
     )
