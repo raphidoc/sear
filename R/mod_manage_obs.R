@@ -31,12 +31,14 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
     observeEvent(
       req(SelData$SelUUID()),
       {
+        # Metadata
         # Have to query data based on UUID
         qry <- paste0("SELECT * FROM Metadata WHERE UUID='", SelData$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
+        # HOCR
         # UUID have to ship with Instrument and SN to be passed to HOCR$L2
         qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='", SelData$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
@@ -50,29 +52,55 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
         Obs$HOCR$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
-        # dbDisconnect(con)
+        # SBE19
+        qry <- paste0("SELECT * FROM SBE19L1b WHERE UUID='", SelData$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$SBE19$L1b <- tibble(DBI::dbFetch(res)) %>%
+          group_by(ID) %>%
+          nest(Data = !matches("Parameter|UUID"))
+        DBI::dbClearResult(res)
 
-        # Obs$Metadata <- tibble(DBI::dbReadTable(DB$Con(), "Metadata"))
-        # Obs$HOCR$L1b <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL1b"))
-        # Obs$HOCR$L2 <- tibble(DBI::dbReadTable(DB$Con(), "HOCRL2"))
+        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID='", SelData$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$SBE19$L2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
 
+        # SeaOWL
+        qry <- paste0("SELECT * FROM SeaOWLL1b WHERE UUID='", SelData$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$SeaOWL$L1b <- tibble(DBI::dbFetch(res)) %>%
+          group_by(ID) %>%
+          nest(Data = !matches("Parameter|UUID"))
+        DBI::dbClearResult(res)
 
-        # L2$ObsTbl(Metadata)
-        #
-        # L2$HOCR()$L1bHOCR(HOCRL1b)
-        #
-        # L2$HOCR()$AOPs(HOCRL2)
+        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID='", SelData$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$SeaOWL$L2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # BBFL2
+        qry <- paste0("SELECT * FROM BBFL2L1b WHERE UUID='", SelData$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$BBFL2$L1b <- tibble(DBI::dbFetch(res)) %>%
+          group_by(ID) %>%
+          nest(Data = !matches("Parameter|UUID"))
+        DBI::dbClearResult(res)
+
+        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID='", SelData$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$BBFL2$L2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
       }
     )
 
-    # Save button send data to SQLite -----------------------------------------
+
+# Save to SQLite ----------------------------------------------------------
     UUID <- reactiveVal()
 
     observeEvent(
       req(input$Save),
       {
-
-        browser()
 
         # Does UUID is present in Metadata colnames ?
         # Now it is initiated on start so always TRUE
@@ -87,7 +115,10 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
 
         # If UUID already exist, update record in SQLite
         if (UUIDPresent & UUIDExist) {
-          # Update Metadata table
+
+
+# Update Metadata ---------------------------------------------------------
+
           Metadata <- Obs$Metadata %>%
             mutate(
               ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
@@ -107,7 +138,9 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           # Execute the statement and return the number of line affected
           MetaUp <- DBI::dbExecute(DB$Con(), qry)
 
-          # Update HOCRL1b table
+
+# Update HOCR -------------------------------------------------------------
+
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData))
 
@@ -140,15 +173,15 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           # Result is that we issue query to update QC everywhere, event if it doesn't change ...
 
           # Execute the statement and return the number of line affected
-          L1bUp <- unlist(purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x))))
+          HOCRL1bUp <- unlist(purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x))))
 
-          # Update HOCRL2 table
+          # Update HOCR L2 table
           HOCRL2 <- Obs$HOCR$L2
 
           # Individual CASE WHEN for each variables to change: Rrs, KLu
           # As the WHERE constraint on UUID is already present on the final query could remove UUID from CASE WHEN
           qryRrs <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$Rrs, ..4 = HOCRL2$KLu),
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$Rrs),
             .f = ~ glue::glue(
               "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
             )
@@ -179,13 +212,34 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           qry <- glue::glue_sql(stringr::str_replace_all(qry, "NA", "NULL"))
 
           # Execute the statement and return the number of line affected
-          L2Up <- DBI::dbExecute(DB$Con(), qry)
+          HOCRL2Up <- DBI::dbExecute(DB$Con(), qry)
+
+
+# Update SBE19 ------------------------------------------------------------
+
+          SBE19L1bUp <- update_L1b_param_val(L1b = Obs$SBE19$L1b, TableName = "SBE19L1b", Con = DB$Con())
+
+          SBE19L2Up <- update_L2_param_val(L2 = Obs$SBE19$L2,TableName = "SBE19L2", Con = DB$Con())
+
+# Update SeaOWL ------------------------------------------------------------
+
+          SeaOWLL1bUp <- update_L1b_param_val(L1b = Obs$SeaOWL$L1b, TableName = "SeaOWLL1b", Con = DB$Con())
+
+          SeaOWLL2Up <- update_L2_param_val(L2 = Obs$SeaOWL$L2,TableName = "SeaOWLL2", Con = DB$Con())
+
+
+# Update BBFL2 ------------------------------------------------------------
+
+          BBFL2L1bUp <- update_L1b_param_val(L1b = Obs$BBFL2$L1b, TableName = "BBFL2L1b", Con = DB$Con())
+
+          BBFL2L2Up <- update_L2_param_val(L2 = Obs$BBFL2$L2,TableName = "BBFL2L2", Con = DB$Con())
+
 
           # Check that the number of line affected is correct, should probably improve this
           # MetaUp must be only one line affected, if more means UUID collision
           # L1bUp == 3 * 137 wavelengths * bins number
           # L2Up == User input wavelength
-          test <- all(MetaUp == 1, unique(L1bUp) == 411, L2Up == 150)
+          test <- all(MetaUp == 1, unique(HOCRL1bUp) == 411, HOCRL2Up == 150)
 
           # Feedback to the user
           session$sendCustomMessage(
@@ -193,8 +247,8 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
             message =
               glue::glue(
                 "Metadata: ", MetaUp, " entry updated\n",
-                "HOCRL1b: ", sum(L1bUp), " entry updated\n",
-                "HOCRL2: ", L2Up, " entry updated\n"
+                "HOCRL1b: ", sum(HOCRL1bUp), " entry updated\n",
+                "HOCRL2: ", HOCRL2Up, " entry updated\n"
               )
           )
 
@@ -249,6 +303,13 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           SeaOWLL2 <- Obs$SeaOWL$L2  %>%
             mutate(UUID = ObsUUID)
 
+          BBFL2L1b <- Obs$BBFL2$L1b %>%
+            unnest(c(Data)) %>%
+            mutate(UUID = ObsUUID)
+
+          BBFL2L2 <- Obs$BBFL2$L2  %>%
+            mutate(UUID = ObsUUID)
+
           DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
@@ -256,6 +317,8 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
 
           # Feedback to the user
           session$sendCustomMessage(

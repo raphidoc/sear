@@ -176,6 +176,36 @@ mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
           )"
         )
 
+        # BBFL2 L1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `BBFL2L1b` (
+          `Parameter` TEXT,
+          `DateTime` TEXT,
+          `ID` INTEGER,
+          `QC` TEXT,
+          `Value` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # BBFL2 L2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `BBFL2L2` (
+          `NTU` REAL,
+          `PC` REAL,
+          `PE` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
 
         ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM Metadata")))
 
