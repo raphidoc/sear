@@ -57,7 +57,13 @@ The app will also look for folder and data files to re-initiate the app state as
 
 ### MTE data logger
 
-If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw bulk MTE files are saved in `project/bulk`. On load, the app will parse and save the resulting applanix data, HOCR packet list and HOCR Time index in `project/L1`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time.
+If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw MTE files (.bin and .txt) are saved in `.sear/data/raw`. On load, the app will parse and save the resulting applanix data, HOCR packet, HOCR dark packet, HOCR Time index, SBE19, SeaOwl and BBFL2 in `.sear/data/parsed`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time (~2/3 min for .bin = 46 MB).
+If parsed data is already present, it will be read at the project selection. 
+
+#### HOCR specific files
+
+The HOCR time index optimize processing time for the selection of HOCR packet within a time interval.
+The HOCR dark is a list of shutter dark values interpolated to the minute to apply dark correction.
 
 ### BioSonic
 

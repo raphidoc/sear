@@ -33,8 +33,7 @@ app_ui <- function(request) {
       dashboardBody(
         tabItems(
           tabItem(tabName = "Settings",
-                  mod_load_data_ui("load_data"),
-                  mod_parse_mtelog_ui("parse_mtelog")
+                  mod_parse_data_ui("parse_data")
           ),
 
           tabItem(tabName = "Processing",

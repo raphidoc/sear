@@ -11,209 +11,276 @@
 mod_parse_mtelog_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    waiter::use_waiter()
+    waiter::use_waiter(),
+    uiOutput(outputId = ns("Load"))
   )
 }
 
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, DataFiles, CalData, Apla) {
+mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
   stopifnot(is.reactive(SearTbl))
-  stopifnot(is.reactive(DataFiles))
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # DataLogger reactive tibble ----------------------------------------------
+    HOCR <- reactiveVal()
+    HOCRDark <- reactiveVal()
+    HOCRTimeIndex <- reactiveVal()
+    SBE19 <- reactiveVal()
+    SeaOWL <- reactiveVal()
+    BBFL2 <- reactiveVal()
 
-    MainLog <- reactive(label = "MainLog", {
-      req(DataFiles())
+# Create parsed files on input --------------------------------------------
+
+    output$Load <- renderUI({
+      req(SearTbl())
+
+      fileInput(ns("Files"), "Choose MTE txt and bin Files", accept = c(".txt",".bin"), multiple = T)
+
+    })
+
+
+    MTELog <- reactive(
+      label = "MTELog",
+      {
+      #req(DataFiles())
 
       read_mtelog(DataFiles()$txt)
     })
 
-    # Aplanix data ------------------------------------------------------------
+    observeEvent(
+      input$Files,
+      {
+        browser()
 
-    # Apla <- reactiveVal({})
+        # Copy files in raw dir
 
-    # Initial tibble
-    observe({
-      # Try to read parsed and filtered applanix data
+        RawDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "raw")
 
-      # Potential filtered File
-      PotApla <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_apla_", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv"))
+        dir.create(RawDir, recursive = TRUE)
 
-      if (file.exists(PotApla)) {
-        Apla(read_csv(PotApla))
-      } else {
-        validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
+        Files <- input$Files %>%
+          mutate(
+            rawpath = file.path(RawDir, name)
+          )
 
-        Apla(read_apla(MainLog()))
+        file.copy(Files$datapath, Files$rawpath)
 
-        # Apla(Apla() %>% filter(
-        #   Speed_N <= 4,
-        #   BoatSolAzm > 0 & BoatSolAzm < 180
-        #   ))
+        # Variables to create parsed files
 
-        dir.create(file.path(SearTbl()$ProjPath, ".sear"))
+        MTELog <- read_mtelog(str_subset(Files$rawpath, "\\.txt$"))
 
-        write_csv(Apla(), PotApla)
+        InstList <- unique(MTELog$Instrument)
+
+        DateTime <- str_extract(str_subset(Files$name, "\\.txt$"), "[:digit:]{8}_[:digit:]{6}")
+
+        ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+
+        dir.create(ParsedDir, recursive = TRUE)
+
+        # Applanix
+
+        if (any(str_detect(InstList, "APLA"))) {
+
+          Apla(read_apla(MTELog))
+
+          PotApla <- file.path(ParsedDir, paste0("apla_",DateTime,".csv"))
+
+          write_csv(Apla(), PotApla) # Should I use append = T to add data ?
+        }
+
+        # HOCR
+
+        if (any(str_detect(InstList, "OCR"))) {
+
+          HOCR(read_hocr(str_subset(Files$rawpath, "\\.bin")))
+
+          HocrDarkRaw <- HOCR()[purrr::map_lgl(HOCR(), ~ str_detect(.$instrument, "HED|PLD"))]
+
+          # Dont know the logger date format so quick fix with Apla date
+          AplaDate <- unique(date(Apla()$DateTime))
+
+          HOCRDark(cal_dark(HocrDarkRaw, CalHOCR = CalData$CalHOCR(), AplaDate))
+
+          # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
+          # Computation time arround 2/3 minutes
+          TimeIndex <- purrr::map(
+            .x = HOCR(),
+            ~ clock::date_time_parse(
+              paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)),
+              zone = "UTC")
+          )
+
+          HOCRTimeIndex(TimeIndex)
+
+
+          PotHOCR <- file.path(ParsedDir, paste0("hocr_",DateTime,".rds"))
+          PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
+          PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
+
+          write_rds(HOCR(), PotHOCR)
+
+          write_rds(HOCRDark(), PotHOCRDark)
+
+          write_rds(HOCRTimeIndex(), PotHOCRTimeIndex)
+
+        }
+
+        # SBE19
+
+        if (any(str_detect(InstList, "CTD"))) {
+
+          SBE19(read_sbe19(MTELog))
+
+          PotSBE19 <- file.path(ParsedDir, paste0("sbe19_",DateTime,".csv"))
+
+          write_csv(SBE19(), PotSBE19)
+
+        }
+
+        # SeaOWL
+
+        if (any(str_detect(InstList, "OWL"))) {
+
+          SeaOWL(read_seaowl(MTELog))
+
+          PotSeaOWL <- file.path(ParsedDir, paste0("seaowl_",DateTime,".csv"))
+
+          write_csv(SeaOWL(), PotSeaOWL)
+
+        }
+
+        # BBFL2
+
+        if (any(str_detect(InstList, "ECO"))) {
+
+          BBFL2(read_bbfl2(MTELog))
+
+          PotBBFL2 <- file.path(ParsedDir, paste0("bbfl2_",DateTime,".csv"))
+
+          write_csv(BBFL2(), PotBBFL2)
+
+        }
+
       }
+    )
+
+# Read parsed files on project load ---------------------------------------
+
+    ParsedFiles <- reactive({
+
+      req(SearTbl())
+
+      ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+
+      if (dir.exists(ParsedDir)) {
+
+        list.files(ParsedDir, full.names = TRUE)
+
+      } else {
+        FALSE
+      }
+
     })
 
-    # HOCR binary read --------------------------------------------------------
+    observeEvent(
+      SearTbl(),
+      {
+        browser()
 
-    HOCR <- reactiveVal()
-    DarkHOCR <- reactiveVal()
-    TimeIndexHOCR <- reactiveVal()
+        # Applanix
 
-    observe({
-      req(DataFiles())
+        NameApla <- c("apla_[:digit:]{8}_[:digit:]{6}\\.csv")
 
-      waiter <- waiter::Waiter$new()
-      waiter$show()
-      on.exit(waiter$hide())
+        if (any(str_detect(ParsedFiles(), NameApla))) {
 
-      PotHocr <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds"))
+          PotApla <- str_subset(ParsedFiles(), NameApla)
 
-      PotDarkHocr <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_dark_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds"))
+          Apla(read_csv(PotApla))
 
-      PotTimeIndexHocr <- file.path(
-        SearTbl()$ProjPath, ".sear",
-        paste0("filtered_hocr_time_index_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
-      )
+        }
 
-      if (file.exists(PotHocr) & file.exists(PotDarkHocr) & file.exists(PotTimeIndexHocr)) {
-        HOCR(read_rds(PotHocr))
+        # HOCR
 
-        DarkHOCR(read_rds(PotDarkHocr))
+        NameHOCR <- c("hocr_[:digit:]{8}_[:digit:]{6}\\.rds")
 
-        TimeIndexHOCR(read_rds(PotTimeIndexHocr))
-      } else {
-        validate(need(DataFiles()$bin, label = "Need raw HOCR"))
+        if (any(str_detect(ParsedFiles(), NameHOCR))) {
 
-        # Dont know the logger date format so quick fix with Apla date
-        AplaDate <- unique(date(Apla()$DateTime))
+          PotHOCR <- str_subset(ParsedFiles(), NameHOCR)
 
-        Hocr <- read_hocr(DataFiles()$bin)
+          HOCR(read_rds(PotHOCR))
 
-        # Create dark index
+        }
 
-        DarkRawHocr <- Hocr[purrr::map_lgl(Hocr, ~ str_detect(.$instrument, "HED|PLD"))]
+        NameHOCRDark <- c("hocr_dark_[:digit:]{8}_[:digit:]{6}\\.rds")
 
-        DarkHocr <- cal_dark(DarkRawHocr, CalHOCR = CalData$CalHOCR(), AplaDate)
+        if (any(str_detect(ParsedFiles(), NameHOCRDark))) {
 
-        # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
-        # Computation time arround 2/3 minutes
-        TimeIndex <- purrr::map(.x = Hocr, ~ clock::date_time_parse(paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)), zone = "UTC"))
+          PotHOCRDark <- str_subset(ParsedFiles(), NameHOCRDark)
 
-        HOCR(Hocr)
+          HOCRDark(read_rds(PotHOCRDark))
 
-        DarkHOCR(DarkHocr)
+        }
 
-        TimeIndexHOCR(TimeIndex)
+        NameHOCRTimeIndex <- c("hocr_time_index_[:digit:]{8}_[:digit:]{6}\\.rds")
 
-        write_rds(Hocr, PotHocr)
+        if (any(str_detect(ParsedFiles(), NameHOCRTimeIndex))) {
 
-        write_rds(DarkHocr, PotDarkHocr)
+          PotHOCRTimeIndex <- str_subset(ParsedFiles(), NameHOCRTimeIndex)
 
-        write_rds(TimeIndex, PotTimeIndexHocr)
+          HOCRTimeIndex(read_rds(PotHOCRTimeIndex))
+
+        }
+
+        # SBE19
+
+        NameSBE19 <- c("sbe19_[:digit:]{8}_[:digit:]{6}\\.csv")
+
+        if (any(str_detect(ParsedFiles(), NameSBE19))) {
+
+          PotSBE19 <- str_subset(ParsedFiles(), NameSBE19)
+
+          SBE19(read_csv(PotSBE19))
+
+        }
+
+        # SeaOWL
+
+        NameSeaOWL <- c("seaowl_[:digit:]{8}_[:digit:]{6}\\.csv")
+
+        if (any(str_detect(ParsedFiles(), NameSeaOWL))) {
+
+          PotSeaOWL <- str_subset(ParsedFiles(), NameSeaOWL)
+
+          SeaOWL(read_csv(PotSeaOWL))
+
+        }
+
+        # BBFL2
+
+        NameBBFL2 <- c("bbfl2_[:digit:]{8}_[:digit:]{6}\\.csv")
+
+        if (any(str_detect(ParsedFiles(), NameBBFL2))) {
+
+          PotBBFL2 <- str_subset(ParsedFiles(), NameBBFL2)
+
+          BBFL2(read_csv(PotBBFL2))
+
+        }
+
       }
-    })
-
-    # BBFL2 data ----------------------------------------------------------------
+    )
 
 
-    BBFL2 <- reactiveVal()
-
-    observe({
-      # Try to read parsed and filtered applanix data
-
-      # Potential filtered File
-      PotBBFL2 <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_bbfl2_", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv"))
-
-      if (file.exists(PotBBFL2)) {
-        BBFL2(read_csv(PotBBFL2))
-      } else {
-        validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
-
-        BBFL2(read_bbfl2(MainLog()))
-
-        # Apla(Apla() %>% filter(
-        #   Speed_N <= 4,
-        #   BoatSolAzm > 0 & BoatSolAzm < 180
-        #   ))
-
-        dir.create(file.path(SearTbl()$ProjPath, ".sear"))
-
-        write_csv(BBFL2(), PotBBFL2)
-      }
-    })
-
-    # SeaOWL data -------------------------------------------------------------
-
-    SeaOWL <- reactiveVal()
-
-    observe({
-      # Try to read parsed and filtered applanix data
-
-      # Potential filtered File
-      PotSeaOWL <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_seaowl_", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv"))
-
-      if (file.exists(PotSeaOWL)) {
-        SeaOWL(read_csv(PotSeaOWL))
-      } else {
-        validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
-
-        SeaOWL(read_seaowl(MainLog()))
-
-        # Apla(Apla() %>% filter(
-        #   Speed_N <= 4,
-        #   BoatSolAzm > 0 & BoatSolAzm < 180
-        #   ))
-
-        dir.create(file.path(SearTbl()$ProjPath, ".sear"))
-
-        write_csv(SeaOWL(), PotSeaOWL)
-      }
-    })
-
-    # SBE19 data ----------------------------------------------------------------
-
-    SBE19 <- reactiveVal()
-
-    observe({
-      # Try to read parsed and filtered applanix data
-
-      # Potential filtered File
-      PotSBE19 <- file.path(SearTbl()$ProjPath, ".sear", paste0("filtered_sbe19_", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv"))
-
-      if (file.exists(PotSBE19)) {
-        SBE19(read_csv(PotSBE19))
-      } else {
-        validate(need(MainLog(), label = "Need Raw Applanix data to create mainlog"))
-
-        SBE19(read_sbe19(MainLog()))
-
-        # Apla(Apla() %>% filter(
-        #   Speed_N <= 4,
-        #   BoatSolAzm > 0 & BoatSolAzm < 180
-        #   ))
-
-        dir.create(file.path(SearTbl()$ProjPath, ".sear"))
-
-        write_csv(SBE19(), PotSBE19)
-      }
-    })
-
-    # Module export -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
     list(
-      MainLog = MainLog,
+      MTELog = MTELog,
       Apla = Apla,
       HOCR = HOCR,
-      DarkHOCR = DarkHOCR,
-      TimeIndexHOCR = TimeIndexHOCR,
+      HOCRDark = HOCRDark,
+      HOCRTimeIndex = HOCRTimeIndex,
       BBFL2 = BBFL2,
       SeaOWL = SeaOWL,
       SBE19 = SBE19

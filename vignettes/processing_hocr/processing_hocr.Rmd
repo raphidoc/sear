@@ -175,18 +175,18 @@ So using `clock::date_time_parse`.
 The resulting list is larger than the original HOCR object list, quite strange ... likely come from the size of the POISIXct object class.
 
 ```{r}
-TimeIndexHOCR <- pur_clock(RawHOCR, AplaDate)
+HOCRTimeIndex <- pur_clock(RawHOCR, AplaDate)
 
-# test <- unlist(TimeIndexHOCR, recursive = T)
+# test <- unlist(HOCRTimeIndex, recursive = T)
 ```
 
 
 ```{r}
-filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
+filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
   # Ideally the packet DateTime would be construct from the packet only ...
   # As I don't know the Date here quick and dirty fix with AplaDate
 
-  Ind <- purrr::map_lgl(.x = TimeIndexHOCR, ~ .x %within% TimeInt)
+  Ind <- purrr::map_lgl(.x = HOCRTimeIndex, ~ .x %within% TimeInt)
 
   # Search for shutter dark measurment in selected point
   # DarkInd <- purrr::map_lgl(.x = RawHOCR[Ind], ~ str_detect(as.character(.x$instrument, error = "ignore"), "HED|PLD"))
@@ -195,7 +195,7 @@ filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
   RawHOCR[Ind]
 }
 
-FiltRawHOCR <- filter_hocr(RawHOCR, TimeIndexHOCR, TimeInt = Station1PaP)
+FiltRawHOCR <- filter_hocr(RawHOCR, HOCRTimeIndex, TimeInt = Station1PaP)
 ```
 
 ### Note regarding HOCR acquisition rate and boat speed

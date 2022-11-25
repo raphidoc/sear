@@ -8,6 +8,7 @@ app_server <- function(input, output, session) {
 
   #format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")
   options(digits.secs = 3)
+  options(shiny.maxRequestSize=50*1024^2) # 50MB
   options(shiny.reactlog = TRUE)
 
   # Global objects ----------------------------------------------------------
@@ -60,15 +61,9 @@ app_server <- function(input, output, session) {
 
   DB <- mod_manage_db_server("manage_db", SearTbl, SelData, Obs)
 
-  DataFiles <- mod_load_data_server("load_data", SearTbl)
-
-  L1 <- mod_parse_mtelog_server("parse_mtelog", SearTbl, DataFiles, CalData, Apla)
-
-  mod_filter_trim_server("filter_trim", SearTbl, DataFiles, SelData, Apla)
+  L1 <- mod_parse_data_server("parse_data", SearTbl, CalData, Apla)
 
   SelData <- mod_select_data_server("select_data", Apla, DB, Obs, ManObs)
-
-  mod_discretize_server("discretize", Apla)
 
   CalData <- mod_load_cal_server("CalData")
 

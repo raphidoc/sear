@@ -145,14 +145,10 @@ read_apla <- function(MainLog) {
     )
 
   Apla %>%
-    # filter(
-    #   Speed_N <= 7,
-    #   BoatSolAzm > 0 & BoatSolAzm < 360
-    # ) %>%
     mutate(
-      ID = seq_along(DateTime),
-      ObsType = NA,
-      ObsName = NA
+      ID = seq_along(DateTime)#,
+      # ObsType = NA,
+      # ObsName = NA
     )
 }
 

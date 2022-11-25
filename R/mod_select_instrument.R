@@ -24,6 +24,7 @@ mod_select_instrument_server <- function(id, MainLog) {
     ns <- session$ns
 
     InstrumentList <- reactive({
+
       InstrumentList <- MainLog() %>%
         select(Instrument) %>%
         unique() %>%

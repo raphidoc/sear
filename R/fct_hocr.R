@@ -60,16 +60,16 @@ read_hocr <- function(BinFile) {
 #' filter_hocr
 #'
 #' @description Time filter of the \code{RawHOCR} list (from  \code{\link{read_hocr}}) based on time interval.
-#' TimeIndexHOCR is precomputed as it takes time.
+#' HOCRTimeIndex is precomputed as it takes time.
 #'
 #' @return Return a subset of \code{RawHOCR}
 #'
 #' @noRd
-filter_hocr <- function(RawHOCR, TimeIndexHOCR, TimeInt) {
+filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
   # Ideally the packet DateTime would be construct from the packet only ...
   # As I don't know the Date here quick and dirty fix with AplaDate
 
-  ind <- purrr::map_lgl(.x = TimeIndexHOCR, ~ .x %within% TimeInt)
+  ind <- purrr::map_lgl(.x = HOCRTimeIndex, ~ .x %within% TimeInt)
 
   RawHOCR[ind]
 }
@@ -270,7 +270,7 @@ cal_dark <- function(RawHOCR, CalHOCR, AplaDate) {
 #' @return Return L1b HOCR data in a tidy long format
 #'
 #' @noRd
-cal_hocr <- function(RawHOCR, CalHOCR, DarkHOCR, AplaDate) {
+cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, AplaDate) {
 
   RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., AplaDate))
 
@@ -383,7 +383,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, DarkHOCR, AplaDate) {
 
   # Apply dark correction
 
-  HOCRWide <- left_join(HOCRWide, DarkHOCR, by = c("SN"))
+  HOCRWide <- left_join(HOCRWide, HOCRDark, by = c("SN"))
 
   cor_dark <- function(.x, .y) {
     ID <- .x[, 1]

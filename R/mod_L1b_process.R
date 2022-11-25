@@ -18,11 +18,6 @@ mod_L1b_process_ui <- function(id) {
 #'
 #' @noRd
 mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
-  # stopifnot(is.reactive(UpApla))
-  # stopifnot(is.reactive(SelID))
-  # stopifnot(is.reactive(RawHOCR))
-  # stopifnot(is.reactive(TimeIndexHOCR))
-  # stopifnot(is.reactive(CalData))
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -32,12 +27,12 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
       tagList(
         waiter::use_waiter(),
-        mod_select_instrument_ui(ns("select_instrument")),
+        #mod_select_instrument_ui(ns("select_instrument")),
         actionButton(ns("ProcessL1b"), "ProcessL1b")
       )
     })
 
-    Instrument <- mod_select_instrument_server("select_instrument", L1$MainLog)
+    #Instrument <- mod_select_instrument_server("select_instrument", L1$MainLog)
 
     observeEvent(
       input$ProcessL1b,
@@ -63,12 +58,12 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(Instrument$ToProcess(), "HOCR"))) {
 
-          FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$TimeIndexHOCR(), TimeInt)
+          FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
 
           # Select nearest dark data
           ObsTime <- int_end(TimeInt / 2)
 
-          DarkHOCR <- L1$DarkHOCR() %>%
+          HOCRDark <- L1$HOCRDark() %>%
             mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
             ungroup() %>%
             select(SN, DarkAproxData)
@@ -77,7 +72,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
             cal_hocr(
               RawHOCR = FiltRawHOCR,
               CalHOCR = CalData$CalHOCR(),
-              DarkHOCR = DarkHOCR,
+              HOCRDark = HOCRDark,
               AplaDate = unique(date(SelData$SelApla()$DateTime))
               ),
             shiny = T,
