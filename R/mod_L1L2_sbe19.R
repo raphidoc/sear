@@ -24,6 +24,7 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
     ns <- session$ns
 
     output$SBE19L1b <- renderPlotly({
+      validate(need(nrow(Obs$SBE19$L1b) != 0, "No L1b data"))
 
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(

@@ -31,6 +31,7 @@ app_server <- function(input, output, session) {
       LatMax = numeric(),
       LonMin = numeric(),
       LonMax = numeric(),
+      Altitude = numeric(),
       DistanceRun = numeric(),
       BoatSolAzm = numeric(),
       Comment = character(),
@@ -49,6 +50,10 @@ app_server <- function(input, output, session) {
       L2 = tibble()
     ),
     BBFL2 = reactiveValues(
+      L1b = tibble(),
+      L2 = tibble()
+    ),
+    BioSonic = reactiveValues(
       L1b = tibble(),
       L2 = tibble()
     )

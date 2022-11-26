@@ -23,8 +23,6 @@ mod_L1L2_server <- function(id, L1b, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-
-
     # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
       req(nrow(Obs$Metadata) != 0)
@@ -38,9 +36,6 @@ mod_L1L2_server <- function(id, L1b, Obs) {
         ),
         tabPanel(
           "HOCR",
-          # plotlyOutput(ns("HOCRL1b"), height = 320),
-          # actionButton(ns("ProcessL2"), "Process L2"),
-          # plotlyOutput(ns("AOPs"), height = 250)
           mod_L1L2_hocr_ui(ns("L1L2_hocr"))
         ),
         tabPanel(
@@ -54,6 +49,10 @@ mod_L1L2_server <- function(id, L1b, Obs) {
         tabPanel(
           "BBFL2",
           mod_L1L2_bbfl2_ui(ns("L1L2_bbfl2"))
+        ),
+        tabPanel(
+          "BioSonic",
+          mod_L1L2_biosonic_ui(ns("L1L2_biosonic"))
         )
       )
 
@@ -94,10 +93,11 @@ mod_L1L2_server <- function(id, L1b, Obs) {
           LatMax = max_geo(L1b$SelApla()$Lat_DD, na.rm = T),
           LonMin = min_geo(L1b$SelApla()$Lon_DD, na.rm = T),
           LonMax = max_geo(L1b$SelApla()$Lon_DD, na.rm = T),
+          Altitude = mean(as.numeric(L1b$SelApla()$Altitude), na.rm = T),
           DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
           BoatSolAzm = mean(L1b$SelApla()$BoatSolAzm, na.rm = T),
           Comment = "NA",
-          UUID = "NA"
+          UUID = NA
         )
       }
     )
@@ -172,6 +172,10 @@ mod_L1L2_server <- function(id, L1b, Obs) {
     # BBFL2 tab ---------------------------------------------------------------
 
     mod_L1L2_bbfl2_server("L1L2_bbfl2", Obs)
+
+    # BioSonic ----------------------------------------------------------------
+
+    mod_L1L2_biosonic_server("L1L2_biosonic", Obs)
 
 
 # Module output -----------------------------------------------------------

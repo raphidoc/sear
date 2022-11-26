@@ -43,28 +43,28 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
         sliderInput(ns("TimeFilter"), "Time",
           min = min(Apla()$DateTime), max = max(Apla()$DateTime),
           value = c(min(Apla()$DateTime), max = max(Apla()$DateTime)),
-          timeFormat = "%T",
+          timeFormat = "%F %T",
           timezone = "+0000",
           width = NULL,
           step = 1
         ),
         sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(90, 180), min = 0, max = 360),
-        numericInput(ns("SpeedLimit"), "Speed", 4, step = 0.1)
+        numericInput(ns("SpeedLimit"), "Speed", 6, step = 0.1)
       )
     })
 
-    TimeInterval <- reactive({
+    DateTimeInterval <- reactive({
       lubridate::interval(input$TimeFilter[1], input$TimeFilter[2])
     })
 
     SubApla <- reactiveVal({})
 
     observe({
-      req(TimeInterval(), input$SpeedLimit, input$SolAzmLimit)
+      req(DateTimeInterval(), input$SpeedLimit, input$SolAzmLimit)
 
       AplaTime <- Apla() %>%
         filter(
-          DateTime %within% TimeInterval(),
+          DateTime %within% DateTimeInterval(),
           BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
           Speed_N <= input$SpeedLimit
         )
@@ -81,6 +81,11 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
       label = "Select data",
       ignoreInit = F,
       {
+
+        if (is.list(event_data("plotly_selected", source = "map"))) {
+          invalidateLater(1)
+        }
+
         # curvenumber 0 is the Applanix trace
         ID <- event_data("plotly_selected", source = "map") %>%
           filter(curveNumber == 0)

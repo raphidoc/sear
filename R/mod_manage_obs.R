@@ -13,8 +13,8 @@ mod_manage_obs_ui <- function(id) {
 
     # shinyFeedback::useShinyFeedback(),
     tags$head(tags$script(src = "message-handler.js")),
-    actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon")),
-    actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
+    uiOutput(ns("Delete")),
+    uiOutput(ns("Save"))
   )
 }
 
@@ -24,6 +24,20 @@ mod_manage_obs_ui <- function(id) {
 mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
+
+    output$Save <- renderUI({
+      validate(need(nrow(Obs$HOCR$L2) != 0, message = "Process to L2 before saving"))
+
+      actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
+
+    })
+
+    output$Delete <- renderUI({
+      req(!is.na(Obs$Metadata$UUID))
+
+      actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon"))
+
+    })
 
 
     # UUID selection event trigger data display -------------------------------

@@ -25,16 +25,7 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
 
     output$SeaOWLL1b <- renderPlotly({
 
-      # SeaOWLL1bNest <- Obs$SeaOWL$L1b %>%
-      #   select(!any_of(c("SN")))%>%
-      #   pivot_longer(
-      #     cols = any_of(c("Bb_700", "Chl", "FDOM")),
-      #     names_to = "Parameter",
-      #     values_to = "Value"
-      #   ) %>%
-      #   group_by(Parameter) %>%
-      #   nest()
-
+      validate(need(nrow(Obs$SeaOWL$L1b) != 0, "No L1b data"))
 
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(

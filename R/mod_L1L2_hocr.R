@@ -27,6 +27,7 @@ mod_L1L2_hocr_server <- function(id, Obs) {
 
     # HOCR Es and Lu plot
     output$HOCRL1b <- renderPlotly({
+      validate(need(nrow(Obs$HOCR$L1b) != 0, "No L1b data"))
 
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(

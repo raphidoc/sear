@@ -14,12 +14,12 @@
 # Read log ----------------------------------------------------------------
 
 read_mtelog <- function(LogFile) {
-  MainLog <- tibble(Raw = readr::read_lines(LogFile))
+  MTELog <- tibble(Raw = readr::read_lines(LogFile))
 
   # Exctract date on line 3 of datalogger header
-  Date <- str_extract(MainLog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
+  Date <- str_extract(MTELog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
 
-  MainLog %>%
+  MTELog %>%
     separate(Raw, into = c("Time", "Instrument", "Data"), sep = c(12, 19)) %>%
     mutate(
       DateTime = lubridate::ymd_hms(paste(Date, Time)),
@@ -29,8 +29,8 @@ read_mtelog <- function(LogFile) {
 
 # Apla extractor ----------------------------------------------------------
 
-read_apla <- function(MainLog) {
-  Apla <- MainLog %>%
+read_apla <- function(MTELog) {
+  Apla <- MTELog %>%
     filter(Instrument == "APLA") %>%
     separate(
       col = Data,
@@ -83,7 +83,8 @@ read_apla <- function(MainLog) {
       Lon_D = as.numeric(str_sub(Lon, 1, 3)),
       Lon_DM = as.numeric(str_sub(Lon, 4, 11)),
       Lat_DD = Lat_D + (Lat_DM / 60),
-      Lon_DD = Lon_D + (Lon_DM / 60)
+      Lon_DD = Lon_D + (Lon_DM / 60),
+      Altitude = as.numeric(Altitude)
     ) %>%
     mutate(
       Lat_DD = ifelse(NS == "N", Lat_DD, -Lat_DD),
@@ -91,7 +92,8 @@ read_apla <- function(MainLog) {
     )
 
   # Add default NA value to ObsType for initial map plot
-  GPGGA <- GPGGA %>% select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution)
+  GPGGA <- GPGGA %>%
+    select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution, Altitude, AltitudeUnit)
 
   # Extract GPVTG info, course and speed
 
@@ -144,19 +146,14 @@ read_apla <- function(MainLog) {
       BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm)
     )
 
-  Apla %>%
-    mutate(
-      ID = seq_along(DateTime)#,
-      # ObsType = NA,
-      # ObsName = NA
-    )
+  Apla
 }
 
 # BBFL2 extractor -----------------------------------------------------------
 
-read_bbfl2 <- function(MainLog) {
+read_bbfl2 <- function(MTELog) {
 
-  BBFL2 <- MainLog %>%
+  BBFL2 <- MTELog %>%
     filter(Instrument == "ECO") %>%
     separate(
       col = Data,
@@ -184,8 +181,8 @@ read_bbfl2 <- function(MainLog) {
 
 # SeaOWL extractor -----------------------------------------------------------
 
-read_seaowl <- function(MainLog) {
-  SeaOWL <- MainLog %>%
+read_seaowl <- function(MTELog) {
+  SeaOWL <- MTELog %>%
     filter(Instrument == "OWL") %>%
     separate(
       col = Data,
@@ -218,8 +215,8 @@ read_seaowl <- function(MainLog) {
 
 # SBE19 extractor -----------------------------------------------------------
 
-read_sbe19 <- function(MainLog) {
-  SBE19 <- MainLog %>%
+read_sbe19 <- function(MTELog) {
+  SBE19 <- MTELog %>%
     filter(Instrument == "CTD") %>%
     separate(
       col = Data,

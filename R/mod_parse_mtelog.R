@@ -19,7 +19,7 @@ mod_parse_mtelog_ui <- function(id) {
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
+mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla, ParsedFiles) {
   stopifnot(is.reactive(SearTbl))
 
   moduleServer(id, function(input, output, session) {
@@ -37,23 +37,19 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
     output$Load <- renderUI({
       req(SearTbl())
 
-      fileInput(ns("Files"), "Choose MTE txt and bin Files", accept = c(".txt",".bin"), multiple = T)
+      fileInput(ns("Files"), "Choose MTE .txt and .bin Files", accept = c(".txt",".bin"), multiple = T)
 
     })
 
-
-    MTELog <- reactive(
-      label = "MTELog",
-      {
-      #req(DataFiles())
-
-      read_mtelog(DataFiles()$txt)
-    })
+    Input <- reactive(input$Files)
 
     observeEvent(
-      input$Files,
+      Input(),
       {
-        browser()
+
+        waiter <- waiter::Waiter$new()
+        waiter$show()
+        on.exit(waiter$hide())
 
         # Copy files in raw dir
 
@@ -82,27 +78,42 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
         # Applanix
 
-        if (any(str_detect(InstList, "APLA"))) {
+        PotApla <- file.path(ParsedDir, paste0("apla_",DateTime,".csv"))
 
-          Apla(read_apla(MTELog))
+        if (any(str_detect(InstList, "APLA")) & !file.exists(PotApla)) {
 
-          PotApla <- file.path(ParsedDir, paste0("apla_",DateTime,".csv"))
+          PrimApla <- read_apla(MTELog)
 
-          write_csv(Apla(), PotApla) # Should I use append = T to add data ?
+          write_csv(PrimApla, PotApla) # Should I use append = T to add data ?
         }
 
         # HOCR
 
-        if (any(str_detect(InstList, "OCR"))) {
+        # Chech that all three HOCR are present
+        # OCRList <- InstrumentList[str_detect(InstrumentList, "OCR")]
+        #
+        # if (any(OCRList %in% c("OCR1", "OCR2", "OCR3")) & any(!OCRList %in% c("OCR1", "OCR2", "OCR3"))) {
+        #   MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% InstrumentList)]
+        #
+        #   warning("HOCR on port ", MissingOCR, "is missing from MainLog. Cannot process HOCR data.")
+        #
+        #   InstrumentList <- str_remove(InstrumentList, "OCR1|OCR2|OCR3")
+        # }
 
-          HOCR(read_hocr(str_subset(Files$rawpath, "\\.bin")))
+        PotHOCR <- file.path(ParsedDir, paste0("hocr_",DateTime,".rds"))
+        PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
+        PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
 
-          HocrDarkRaw <- HOCR()[purrr::map_lgl(HOCR(), ~ str_detect(.$instrument, "HED|PLD"))]
+        if (any(str_detect(InstList, "OCR")) & !file.exists(PotHOCR)) {
+
+          PrimHOCR <- read_hocr(str_subset(Files$rawpath, "\\.bin"))
+
+          PrimHocrDarkRaw <- PrimHOCR[purrr::map_lgl(PrimHOCR, ~ str_detect(.$instrument, "HED|PLD"))]
 
           # Dont know the logger date format so quick fix with Apla date
-          AplaDate <- unique(date(Apla()$DateTime))
+          AplaDate <- unique(date(PrimApla$DateTime))
 
-          HOCRDark(cal_dark(HocrDarkRaw, CalHOCR = CalData$CalHOCR(), AplaDate))
+          PrimHOCRDark <- cal_dark(PrimHocrDarkRaw, CalHOCR = CalData$CalHOCR(), AplaDate)
 
           # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
@@ -113,54 +124,49 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
               zone = "UTC")
           )
 
-          HOCRTimeIndex(TimeIndex)
+          PrimHOCRTimeIndex <- TimeIndex
 
+          write_rds(PrimHOCR, PotHOCR)
 
-          PotHOCR <- file.path(ParsedDir, paste0("hocr_",DateTime,".rds"))
-          PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
-          PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
+          write_rds(PrimHOCRDark, PotHOCRDark)
 
-          write_rds(HOCR(), PotHOCR)
-
-          write_rds(HOCRDark(), PotHOCRDark)
-
-          write_rds(HOCRTimeIndex(), PotHOCRTimeIndex)
+          write_rds(PrimHOCRTimeIndex, PotHOCRTimeIndex)
 
         }
 
         # SBE19
 
-        if (any(str_detect(InstList, "CTD"))) {
+        PotSBE19 <- file.path(ParsedDir, paste0("sbe19_",DateTime,".csv"))
 
-          SBE19(read_sbe19(MTELog))
+        if (any(str_detect(InstList, "CTD")) & !file.exists(PotSBE19)) {
 
-          PotSBE19 <- file.path(ParsedDir, paste0("sbe19_",DateTime,".csv"))
+          PrimSBE19 <- read_sbe19(MTELog)
 
-          write_csv(SBE19(), PotSBE19)
+          write_csv(PrimSBE19, PotSBE19)
 
         }
 
         # SeaOWL
 
-        if (any(str_detect(InstList, "OWL"))) {
+        PotSeaOWL <- file.path(ParsedDir, paste0("seaowl_",DateTime,".csv"))
 
-          SeaOWL(read_seaowl(MTELog))
+        if (any(str_detect(InstList, "OWL")) & !file.exists(PotSeaOWL)) {
 
-          PotSeaOWL <- file.path(ParsedDir, paste0("seaowl_",DateTime,".csv"))
+          PrimSeaOWL <- read_seaowl(MTELog)
 
-          write_csv(SeaOWL(), PotSeaOWL)
+          write_csv(PrimSeaOWL, PotSeaOWL)
 
         }
 
         # BBFL2
 
-        if (any(str_detect(InstList, "ECO"))) {
+        PotBBFL2 <- file.path(ParsedDir, paste0("bbfl2_",DateTime,".csv"))
 
-          BBFL2(read_bbfl2(MTELog))
+        if (any(str_detect(InstList, "ECO")) & !file.exists(PotBBFL2)) {
 
-          PotBBFL2 <- file.path(ParsedDir, paste0("bbfl2_",DateTime,".csv"))
+          PrimBBFL2 <- read_bbfl2(MTELog)
 
-          write_csv(BBFL2(), PotBBFL2)
+          write_csv(PrimBBFL2, PotBBFL2)
 
         }
 
@@ -169,26 +175,17 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
 # Read parsed files on project load ---------------------------------------
 
-    ParsedFiles <- reactive({
-
-      req(SearTbl())
-
-      ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
-
-      if (dir.exists(ParsedDir)) {
-
-        list.files(ParsedDir, full.names = TRUE)
-
-      } else {
-        FALSE
-      }
-
-    })
-
     observeEvent(
-      SearTbl(),
+      ignoreInit = TRUE,
       {
-        browser()
+        c(
+          SearTbl(),
+          Input()
+        )
+      },
+      {
+        # Why does this event is activated twice on Project selection ?
+        #browser()
 
         # Applanix
 
@@ -198,7 +195,11 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
           PotApla <- str_subset(ParsedFiles(), NameApla)
 
-          Apla(read_csv(PotApla))
+          temp <- read_csv(PotApla)
+          temp <- temp %>%
+            mutate(ID = seq_along(rownames(temp)))
+
+          Apla(temp)
 
         }
 
@@ -210,7 +211,9 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
           PotHOCR <- str_subset(ParsedFiles(), NameHOCR)
 
-          HOCR(read_rds(PotHOCR))
+          temp <- unlist(purrr::map(.x = PotHOCR, ~ read_rds(.x)), recursive = F)
+
+          HOCR(temp)
 
         }
 
@@ -220,7 +223,15 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
           PotHOCRDark <- str_subset(ParsedFiles(), NameHOCRDark)
 
-          HOCRDark(read_rds(PotHOCRDark))
+          temp <- purrr::map(.x = PotHOCRDark, ~ read_rds(.x))
+
+          test <- purrr::map(.x = temp, ~ unnest(.x, cols = c(AproxData)))
+
+          test2 <- purrr::map_df(.x = test, ~ .x) %>%
+            group_by(Instrument, SN) %>%
+            nest(AproxData = !matches("Instrument|SN"))
+
+          HOCRDark(test2)
 
         }
 
@@ -230,7 +241,9 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
           PotHOCRTimeIndex <- str_subset(ParsedFiles(), NameHOCRTimeIndex)
 
-          HOCRTimeIndex(read_rds(PotHOCRTimeIndex))
+          temp <- unlist(purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)), recursive = F)
+
+          HOCRTimeIndex(temp)
 
         }
 
@@ -276,14 +289,14 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla) {
 
     # Module output -----------------------------------------------------------
     list(
-      MTELog = MTELog,
       Apla = Apla,
       HOCR = HOCR,
       HOCRDark = HOCRDark,
       HOCRTimeIndex = HOCRTimeIndex,
       BBFL2 = BBFL2,
       SeaOWL = SeaOWL,
-      SBE19 = SBE19
+      SBE19 = SBE19,
+      Input = Input
     )
   })
 }

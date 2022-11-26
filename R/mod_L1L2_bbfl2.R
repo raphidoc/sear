@@ -24,17 +24,7 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
     ns <- session$ns
 
     output$L1b <- renderPlotly({
-
-      # BBFL2L1bNest <- Obs$BBFL2$L1b %>%
-      #   select(!any_of(c("SN")))%>%
-      #   pivot_longer(
-      #     cols = any_of(c("Bb_700", "Chl", "FDOM")),
-      #     names_to = "Parameter",
-      #     values_to = "Value"
-      #   ) %>%
-      #   group_by(Parameter) %>%
-      #   nest()
-
+      validate(need(nrow(Obs$BBFL2$L1b) != 0, "No L1b data"))
 
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(

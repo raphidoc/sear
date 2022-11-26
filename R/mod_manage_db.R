@@ -69,6 +69,7 @@ mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
           LatMax DOUBLE NOT NULL,
           LonMin DOUBLE NOT NULL,
           LonMax DOUBLE NOT NULL,
+          Altitude DOUBLE NOT NULL,
           DistanceRun DOUBLE NOT NULL,
           BoatSolAzm DOUBLE NOT NULL,
           Comment TEXT,

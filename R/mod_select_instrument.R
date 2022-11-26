@@ -17,42 +17,29 @@ mod_select_instrument_ui <- function(id) {
 #' select_instrument Server Functions
 #'
 #' @noRd
-mod_select_instrument_server <- function(id, MainLog) {
-  stopifnot(is.reactive(MainLog))
+mod_select_instrument_server <- function(id, ParsedFiles) {
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     InstrumentList <- reactive({
 
-      InstrumentList <- MainLog() %>%
-        select(Instrument) %>%
-        unique() %>%
-        filter(Instrument %in% c("OCR1", "OCR2", "OCR3", "CTD", "ECO", "OWL"))
+      InstrumentList <- ParsedFiles() %>%
+        str_extract("apla|bbfl2|hocr|sbe19|seaowl|biosonic")
 
-      InstrumentList <- InstrumentList[[1]]
-
-      OCRList <- InstrumentList[str_detect(InstrumentList, "OCR")]
-
-      if (any(OCRList %in% c("OCR1", "OCR2", "OCR3")) & any(!OCRList %in% c("OCR1", "OCR2", "OCR3"))) {
-        MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% InstrumentList)]
-
-        warning("HOCR on port ", MissingOCR, "is missing from MainLog. Cannot process HOCR data.")
-
-        InstrumentList <- str_remove(InstrumentList, "OCR1|OCR2|OCR3")
-      }
-
-      InstrumentList <- case_when(
-        str_detect(InstrumentList, "OCR1|OCR2|OCR3") ~ "HOCR",
-        str_detect(InstrumentList, "CTD") ~ "SBE19",
-        str_detect(InstrumentList, "ECO") ~ "BBFL2",
-        str_detect(InstrumentList, "OWL") ~ "SeaOWL"
+      case_when(
+        str_detect(InstrumentList, "hocr") ~ "HOCR",
+        str_detect(InstrumentList, "sbe19") ~ "SBE19",
+        str_detect(InstrumentList, "bbfl2") ~ "BBFL2",
+        str_detect(InstrumentList, "seaowl") ~ "SeaOWL",
+        str_detect(InstrumentList, "biosonic") ~ "BioSonic"
       ) %>%
-        unique()
+        unique() %>%
+        na.omit()
     })
 
     output$InstrumentList <- renderUI({
-      req(MainLog)
+      req(ParsedFiles())
 
       checkboxGroupInput(
         ns("InstrumentList"),
@@ -67,15 +54,13 @@ mod_select_instrument_server <- function(id, MainLog) {
     })
 
     list(
-      ToProcess = reactive({
-        input$InstrumentList
-      })
+      ToProcess = reactive({input$InstrumentList})
     )
   })
 }
 
 ## To be copied in the UI
-# mod_select_instrument_ui("select_instrument_1")
+# mod_select_instrument_ui("select_instrument")
 
 ## To be copied in the server
-# mod_select_instrument_server("select_instrument_1")
+# mod_select_instrument_server("select_instrument")

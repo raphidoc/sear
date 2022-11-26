@@ -36,8 +36,6 @@ mod_load_mtelog_server <- function(id, SearTbl) {
 
       req(input$Files)
 
-      browser()
-
       reactiveValues(
             txt = {
               stringr::str_subset(input$Files, ".txt")

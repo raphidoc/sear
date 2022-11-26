@@ -254,7 +254,8 @@ cal_dark <- function(RawHOCR, CalHOCR, AplaDate) {
     mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
 
   HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
+    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq))) %>%
+    select(!CalData)
 }
 
 #' cal_hocr
