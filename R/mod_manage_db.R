@@ -38,12 +38,14 @@ mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
     Con <- eventReactive(
       req(SearTbl()$ProjPath),
       {
-        L2dir <- file.path(SearTbl()$ProjPath, "L2")
+        message("Doing SQLite stuff ... you know")
 
-        PotSQLite <- file.path(L2dir, paste0(SearTbl()$ProjName, "_sear.sqlite"))
+        L2Dir <- file.path(SearTbl()$ProjPath, "L2")
 
-        if (!dir.exists(L2dir)) {
-          dir.create(L2dir)
+        PotSQLite <- file.path(L2Dir, paste0(SearTbl()$ProjName, "_sear.sqlite"))
+
+        if (!dir.exists(L2Dir)) {
+          dir.create(L2Dir)
         }
 
         Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)
@@ -63,12 +65,12 @@ mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
           DateTimeMin TEXT NOT NULL,
           DateTimeMax TEXT NOT NULL,
           TimeElapsed INTEGER NOT NULL,
-          Lat DOUBLE NOT NULL,
           Lon DOUBLE NOT NULL,
-          LatMin DOUBLE NOT NULL,
-          LatMax DOUBLE NOT NULL,
+          Lat DOUBLE NOT NULL,
           LonMin DOUBLE NOT NULL,
           LonMax DOUBLE NOT NULL,
+          LatMin DOUBLE NOT NULL,
+          LatMax DOUBLE NOT NULL,
           Altitude DOUBLE NOT NULL,
           DistanceRun DOUBLE NOT NULL,
           BoatSolAzm DOUBLE NOT NULL,

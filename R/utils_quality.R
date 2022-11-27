@@ -23,3 +23,10 @@ qc_shift <- function(df, Selected) {
       )
     )
 }
+
+data_synthesis <- function(x, y, tol = 3) {
+  purrr::map_lgl(
+    .x = x,
+    ~ any(near(as.numeric(.x), as.numeric(y), tol = tol))
+  )
+}

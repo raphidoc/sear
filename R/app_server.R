@@ -13,7 +13,7 @@ app_server <- function(input, output, session) {
 
   # Global objects ----------------------------------------------------------
 
-  Apla <- reactiveVal()
+  MainLog <- reactiveVal()
 
   # Active discrete observation
   Obs <- reactiveValues(
@@ -66,9 +66,9 @@ app_server <- function(input, output, session) {
 
   DB <- mod_manage_db_server("manage_db", SearTbl, SelData, Obs)
 
-  L1 <- mod_parse_data_server("parse_data", SearTbl, CalData, Apla)
+  L1 <- mod_parse_data_server("parse_data", SearTbl, CalData, MainLog)
 
-  SelData <- mod_select_data_server("select_data", Apla, DB, Obs, ManObs)
+  SelData <- mod_select_data_server("select_data", MainLog, DB, Obs, ManObs, L1)
 
   CalData <- mod_load_cal_server("CalData")
 

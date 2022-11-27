@@ -19,12 +19,13 @@ mod_parse_mtelog_ui <- function(id) {
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla, ParsedFiles) {
+mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
   stopifnot(is.reactive(SearTbl))
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    Apla <- reactiveVal()
     HOCR <- reactiveVal()
     HOCRDark <- reactiveVal()
     HOCRTimeIndex <- reactiveVal()
@@ -174,13 +175,14 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla, ParsedFiles) {
     )
 
 # Read parsed files on project load ---------------------------------------
+# This should be located in the parse_data module and read data parsed to
+# sear specification. The sear format specification must be defined before.
 
     observeEvent(
       ignoreInit = TRUE,
       {
         c(
-          SearTbl(),
-          Input()
+          ParsedFiles()
         )
       },
       {
@@ -196,8 +198,6 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, Apla, ParsedFiles) {
           PotApla <- str_subset(ParsedFiles(), NameApla)
 
           temp <- read_csv(PotApla)
-          temp <- temp %>%
-            mutate(ID = seq_along(rownames(temp)))
 
           Apla(temp)
 

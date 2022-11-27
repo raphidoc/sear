@@ -33,11 +33,27 @@ library(suncalc)
 ```
 
 ```{r}
-ConFile <- system.file("extdata", "DATA_20211111_171729.txt", package = "sear", mustWork = T)
+ConFile <- system.file("extdata", "DATA_20220705_105732.txt", package = "sear", mustWork = T)
 
 MTELog <- sear:::read_mtelog(ConFile)
 
 Apla <- sear:::read_apla(MTELog)
+
+SBE19 <- sear:::read_sbe19(MTELog)
+
+BinFile <- system.file("extdata", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
+
+HOCR <- sear:::read_hocr(BinFile)
+
+AplaDate <- unique(date(Apla$DateTime))
+
+HOCRTimeIndex <- purrr::map(
+  .x = HOCR,
+  ~ clock::date_time_parse(
+    paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
 ```
 
 # UI
@@ -67,7 +83,7 @@ The HOCR dark is a list of shutter dark values interpolated to the minute to app
 
 ### BioSonic
 
-*TO BE DONE*
+Just select the .csv file processed with the dedicated software (biosonic Visual Aquatic)
 
 ### Hydroball
 
@@ -75,7 +91,30 @@ The HOCR dark is a list of shutter dark values interpolated to the minute to app
 
 ## Selection display
 
-When parsed data is loaded in the app, a selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second) data point, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot representing the solar azimuth relative to the boat heading of points selected on the map.
+When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `MTELog$Apla()`), a data synthesis is calculated from the `DateTime` values of each instrument.
+
+```{r}
+MainLog <- Apla %>%
+  rename(Lon = Lon_DD, Lat = Lat_DD)
+
+
+data_synthesis_any_near <- function(x, y, tol = 3) {
+  purrr::map_lgl(
+          .x = x,
+          ~ any(near(as.numeric(.x), as.numeric(y), tol = tol))
+          )
+}
+
+SyntSBE19 <- data_synthesis_any_near(MainLog$DateTime, SBE19$DateTime)
+
+SyntHOCR <- data_synthesis_any_near(MainLog$DateTime, HOCRTimeIndex)
+
+microbenchmark(times = 1,
+  data_synthesis_any_near(MainLog$DateTime, HOCRTimeIndex)
+)
+```
+
+From this `MainLog`, the selection display column in the dashboard body is populated. This selection display is composed of a map which expose the discrete (aggregated to second) data point, of several filters (speed, time, need to add pitch and roll when available) and of a polar plot representing the solar azimuth relative to the boat heading of points selected on the map.
 
 The points selected on the plotly map (lasso or box) will be processed when the `Process to L1b` button is clicked.
 
@@ -89,11 +128,11 @@ NEED: List the required and optional NMEA string that sear will use.
 
 ### Speed
 
-*MANDATORY*: can be directly taken from the appropriate (GPVTG) NMEA string, or could be computed (from GPGGA ?)
+*MANDATORY*: can be directly taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
 
 ### Azimuth polar plot
 
-*MANDATORY*: boat azimuth can be taken from the appropriate (GPVTG) NMEA string, or could be computed (from GPGGA ?)
+*MANDATORY*: boat azimuth can be taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
 
 First compute the sun azimuth.
 

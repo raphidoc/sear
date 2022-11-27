@@ -43,7 +43,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         waiter$show()
         on.exit(waiter$hide())
 
-        if (is.null(L1$ToProcess())) {
+        if (is.null(L1$InstrumentList())) {
           showModal(modalDialog(
             title = "No instrument selected",
             "Please select at least one instrument to process"
@@ -65,12 +65,12 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         Obs$BioSonic$L2 <- tibble()
 
         # Filter data point before processing to optimize execution time
-        SelDateTime <- SelData$Apla()$DateTime[SelData$Apla()$ID %in% SelData$SelApla()$ID]
+        SelDateTime <- SelData$MainLog()$DateTime[SelData$MainLog()$ID %in% SelData$SelMainLog()$ID]
         TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 
         # HOCR L1b ----------------------------------------------------------------
 
-        if (any(str_detect(L1$ToProcess(), "HOCR"))) {
+        if (any(str_detect(L1$InstrumentList(), "HOCR"))) {
 
           FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
 
@@ -93,7 +93,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
                 RawHOCR = FiltRawHOCR,
                 CalHOCR = CalData$CalHOCR(),
                 HOCRDark = HOCRDark,
-                AplaDate = unique(date(SelData$SelApla()$DateTime))
+                MainLogDate = unique(date(SelData$SelMainLog()$DateTime))
               ),
               shiny = T,
               trace_back = TRUE
@@ -103,10 +103,10 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # SBE19 L1b ---------------------------------------------------------------
 
-        if (any(str_detect(L1$ToProcess(), "SBE19"))) {
+        if (any(str_detect(L1$InstrumentList(), "SBE19"))) {
 
-          Lon <- mean(SelData$SelApla()$Lon_DD)
-          Lat <- mean(SelData$SelApla()$Lat_DD)
+          Lon <- mean(SelData$SelMainLog()$Lon_DD)
+          Lat <- mean(SelData$SelMainLog()$Lat_DD)
 
           SBE19 <- L1$SBE19() %>% filter(DateTime %within% TimeInt)
 
@@ -166,7 +166,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # SeaOWL L1b --------------------------------------------------------------
 
-        if (any(str_detect(L1$ToProcess(), "SeaOWL"))) {
+        if (any(str_detect(L1$InstrumentList(), "SeaOWL"))) {
 
           SeaOWL <- L1$SeaOWL() %>% filter(DateTime %within% TimeInt)
 
@@ -196,7 +196,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # BBFL2 L1b ---------------------------------------------------------------
 
-        if (any(str_detect(L1$ToProcess(), "BBFL2"))) {
+        if (any(str_detect(L1$InstrumentList(), "BBFL2"))) {
 
           BBFL2 <- L1$BBFL2() %>% filter(DateTime %within% TimeInt)
 
@@ -226,7 +226,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # BioSonic L1b ---------------------------------------------------------------
 
-        if (any(str_detect(L1$ToProcess(), "BioSonic"))) {
+        if (any(str_detect(L1$InstrumentList(), "BioSonic"))) {
 
           BioSonicL1b <- L1$BioSonic() %>% filter(DateTime %within% TimeInt)
 
@@ -250,7 +250,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
 # Module output -----------------------------------------------------------
     list(
-      SelApla = SelData$SelApla,
+      SelMainLog = SelData$SelMainLog,
       Map = SelData$Map,
       ProcessL1b = reactive(input$ProcessL1b)
     )

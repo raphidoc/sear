@@ -54,7 +54,7 @@ mod_select_instrument_server <- function(id, ParsedFiles) {
     })
 
     list(
-      ToProcess = reactive({input$InstrumentList})
+      InstrumentList = reactive({input$InstrumentList})
     )
   })
 }

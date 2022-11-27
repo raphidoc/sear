@@ -29,24 +29,34 @@ mod_select_data_ui <- function(id) {
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
-  stopifnot(is.reactive(Apla))
+mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
+  stopifnot(is.reactive(MainLog))
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # Filters for data selection ----------------------------------------------
     output$Filters <- renderUI({
-      req(Apla())
+      req(MainLog())
 
       tagList(
         sliderInput(ns("TimeFilter"), "Time",
-          min = min(Apla()$DateTime), max = max(Apla()$DateTime),
-          value = c(min(Apla()$DateTime), max = max(Apla()$DateTime)),
+          min = min(MainLog()$DateTime), max = max(MainLog()$DateTime),
+          value = c(min(MainLog()$DateTime), max = max(MainLog()$DateTime)),
           timeFormat = "%F %T",
           timezone = "+0000",
           width = NULL,
           step = 1
+        ),
+        checkboxGroupInput(
+          ns("Instrument"),
+          "Intrument",
+          choices = L1$InstrumentList(),
+          selected = L1$InstrumentList(),
+          inline = TRUE,
+          width = NULL,
+          choiceNames = NULL,
+          choiceValues = NULL
         ),
         sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(90, 180), min = 0, max = 360),
         numericInput(ns("SpeedLimit"), "Speed", 6, step = 0.1)
@@ -57,19 +67,55 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
       lubridate::interval(input$TimeFilter[1], input$TimeFilter[2])
     })
 
-    SubApla <- reactiveVal({})
+    SubMainLog <- reactiveVal({})
 
     observe({
-      req(DateTimeInterval(), input$SpeedLimit, input$SolAzmLimit)
+      req(DateTimeInterval(), input$SpeedLimit, input$SolAzmLimit, input$Instrument)
 
-      AplaTime <- Apla() %>%
+      browser()
+
+      Inst <- input$Instrument
+
+      PrimMainLog <- MainLog()
+
+      if (all(!str_detect(Inst, "HOCR")) & any(str_detect(colnames(PrimMainLog), "HOCR"))) {
+        PrimMainLog <- PrimMainLog[PrimMainLog$HOCR == F,]
+      } else {
+        PrimMainLog <- PrimMainLog[PrimMainLog$HOCR == T,]
+      }
+
+      if (all(!str_detect(Inst, "SBE19")) & any(str_detect(colnames(PrimMainLog), "SBE19"))) {
+        PrimMainLog <- PrimMainLog[PrimMainLog$SBE19 == F,]
+      } else {
+        PrimMainLog <- PrimMainLog[PrimMainLog$SBE19 == T,]
+      }
+
+      if (all(!str_detect(Inst, "SeaOWL")) & any(str_detect(colnames(PrimMainLog), "SeaOWL"))) {
+        PrimMainLog <- PrimMainLog[PrimMainLog$SeaOWL == F,]
+      } else {
+        PrimMainLog <- PrimMainLog[PrimMainLog$SeaOWL == T,]
+      }
+
+      if (all(!str_detect(Inst, "BBFL2")) & any(str_detect(colnames(PrimMainLog), "BBFL2"))) {
+        PrimMainLog <- PrimMainLog[PrimMainLog$BBFL2 == F,]
+      } else {
+        PrimMainLog <- PrimMainLog[PrimMainLog$BBFL2 == T,]
+      }
+
+      if (all(!str_detect(Inst, "BioSonic")) & any(str_detect(colnames(PrimMainLog), "BioSonic"))) {
+        PrimMainLog <- PrimMainLog[PrimMainLog$BioSonic == F,]
+      } else {
+        PrimMainLog <- PrimMainLog[PrimMainLog$BioSonic == T,]
+      }
+
+      PrimMainLog <- PrimMainLog %>%
         filter(
           DateTime %within% DateTimeInterval(),
           BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
           Speed_N <= input$SpeedLimit
         )
 
-      SubApla(AplaTime)
+      SubMainLog(PrimMainLog)
     })
 
     # Selected data points ----------------------------------------------------
@@ -162,12 +208,12 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
       }
     )
 
-    SelApla <- reactive({
+    SelMainLog <- reactive({
       req(SelID())
 
       # Should not be recomputed when processing to L1b ...
 
-      Apla()[Apla()$ID %in% SelID(), ]
+      MainLog()[MainLog()$ID %in% SelID(), ]
     })
 
 
@@ -191,10 +237,10 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
     # )
 
     output$Map <- renderPlotly({
-      req(SubApla())
+      req(SubMainLog())
 
       if (is.null(SelUUID())) {
-        ZC <- zoom_center(SubApla()$Lat_DD, SubApla()$Lon_DD)
+        ZC <- zoom_center(SubMainLog()$Lat, SubMainLog()$Lon)
         Zoom(ZC[[1]])
         Center(ZC[[2]])
       }
@@ -219,9 +265,9 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
         (.) %>%
           add_markers(
             name = "Raw",
-            data = SubApla(),
-            x = ~Lon_DD,
-            y = ~Lat_DD,
+            data = SubMainLog(),
+            x = ~Lon,
+            y = ~Lat,
             customdata = ~ID,
             marker = list(color = "rgb(154, 42, 42)"),
             text = ~ paste0(
@@ -283,7 +329,7 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
       } else {
         # Determine survey area bounding box and crop coastline accordingly
 
-        SurveyArea <- sf::st_as_sf(SubApla(), coords = c("Lon_DD", "Lat_DD"), crs = 4326) %>%
+        SurveyArea <- sf::st_as_sf(SubMainLog(), coords = c("Lon", "Lat"), crs = 4326) %>%
           select(geometry) %>%
           summarise()
 
@@ -309,7 +355,7 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
 
     # BoatSolAzm polar plot ---------------------------------------------------
     output$BoatSolAzm <- renderPlotly({
-      req(SelApla())
+      req(SelMainLog())
 
       m <- list(
         l = 40,
@@ -319,7 +365,7 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
         pad = 0
       )
 
-      SelApla() %>%
+      SelMainLog() %>%
         plot_ly(
           width = 250,
           height = 250,
@@ -342,9 +388,9 @@ mod_select_data_server <- function(id, Apla, DB, Obs, ManObs) {
 
     # Module output -----------------------------------------------------------
     list(
-      Apla = Apla,
-      SubApla = SubApla,
-      SelApla = SelApla,
+      MainLog = MainLog,
+      SubMainLog = SubMainLog,
+      SelMainLog = SelMainLog,
       SelID = SelID,
       SelUUID = SelUUID,
       Map = Map

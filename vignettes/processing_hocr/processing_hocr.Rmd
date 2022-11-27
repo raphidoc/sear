@@ -40,11 +40,11 @@ HOCR data is stored in .raw file in a mix of ASCII and binary format.
 
 # Read raw file
 
-For that will pass by the kaitai struct parser trough python (or cpp as it may improve speed, have to test).
+To read the binaary HOCR file we will pass by the kaitai struct parser trough python (or cpp as it may improve speed, have to test).
 To code live in python use `reticulate::repl_python()`, to get object from python or r envs use `py$<name>` or `r.<name>`, `source_python()` to source function in python file.
 
 ```{r read-hocr}
-BinFile <- system.file("extdata", "DATA_20220705_105732.txt", package = "sear", mustWork = T)
+BinFile <- system.file("extdata", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
 
 reticulate::source_python(system.file("py", "hocr.py", package = "sear", mustWork = T))
 
