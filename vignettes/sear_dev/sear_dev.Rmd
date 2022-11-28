@@ -91,7 +91,7 @@ Just select the .csv file processed with the dedicated software (biosonic Visual
 
 ## Selection display
 
-When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `MTELog$Apla()`), a data synthesis is calculated from the `DateTime` values of each instrument.
+When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `DataParsed`), a data synthesis is calculated from the `DateTime` values of each instrument. As this per-row operation takes time, `MainLog` is saved under `.sear/data/parsed/main_log_[:digit:]{8}_[:digit:]{6}.csv`. 
 
 ```{r}
 MainLog <- Apla %>%
@@ -123,6 +123,8 @@ NEED: List the required and optional NMEA string that sear will use.
 -GPGGA
 
 ### DateTime filtering
+
+DateTime classe is huge to store as is. As number of second since origin it is up to 100 times smaller.
 
 *MANDATORY*
 

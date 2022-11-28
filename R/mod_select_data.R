@@ -72,7 +72,7 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
     observe({
       req(DateTimeInterval(), input$SpeedLimit, input$SolAzmLimit, input$Instrument)
 
-      browser()
+      #browser()
 
       Inst <- input$Instrument
 

@@ -119,11 +119,15 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
           TimeIndex <- purrr::map(
-            .x = HOCR(),
+            .x = PrimHOCR,
             ~ clock::date_time_parse(
               paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)),
               zone = "UTC")
           )
+
+          if (length(TimeIndex) != length(PrimHOCR)) {
+            stop("HOCRTimeIndex not the same length as HOCR !")
+          }
 
           PrimHOCRTimeIndex <- TimeIndex
 
@@ -178,7 +182,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 # This should be located in the parse_data module and read data parsed to
 # sear specification. The sear format specification must be defined before.
 
-    observeEvent(
+    # ParsedData is used to keep track of the loaded metadata (Apla) against MainLog
+    ParsedData <- eventReactive(
       ignoreInit = TRUE,
       {
         c(
@@ -283,12 +288,15 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         }
 
+        return(Apla())
+
       }
     )
 
 
     # Module output -----------------------------------------------------------
     list(
+      ParsedData = ParsedData,
       Apla = Apla,
       HOCR = HOCR,
       HOCRDark = HOCRDark,

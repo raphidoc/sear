@@ -13,7 +13,7 @@ app_server <- function(input, output, session) {
 
   # Global objects ----------------------------------------------------------
 
-  MainLog <- reactiveVal()
+  MainLog <- reactiveVal(tibble())
 
   # Active discrete observation
   Obs <- reactiveValues(

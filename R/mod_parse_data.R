@@ -10,6 +10,7 @@
 mod_parse_data_ui <- function(id){
   ns <- NS(id)
   tagList(
+    waiter::use_waiter(),
     mod_select_instrument_ui(ns("select_instrument")),
     uiOutput(outputId = ns("TabPanel"))
   )
@@ -66,16 +67,17 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
     MTELog <- mod_parse_mtelog_server("parse_mtelog", SearTbl, CalData, ParsedFiles)
     BioSonic <- mod_parse_biosonic_server("parse_biosonic", SearTbl, ParsedFiles)
 
+
+# MainLog -----------------------------------------------------------------
+
     observeEvent(
-      ignoreInit = TRUE,
+      ignoreInit = FALSE,
       {
         c(
-          MTELog$Apla()
+          SearTbl()
           )
       },
       {
-
-        browser()
 
         NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
         ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
@@ -95,62 +97,76 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       }
     )
 
-    observeEvent(
+    UpdateMainLog <- observeEvent(
       {
-        MTELog$Input()
+        MTELog$ParsedData()
       },
       {
-        req(MTELog$Apla())
+
+        waiter <- waiter::Waiter$new()
+        waiter$show()
+        on.exit(waiter$hide())
 
         browser()
+
+        OldMainLog <- MainLog()
 
         PrimMainLog <- MTELog$Apla() %>%
           rename(Lon = Lon_DD, Lat = Lat_DD)
 
-        PrimBioSonic <- BioSonic$BioSonic()
+        if (nrow(OldMainLog) == nrow(PrimMainLog) | !is.null(BioSonic$BioSonic())) {
 
-        # HOCR often record 2/3 bin per second.
-        # Should we reduce the time index by second to optimize computation time ?
-        DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, MTELog$HOCRTimeIndex())
+          message("MainLog up to date")
 
-        DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, MTELog$SBE19()$DateTime)
+        } else {
 
-        DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, MTELog$SeaOWL()$DateTime)
+          PrimBioSonic <- BioSonic$BioSonic()
 
-        DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, MTELog$BBFL2()$DateTime)
+          # HOCR often record 2/3 bin per second.
+          # Should we reduce the time index by second to optimize computation time ?
+          # Also this time index represents all three hocr, could start by keeping only one
 
-        DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, PrimBioSonic$DateTime)
+          DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, MTELog$HOCRTimeIndex())
 
-        PrimMainLog <- PrimMainLog %>%
-          mutate(
-            ID = seq_along(rownames(PrimMainLog)),
-            HOCR = DataSyntHOCR,
-            SBE19 = DataSyntSBE19,
-            SeaOWL = DataSyntSeaOWL,
-            BBFL2 = DataSyntBBFL2,
-            BioSonic = DataSyntBioSonic
-          )
+          DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, MTELog$SBE19()$DateTime)
 
-        MainLog(PrimMainLog)
+          DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, MTELog$SeaOWL()$DateTime)
 
-        ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
-        dir.create(ParsedDir, recursive = TRUE)
+          DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, MTELog$BBFL2()$DateTime)
 
-        SysDateTime <- format(as.POSIXlt(Sys.time(), tz = "UTC"), "%Y%m%d_%H%M%S")
+          DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, PrimBioSonic$DateTime)
 
-        NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
+          PrimMainLog <- PrimMainLog %>%
+            mutate(
+              ID = seq_along(rownames(PrimMainLog)),
+              HOCR = DataSyntHOCR,
+              SBE19 = DataSyntSBE19,
+              SeaOWL = DataSyntSeaOWL,
+              BBFL2 = DataSyntBBFL2,
+              BioSonic = DataSyntBioSonic
+            )
 
-        if (any(str_detect(ParsedFiles(), NameMainLog))) {
+          MainLog(PrimMainLog)
 
-          PotMainLog <- str_subset(ParsedFiles(), NameMainLog)
+          ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+          dir.create(ParsedDir, recursive = TRUE)
 
-          file.remove(PotMainLog)
+          SysDateTime <- format(as.POSIXlt(Sys.time(), tz = "UTC"), "%Y%m%d_%H%M%S")
 
-        } else if (TRUE) {
+          NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
+
+          if (any(str_detect(ParsedFiles(), NameMainLog))) {
+
+            PotMainLog <- str_subset(ParsedFiles(), NameMainLog)
+
+            file.remove(PotMainLog)
+
+          }
 
           PotMainLog <- file.path(ParsedDir, paste0("main_log_",SysDateTime,".csv"))
 
           PrimMainLog <- write_csv(MainLog(), PotMainLog)
+
 
         }
 

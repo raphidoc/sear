@@ -273,6 +273,8 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
 #' @noRd
 cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
 
+  browser()
+
   RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., MainLogDate))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
@@ -386,11 +388,13 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
 
   HOCRWide <- left_join(HOCRWide, HOCRDark, by = c("SN"))
 
-  cor_dark <- function(.x, .y) {
-    ID <- .x[, 1]
-    DateTime <- .x[, 2]
+  cor_dark <- function(x, y) {
+    browser()
 
-    Data <- .x[, -1:-2] - row_rep(.y[, -1:-2], nrow(.x[, -1:-2]))
+    ID <- x[, 1]
+    DateTime <- x[, 2]
+
+    Data <- x[, -1:-2] - row_rep(y[, -1:-2], nrow(x[, -1:-2]))
 
     bind_cols(ID, DateTime, Data)
   }

@@ -72,6 +72,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(L1$InstrumentList(), "HOCR"))) {
 
+          browser()
+
           FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
 
           if (length(FiltRawHOCR) == 0) {
@@ -82,6 +84,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
             # Select nearest dark data
             ObsTime <- int_end(TimeInt / 2)
+
+            ### CHECK FOR BUG IN HOCRDark LOADING ###
 
             HOCRDark <- L1$HOCRDark() %>%
               mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
