@@ -72,13 +72,15 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(L1$InstrumentList(), "HOCR"))) {
 
-          browser()
-
           FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
 
           if (length(FiltRawHOCR) == 0) {
             warning(
               paste0("HOCR data not found at time interval: ",TimeInt)
+            )
+          } else if (is.null(CalData$CalHOCR())) {
+            warning(
+              "HOCR calibration data not loaded"
             )
           } else {
 
@@ -109,14 +111,18 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(L1$InstrumentList(), "SBE19"))) {
 
-          Lon <- mean(SelData$SelMainLog()$Lon_DD)
-          Lat <- mean(SelData$SelMainLog()$Lat_DD)
+          Lon <- mean(SelData$SelMainLog()$Lon)
+          Lat <- mean(SelData$SelMainLog()$Lat)
 
           SBE19 <- L1$SBE19() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(SBE19) == 0) {
             warning(
               paste0("SBE19 data not found at time interval: ",TimeInt)
+            )
+          } else if (is.null(CalData$CalSBE19()) | is.null(CalData$CalSBE18()) | is.null(CalData$CalSBE43())) {
+            warning(
+              "SBE19 | SBE18 | SBE43 calibration data not loaded"
             )
           } else {
 
@@ -178,6 +184,10 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
             warning(
               paste0("SeaOWL data not found at time interval: ",TimeInt)
             )
+          } else if (is.null(CalData$CalSeaOWL())) {
+            warning(
+              "SeaOWL calibration data not loaded"
+            )
           } else {
 
             SeaOWLL1b <- cal_seaowl(SeaOWL, CalData$CalSeaOWL()) %>%
@@ -207,6 +217,10 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
           if (nrow(BBFL2) == 0) {
             warning(
               paste0("BBFL2 data not found at time interval: ",TimeInt)
+            )
+          } else if (is.null(CalData$CalBBFL2())) {
+            warning(
+              "BBFL2 calibration data not loaded"
             )
           } else {
 

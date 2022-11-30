@@ -14,7 +14,8 @@ mod_select_data_ui <- function(id) {
     fluidRow(
       column(
         width = 6,
-        uiOutput(ns("Filters"))
+        uiOutput(ns("FilterInstDate")),
+        uiOutput(ns("FilterTimeSpeed"))
       ),
       column(
         width = 6,
@@ -36,21 +37,12 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
     ns <- session$ns
 
     # Filters for data selection ----------------------------------------------
-    output$Filters <- renderUI({
+    output$FilterInstDate <- renderUI({
       req(MainLog())
 
       tagList(
-        sliderInput(ns("TimeFilter"), "Time",
-          min = min(MainLog()$DateTime), max = max(MainLog()$DateTime),
-          value = c(min(MainLog()$DateTime), max = max(MainLog()$DateTime)),
-          timeFormat = "%F %T",
-          timezone = "+0000",
-          width = NULL,
-          step = 1
-        ),
         checkboxGroupInput(
-          ns("Instrument"),
-          "Intrument",
+          ns("Instrument"), "Intrument",
           choices = L1$InstrumentList(),
           selected = L1$InstrumentList(),
           inline = TRUE,
@@ -58,59 +50,94 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
           choiceNames = NULL,
           choiceValues = NULL
         ),
+        dateRangeInput(
+          ns("DateFilter"), "DateFilter",
+          start = min(lubridate::date(MainLog()$DateTime)),
+          end = max(lubridate::date(MainLog()$DateTime)),
+          min = min(lubridate::date(MainLog()$DateTime)),
+          max = max(lubridate::date(MainLog()$DateTime))
+        )
+      )
+    })
+
+    output$FilterTimeSpeed <- renderUI({
+      req(AllowedTime())
+
+      tagList(
+        sliderInput(
+          ns("TimeFilter"), "Time",
+          min = min(AllowedTime()),
+          max = max(AllowedTime()),
+          value = c(min(AllowedTime()), max = max(AllowedTime())),
+          timeFormat = "%T",
+          timezone = "+0000",
+          width = NULL,
+          step = 1
+        ),
         sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(90, 180), min = 0, max = 360),
         numericInput(ns("SpeedLimit"), "Speed", 6, step = 0.1)
       )
     })
 
-    DateTimeInterval <- reactive({
+    DateInterval <- reactive({
+      req(input$DateFilter)
+      lubridate::interval(input$DateFilter[1], input$DateFilter[2])
+    })
+
+    AllowedTime <- reactive({
+      req(DateInterval())
+
+      Int <- DateInterval()
+      IntStart <- int_start(DateInterval())
+      IntEnd <- int_end(DateInterval())
+
+      # Make the IntEnd day inclusive for %within%
+      int_end(Int) <- IntEnd + days(1) - seconds(1)
+
+      if (IntStart == IntEnd) {
+        MainLog()$DateTime[lubridate::date(MainLog()$DateTime) == IntStart]
+      } else {
+        MainLog()$DateTime[MainLog()$DateTime %within% Int]
+      }
+
+    })
+
+    TimeInterval <- reactive({
       lubridate::interval(input$TimeFilter[1], input$TimeFilter[2])
     })
 
     SubMainLog <- reactiveVal({})
 
     observe({
-      req(DateTimeInterval(), input$SpeedLimit, input$SolAzmLimit, input$Instrument)
-
-      #browser()
+      req(TimeInterval(), input$SpeedLimit, input$SolAzmLimit, input$Instrument)
 
       Inst <- input$Instrument
 
       PrimMainLog <- MainLog()
 
-      if (all(!str_detect(Inst, "HOCR")) & any(str_detect(colnames(PrimMainLog), "HOCR"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$HOCR == F,]
-      } else {
+      if (any(str_detect(Inst, "HOCR"))) {
         PrimMainLog <- PrimMainLog[PrimMainLog$HOCR == T,]
       }
 
-      if (all(!str_detect(Inst, "SBE19")) & any(str_detect(colnames(PrimMainLog), "SBE19"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$SBE19 == F,]
-      } else {
+      if (any(str_detect(Inst, "SBE19"))) {
         PrimMainLog <- PrimMainLog[PrimMainLog$SBE19 == T,]
       }
 
-      if (all(!str_detect(Inst, "SeaOWL")) & any(str_detect(colnames(PrimMainLog), "SeaOWL"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$SeaOWL == F,]
-      } else {
+      if (any(str_detect(Inst, "SeaOWL"))) {
         PrimMainLog <- PrimMainLog[PrimMainLog$SeaOWL == T,]
       }
 
-      if (all(!str_detect(Inst, "BBFL2")) & any(str_detect(colnames(PrimMainLog), "BBFL2"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$BBFL2 == F,]
-      } else {
+      if (any(str_detect(Inst, "BBFL2"))) {
         PrimMainLog <- PrimMainLog[PrimMainLog$BBFL2 == T,]
       }
 
-      if (all(!str_detect(Inst, "BioSonic")) & any(str_detect(colnames(PrimMainLog), "BioSonic"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$BioSonic == F,]
-      } else {
+      if (any(str_detect(Inst, "BioSonic"))) {
         PrimMainLog <- PrimMainLog[PrimMainLog$BioSonic == T,]
       }
 
       PrimMainLog <- PrimMainLog %>%
         filter(
-          DateTime %within% DateTimeInterval(),
+          DateTime %within% TimeInterval(),
           BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
           Speed_N <= input$SpeedLimit
         )
@@ -239,6 +266,8 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
     output$Map <- renderPlotly({
       req(SubMainLog())
 
+      validate(need(nrow(SubMainLog()) != 0, message = "No data to display with those filters"))
+
       if (is.null(SelUUID())) {
         ZC <- zoom_center(SubMainLog()$Lat, SubMainLog()$Lon)
         Zoom(ZC[[1]])
@@ -271,7 +300,8 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
             customdata = ~ID,
             marker = list(color = "rgb(154, 42, 42)"),
             text = ~ paste0(
-              "<b>DateTime</b>: ", paste(hour(DateTime), ":", minute(DateTime), ":", second(DateTime)), "<br>",
+              "<b>Date</b>: ", format(DateTime, "%Y-%m-%d"), "<br>",
+              "<b>Time</b>: ", format(DateTime, "%H:%M:%S"), "<br>",
               "<b>Speed (Knt)</b>: ", Speed_N, "<br>",
               "<b>Course (TN)</b>: ", Course_TN, "<br>",
               "<b>BoatSolAzm (degree)</b>: ", BoatSolAzm, "<br>"

@@ -107,18 +107,23 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
         waiter$show()
         on.exit(waiter$hide())
 
-        browser()
-
         OldMainLog <- MainLog()
 
         PrimMainLog <- MTELog$Apla() %>%
           rename(Lon = Lon_DD, Lat = Lat_DD)
 
-        if (nrow(OldMainLog) == nrow(PrimMainLog) | !is.null(BioSonic$BioSonic())) {
+        #browser()
+
+        # Need to figure out how to compute on BioSonic Load
+        # | !is.null(BioSonic$BioSonic())
+
+        if (nrow(OldMainLog) == nrow(PrimMainLog)) {
 
           message("MainLog up to date")
 
         } else {
+
+          message("Updating MainLog")
 
           PrimBioSonic <- BioSonic$BioSonic()
 

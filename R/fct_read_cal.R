@@ -102,9 +102,9 @@ read_hocr_cal <- function(CalFiles) {
   return(list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
 }
 
-tidy_cal_hocr <- function() {
+tidy_cal_hocr <- function(CalFiles) {
 
-  CalFiles <- list.files(system.file("cal", "hocr", package = "sear"), full.names = TRUE)
+  #CalFiles <- list.files(system.file("cal", "hocr", package = "sear"), full.names = TRUE)
 
   CalList <- purrr::map(CalFiles, read_hocr_cal)
 
@@ -144,9 +144,9 @@ tidy_cal_hocr <- function() {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_sbe19_cal <- function() {
+read_sbe19_cal <- function(CalFile) {
 
-  CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
+  #CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -201,9 +201,9 @@ read_sbe19_cal <- function() {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_sbe43_cal <- function() {
+read_sbe43_cal <- function(CalFile) {
 
-  CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
+  #CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -240,9 +240,9 @@ read_sbe43_cal <- function() {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_sbe18_cal <- function() {
+read_sbe18_cal <- function(CalFile) {
 
-  CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
+  #CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -274,9 +274,9 @@ read_sbe18_cal <- function() {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_seaowl_cal <- function(){
+read_seaowl_cal <- function(CalFile){
 
-  CalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
+  #CalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -314,9 +314,9 @@ read_seaowl_cal <- function(){
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_bbfl2_cal <- function(){
+read_bbfl2_cal <- function(CalFile){
 
-  CalFile <- sear:::app_sys("cal", "bbfl2", "5745.cal")
+  #CalFile <- sear:::app_sys("cal", "bbfl2", "5745.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 

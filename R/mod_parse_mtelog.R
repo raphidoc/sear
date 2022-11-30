@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-#' @import readr
+#' @import readr shinyFeedback
 mod_parse_mtelog_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -191,8 +191,10 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
         )
       },
       {
-        # Why does this event is activated twice on Project selection ?
-        #browser()
+
+        waiter <- waiter::Waiter$new()
+        waiter$show()
+        on.exit(waiter$hide())
 
         # Applanix
 
@@ -230,13 +232,44 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
           temp <- purrr::map(.x = PotHOCRDark, ~ read_rds(.x))
 
-          test <- purrr::map(.x = temp, ~ unnest(.x, cols = c(AproxData)))
+          test <- purrr::map(
+            .x = temp,
+            ~ tibble(
+              Instrument = .x$Instrument,
+              SN = .x$SN,
+              AproxData = purrr::map(
+                .x = ..1$AproxData,
+                ~ pivot_longer(
+                  .x,
+                  cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+                  values_to = "Channels",
+                  names_to = c("Type", "Wavelength"),
+                  names_sep = "_",
+                  # names_prefix = "[[:alpha:]]{2}_",
+                  names_transform = list(Wavelength = as.numeric)
+                )
+              )
+            )
+          )
 
-          test2 <- purrr::map_df(.x = test, ~ .x) %>%
+          test2 <- purrr::map(.x = test, ~ unnest(.x, cols = c(AproxData)))
+
+          test3 <- purrr::map_df(.x = test2, ~ .x) %>%
             group_by(Instrument, SN) %>%
-            nest(AproxData = !matches("Instrument|SN"))
+            nest(AproxData = !matches("Instrument|SN")) %>%
+            mutate(
+              AproxData = purrr::map(
+                AproxData,
+                ~ pivot_wider(
+                  .x,
+                  names_from = all_of(c("Type", "Wavelength")),
+                  names_sep = "_",
+                  values_from = Channels
+                )
+              )
+              )
 
-          HOCRDark(test2)
+          HOCRDark(test3)
 
         }
 

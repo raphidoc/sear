@@ -198,6 +198,9 @@ Instrument available to process are detected from the loaded files. For now the 
 
 *NEED* think about generalization of processing with different instruments configuration, usage of \*.con files (similar to ProSoft)
 
+*OPTIONAL*
+Could use ECMWF services (climate reanalysis) to add meteorological data to the interface. Like clouds on the selection map ?
+
 # Server
 
 ## golem organization 

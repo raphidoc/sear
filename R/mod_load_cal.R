@@ -1,4 +1,4 @@
-#' load_cal UI Function
+#' load_cal_2 UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,59 +7,77 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_load_cal_ui <- function(id) {
+mod_load_cal_ui <- function(id){
   ns <- NS(id)
-  tagList()
+  tagList(
+    uiOutput(outputId = ns("Load"))
+  )
 }
 
 #' load_cal Server Functions
 #'
 #' @noRd
-mod_load_cal_server <- function(id) {
-  moduleServer(id, function(input, output, session) {
+mod_load_cal_server <- function(
+    id,
+    SearTbl,
+    read_cal,
+    ReactCal,
+    ParsedCalFiles
+    ){
+  moduleServer( id, function(input, output, session){
     ns <- session$ns
 
-    # HOCR Calibration reactive value
-    CalHOCR <- reactiveVal({
-      tidy_cal_hocr()
+    output$Load <- renderUI({
+      req(SearTbl())
+
+      fileInput(ns("Cal"), paste0("Select ",id," calibration files"), accept = c(".cal"), multiple = T)
+
     })
 
-    CalSBE19 <- reactiveVal({
-      read_sbe19_cal()
-    })
+    observeEvent(
+      input$Cal,
+      {
 
-    CalSBE18 <- reactiveVal({
-      read_sbe18_cal()
-    })
+        CalDir <- file.path(SearTbl()$ProjPath, ".sear", "cal")
 
-    CalSBE43 <- reactiveVal({
-      read_sbe43_cal()
-    })
+        dir.create(CalDir, recursive = TRUE)
 
-    CalSeaOWL <- reactiveVal({
-      read_seaowl_cal()
-    })
+        Files <- input$Cal %>%
+          mutate(
+            calpath = file.path(CalDir, paste0(id,"_",name))
+          )
 
-    CalBBFL2 <- reactiveVal({
-      read_bbfl2_cal()
-    })
+        file.copy(Files$datapath, Files$calpath)
 
+        Cal <- read_cal(Files$calpath)
 
-# Module output -----------------------------------------------------------
-  list(
-    CalHOCR = CalHOCR,
-    CalSBE19 = CalSBE19,
-    CalSBE18 = CalSBE18,
-    CalSBE43 = CalSBE43,
-    CalSeaOWL = CalSeaOWL,
-    CalBBFL2 = CalBBFL2
-  )
+        ReactCal(Cal)
+
+      }
+    )
+
+    observeEvent(
+      ignoreInit = F,
+      ParsedCalFiles(),
+      {
+
+        if (any(str_detect(ParsedCalFiles(), id))) {
+
+          Pot <- str_subset(ParsedCalFiles(), id)
+
+          temp <- read_cal(Pot)
+
+          ReactCal(temp)
+        }
+
+      }
+    )
 
   })
 }
 
 ## To be copied in the UI
-# mod_load_cal_ui("load_cal_1")
+# mod_load_cal_ui("load_cal")
 
 ## To be copied in the server
-# mod_load_cal_server("load_cal_1")
+# mod_load_cal_server("load_cal")

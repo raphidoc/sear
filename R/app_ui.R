@@ -36,7 +36,8 @@ app_ui <- function(request) {
       dashboardBody(
         tabItems(
           tabItem(tabName = "Settings",
-                  mod_parse_data_ui("parse_data")
+                  mod_parse_data_ui("parse_data"),
+                  mod_parse_cal_ui("parse_cal")
           ),
 
           tabItem(tabName = "Processing",
