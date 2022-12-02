@@ -38,7 +38,12 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
     output$Load <- renderUI({
       req(SearTbl())
 
-      fileInput(ns("Files"), "Choose MTE .txt and .bin Files", accept = c(".txt",".bin"), multiple = T)
+      fluidRow(
+        column(
+          width = 6,
+          fileInput(ns("Files"), "Choose MTE .txt and .bin Files", accept = c(".txt",".bin"), multiple = T)
+        )
+      )
 
     })
 

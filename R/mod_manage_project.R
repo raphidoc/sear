@@ -29,6 +29,12 @@ mod_manage_project_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # output$ProjectList <- renderUI({
+    #
+    #   selectizeInput(ns("ObsList"), "ObsList", choices = c("", ObsMeta()$UUID), selected = NULL, multiple = F)
+    # })
+    #
+
     # Server side function of shinyDirButton
     shinyDirChoose(input, id = "Select", allowDirCreate = T, roots = c(Data = "/D/Data", root = "/"))
 

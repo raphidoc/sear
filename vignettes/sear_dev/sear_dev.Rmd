@@ -53,8 +53,19 @@ HOCRTimeIndex <- purrr::map(
     paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC")
 )
-
 ```
+
+# Foreword
+
+> Do we have a way to manage and process data in a usable and consistent way ? No... Ok so it's On !
+
+* [https://en.wikipedia.org/wiki/Usability](Usability) : 
+
+> Capacity of a system to provide a condition for its users to perform the tasks safely, effectively, and efficiently while enjoying the experience.
+
+* [https://en.wikipedia.org/wiki/Consistency_(disambiguation)](Consistency) : 
+
+> A consistent theory is one that does not lead to a logical contradiction.
 
 # UI
 

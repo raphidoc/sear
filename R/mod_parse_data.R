@@ -11,7 +11,6 @@ mod_parse_data_ui <- function(id){
   ns <- NS(id)
   tagList(
     waiter::use_waiter(),
-    mod_select_instrument_ui(ns("select_instrument")),
     uiOutput(outputId = ns("TabPanel"))
   )
 }
@@ -29,6 +28,10 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       tabsetPanel(
         id = ns("Tabset"),
         type = "pills",
+        tabPanel(
+          "Parsed data",
+          mod_select_instrument_ui(ns("select_instrument"))
+        ),
         tabPanel(
           "SeaDooMTE",
           mod_parse_mtelog_ui(ns("parse_mtelog"))

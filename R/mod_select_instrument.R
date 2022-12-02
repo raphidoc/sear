@@ -10,7 +10,16 @@
 mod_select_instrument_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    uiOutput(ns("InstrumentList"))
+    fluidRow(
+      column(
+        width = 6,
+        uiOutput(ns("InstrumentList"))
+      ),
+      column(
+        width = 6,
+        textOutput(ns("FilesPath"))
+      )
+    )
   )
 }
 
@@ -52,6 +61,8 @@ mod_select_instrument_server <- function(id, ParsedFiles) {
         choiceValues = NULL
       )
     })
+
+    output$FilesPath <- renderText({ basename(ParsedFiles()) })
 
     list(
       InstrumentList = reactive({input$InstrumentList})

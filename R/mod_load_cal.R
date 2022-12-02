@@ -30,7 +30,18 @@ mod_load_cal_server <- function(
     output$Load <- renderUI({
       req(SearTbl())
 
-      fileInput(ns("Cal"), paste0("Select ",id," calibration files"), accept = c(".cal"), multiple = T)
+      fluidRow(
+        column(
+          width = 6,
+          fileInput(ns("Cal"), paste0("Select ",id," calibration files"), accept = c(".cal"), multiple = T)
+        ),
+        column(
+          width = 6,
+          textOutput(ns("CalPath"))
+        )
+      )
+
+
 
     })
 
@@ -68,6 +79,9 @@ mod_load_cal_server <- function(
           temp <- read_cal(Pot)
 
           ReactCal(temp)
+
+          output$CalPath <- renderText({ basename(Pot) })
+
         }
 
       }
