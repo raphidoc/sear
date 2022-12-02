@@ -37,7 +37,7 @@ mod_parse_biosonic_server <- function(id, SearTbl, ParsedFiles){
 
         # Copy files in raw dir
 
-        RawDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "raw")
+        RawDir <- file.path(SearTbl()$ProjPath, "sear", "data", "raw")
 
         dir.create(RawDir, recursive = TRUE)
 
@@ -50,7 +50,7 @@ mod_parse_biosonic_server <- function(id, SearTbl, ParsedFiles){
 
         DateRange <- str_extract(Files$name, "[:digit:]{8}_[:digit:]{8}")
 
-        ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+        ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
 
         dir.create(ParsedDir, recursive = TRUE)
 

@@ -49,7 +49,7 @@ mod_load_cal_server <- function(
       input$Cal,
       {
 
-        CalDir <- file.path(SearTbl()$ProjPath, ".sear", "cal")
+        CalDir <- file.path(SearTbl()$ProjPath, "sear", "cal")
 
         dir.create(CalDir, recursive = TRUE)
 

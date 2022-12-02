@@ -59,7 +59,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # Copy files in raw dir
 
-        RawDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "raw")
+        RawDir <- file.path(SearTbl()$ProjPath, "sear", "data", "raw")
 
         dir.create(RawDir, recursive = TRUE)
 
@@ -78,7 +78,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         DateTime <- str_extract(str_subset(Files$name, "\\.txt$"), "[:digit:]{8}_[:digit:]{6}")
 
-        ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+        ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
 
         dir.create(ParsedDir, recursive = TRUE)
 
@@ -109,6 +109,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
         PotHOCR <- file.path(ParsedDir, paste0("hocr_",DateTime,".rds"))
         PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
         PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
+
+        browser()
 
         if (any(str_detect(InstList, "OCR")) & !file.exists(PotHOCR)) {
 

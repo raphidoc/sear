@@ -38,7 +38,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
         SearTbl()
       },{
 
-        CalDir <- file.path(SearTbl()$ProjPath, ".sear", "cal")
+        CalDir <- file.path(SearTbl()$ProjPath, "sear", "cal")
 
         if (dir.exists(CalDir)) {
 

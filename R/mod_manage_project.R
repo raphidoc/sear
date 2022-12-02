@@ -36,7 +36,7 @@ mod_manage_project_server <- function(id) {
     #
 
     # Server side function of shinyDirButton
-    shinyDirChoose(input, id = "Select", allowDirCreate = T, roots = c(Data = "/D/Data", root = "/"))
+    shinyDirChoose(input, id = "Select", allowDirCreate = T, roots = c(Data = "~", root = "/"))
 
     # Store project Name and path in a reactive value
     Project <- reactive({
@@ -44,7 +44,7 @@ mod_manage_project_server <- function(id) {
       # this early computation leed to error as input$Select is first an integer then a list.
       req(is.list(input$Select))
 
-      Path <- parseDirPath(roots = c(Data = "/D/Data", root = "/"), input$Select)
+      Path <- parseDirPath(roots = c(Data = "~", root = "/"), input$Select)
 
       Name <- str_extract(Path, "(?<=/)[^/]*$")
 

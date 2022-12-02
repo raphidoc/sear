@@ -11,6 +11,8 @@
 #'
 #' @noRd
 read_hocr <- function(BinFile) {
+
+  browser()
   # now source python onload
   reticulate::source_python(system.file("py", "hocr.py", package = "sear", mustWork = T))
 

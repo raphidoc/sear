@@ -53,7 +53,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       },
       {
 
-        ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+        ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
 
         if (dir.exists(ParsedDir)) {
 
@@ -83,7 +83,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       {
 
         NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
-        ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+        ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
 
         #PotMainLog <- file.path(ParsedDir, paste0("main_log_",SysDateTime,".csv"))
 
@@ -156,7 +156,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
           MainLog(PrimMainLog)
 
-          ParsedDir <- file.path(SearTbl()$ProjPath, ".sear", "data", "parsed")
+          ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
           dir.create(ParsedDir, recursive = TRUE)
 
           SysDateTime <- format(as.POSIXlt(Sys.time(), tz = "UTC"), "%Y%m%d_%H%M%S")
