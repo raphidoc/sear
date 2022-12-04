@@ -36,7 +36,9 @@ Imports:
     tidyr,
     uuid,
     waiter,
-    widgetframe
+    widgetframe,
+    Rcpp (>= 1.0.9)
+LinkingTo: Rcpp
 Suggests: 
     covr,
     knitr,

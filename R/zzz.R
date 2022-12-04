@@ -1,3 +1,6 @@
+#' @useDynLib sear
+#' @importFrom Rcpp evalCpp
+
 # global reference to kaitaistruct (will be initialized in .onLoad)
 kaitaistruct <- NULL
 
@@ -10,7 +13,12 @@ skip_if_no_kaitaistruct <- function() {
 }
 
 .onLoad <- function(lib, pkg) {
-  reticulate::use_condaenv(condaenv = "py_sear", conda = "auto", required = NULL)
+
+  #reticulate::use_condaenv(condaenv = "py_sear", conda = "auto", required = NULL)
+
+  reticulate::virtualenv_create("pysear")
+  reticulate::virtualenv_install("pysear", "kaitaistruct")
+  reticulate::use_virtualenv("pysear")
 
   # use superassignment to update global reference to kaitaistruct
   kaitaistruct <<- reticulate::import("kaitaistruct", delay_load = TRUE)
