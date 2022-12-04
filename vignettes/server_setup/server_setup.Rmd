@@ -85,6 +85,12 @@ Not sure if both `gdal-bin` and `libgdl-dev` are needed
 sudo apt install gdal-bin libgdal-dev
 ```
 
+To use python virtual env
+
+```
+sudo apt install python3.10-venv
+```
+
 #### System
 
 ```
