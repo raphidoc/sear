@@ -59,6 +59,18 @@ mod_manage_project_server <- function(id) {
       {
         message(getwd())
 
+        user <- system2('echo', '"$USER"')
+
+        message(paste0("Connected as: ", user))
+
+        ProjPath <- file.path("~","sear_project",input$NewProj)
+
+        dir.create(file.path("~","sear_project",ProjPath), recursive = T)
+
+        setwd(ProjPath)
+
+        message(getwd())
+
         #dir.create("input$NewProj")
       }
     )
