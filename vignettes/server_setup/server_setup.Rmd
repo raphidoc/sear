@@ -91,14 +91,9 @@ sudo apt install gdal-bin libgdal-dev
 sudo apt install libcurl4-gnutls-dev libxml2-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev gdal-bin libgdal-dev
 ```
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 99ee6e09966578b800d6a2036bfc895f603e2316
 #### R
 
-Install R packages as su (Super User) to make them available to all users on the machine. 
+Install R packages as su (Super User) to make them available to all users on the machine.
 
 ```
 sudo su - -c "R -e \"install.packages('devtools')\""
@@ -110,11 +105,9 @@ Also need to install `sear` dependencies :
 ```
 sudo su - -c "R -e \"install.packages(c('clock', 'config', 'DBI', 'dplyr', 'DT', 'golem', 'hms', 'lubridate', 'plotly', 'raster', 'readr', 'reticulate', 'RSQLite', 'sf', 'shinydashboard', 'shinyFeedback'))\""
 
-<<<<<<< HEAD
+
 sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe'))\""
-=======
-sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps' 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe'))\""
->>>>>>> 99ee6e09966578b800d6a2036bfc895f603e2316
+
 ```
 
 
