@@ -50,9 +50,9 @@ mod_manage_project_server <- function(id) {
     observeEvent(
       input$NewProj,
       {
-        browser()
+        stop(getwd())
 
-        dir.create("input$NewProj")
+        #dir.create("input$NewProj")
       }
     )
 
