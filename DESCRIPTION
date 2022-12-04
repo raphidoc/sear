@@ -28,7 +28,6 @@ Imports:
     shiny (>= 1.6.0),
     shinydashboard,
     shinyFeedback,
-    shinyFiles,
     shinyWidgets,
     spsComps,
     stringr,
