@@ -43,12 +43,19 @@ mod_manage_project_server <- function(id) {
       textInput(ns("NewProj"),"Enter a project name", value = "", placeholder = "super_duper"),
       title = "Creating new project",
       footer = tagList(
+        actionButton(ns("create"), "Create"),
         actionButton(ns("cancel"), "Cancel")
       )
     )
 
+    observeEvent(input$cancel,
+      {
+        removeModal()
+      }
+    )
+
     observeEvent(
-      input$NewProj,
+      input$create,
       {
         stop(getwd())
 
