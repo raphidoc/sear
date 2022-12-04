@@ -59,6 +59,8 @@ mod_manage_project_server <- function(id) {
       {
         message(getwd())
 
+        browser()
+
         user <- system2('echo', '"$USER"')
 
         message(paste0("Connected as: ", user))
