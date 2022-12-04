@@ -9,7 +9,11 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This document is (originaly / mainly taken / greatly inspired) from [https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/](Dean Attali tutorial) to setup an Rstudio and Shiny server. The only purpose of this document is to give up-to-date guidance for the specificities of the `sear` app shiny server setup.
+This document is (originaly / mainly taken / greatly inspired) from [Dean Attali tutorial](https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/) to setup an Rstudio and Shiny server. The only purpose of this document is to give up-to-date guidance for the specificities of the `sear` app shiny server setup.
+
+There will be (for sure ...) specificities related to the machine/server you will try do deploy on.
+When errors occurs, box breath, take a walk, drink something good, look at the error log and find your way.
+Also add some information here about it so others (and your future self ;) ) can build on it !
 
 ## nginx
 
@@ -29,20 +33,33 @@ sudo service nginx start
 sudo service nginx restart
 ```
 
-The default nginx settings only allow file uploads of 1MB, to be able to upload larger files, you’ll need to set the client_max_body_size nginx parameter in nginx.conf file.
+The default nginx settings only allow file uploads of 1MB, to be able to upload larger files, you’ll need to set the client_max_body_size nginx parameter in nginx.conf file in `http{}` section.
+
+```
+sudo nano /etc/nginx/nginx.conf
+client_max_body_size 200M;
+```
+
+Restart the nginx service and check it's status.
+
+```
+sudo systemctl restart nginx
+sudo systemctl status nginx
+```
+
 
 
 ## R
 
-Kinetic (22.10) (The DigitalOcean Droplet) is not yet LTS and therfore is not supported by [https://cran.r-project.org/bin/linux/ubuntu/](CRAN) so we use Jammy (22.04)
+Kinetic (22.10) (The DigitalOcean Droplet) is not yet LTS and therfore is not supported by [CRAN](https://cran.r-project.org/bin/linux/ubuntu/) so we use Jammy (22.04)
 
 You can get the name of your release and replace "Jammy" with the command `$(lsb_release -cs)`.
 
 ```
-sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu Jammy-cran40/"
+sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu $(lsb_release -cs)-cran40/"
 ```
 
-Add the public key to the repositorie
+Add the public key to the repository
 
 ```
 gpg --keyserver keyserver.ubuntu.com --recv-key E298A3A825C0D65DFD57CBB651716619E084DAB9
@@ -56,11 +73,27 @@ sudo apt-get update
 sudo apt-get install r-base
 ```
 
-Install libraries for devtools and it's dependencies
+### Dependencies
+
+The project [r2u](https://github.com/eddelbuettel/r2u) offer a way to integrate CRAN and apt to manage system libraries dependancies for R libraries in an automated manner. If you successfully installed it you don't have to manually install the system dependencies and you can go strait to install R dependencies.
+
+
+The R library `terra` require `gdal-config` but does not tell R about it. So the above doesn't work and you have to manually install `gdal-config`.
+Not sure if both `gdal-bin` and `libgdl-dev` are needed
 
 ```
-sudo apt install libcurl4-gnutls-dev libxml2-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+sudo apt install gdal-bin libgdal-dev
 ```
+
+#### System
+
+```
+sudo apt install libcurl4-gnutls-dev libxml2-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev gdal-bin libgdal-dev
+```
+
+
+
+#### R
 
 Install R packages as su (Super User) to make them available to all users on the machine. 
 
@@ -69,13 +102,22 @@ sudo su - -c "R -e \"install.packages('devtools')\""
 sudo su - -c "R -e \"install.packages('shiny')\""
 ```
 
+Also need to install `sear` dependencies :
+
+```
+sudo su - -c "R -e \"install.packages(c('clock', 'config', 'DBI', 'dplyr', 'DT', 'golem', 'hms', 'lubridate', 'plotly', 'raster', 'readr', 'reticulate', 'RSQLite', 'sf', 'shinydashboard', 'shinyFeedback'))\""
+
+sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps' 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe'))\""
+```
+
+
 ## Rstudio server
 
 ```
 sudo apt install gdebi-core
 ```
 
-Check the latest version of [https://posit.co/download/rstudio-server/](Rstudio Server)
+Check the latest version of [Rstudio Server](https://posit.co/download/rstudio-server/)
 
 ```
 wget https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2022.07.2-576-amd64.deb
@@ -91,7 +133,7 @@ sudo gdebi rstudio-server-2022.07.2-576-amd64.deb
 
 Could automatically fetch the latest with some web scrapping technique ?
 
-latest [https://posit.co/download/shiny-server/](Shiny Server)
+latest [Shiny Server](https://posit.co/download/shiny-server/)
 
 ```
 wget https://download3.rstudio.org/ubuntu-18.04/x86_64/shiny-server-1.5.19.995-amd64.deb
@@ -101,7 +143,34 @@ wget https://download3.rstudio.org/ubuntu-18.04/x86_64/shiny-server-1.5.19.995-a
 sudo gdebi shiny-server-1.5.19.995-amd64.deb
 ```
 
-add the lines `preserve_logs true;` and `sanitize_errors false;` to the shiny server configuration file `/etc/shiny-server/shiny-server.conf` (and then restarting the server)
+Change the default hosting location after `listen 3838;` in the shiny server configuration file.
+
+```
+sudo nano /etc/shiny-server/shiny-server.conf
+```
+
+```
+location /users {
+  run_as :HOME_USER:;
+  user_dirs;
+}
+
+location /apps {
+  run_as shiny;
+  site_dir /srv/shiny-server;
+  log_dir /var/log/shiny-server;
+  directory_index on;
+}
+```
+
+Add the lines `preserve_logs true;` and `sanitize_errors false;` at the end of the file
+
+Restart and check status
+
+```
+sudo systemctl restart shiny-server
+sudo systemctl status shiny-server
+```
 
 ## Note on UQAR network
 
@@ -109,4 +178,39 @@ The UQAR network doesn't allow connection to a server service based on port numb
 
 ```
 sudo nano /etc/nginx/sites-enabled/default
+```
+
+Add those line above `server {}`
+
+```
+map $http_upgrade $connection_upgrade {
+  default upgrade;
+  ''      close;
+}
+```
+
+Add those line after `server_name _;`
+
+```
+location /shiny/ {
+  proxy_pass http://127.0.0.1:3838/;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $connection_upgrade;
+  rewrite ^(/shiny/[^/]+)$ $1/ permanent;
+}
+
+location /rstudio/ {
+  proxy_pass http://127.0.0.1:8787/;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $connection_upgrade;
+}
+```
+
+Restart and check status
+
+```
+sudo systemctl restart nginx
+sudo systemctl status nginx
 ```

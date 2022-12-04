@@ -7,7 +7,6 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-#' @import shinyFiles
 #' @import shinyWidgets
 #'
 mod_manage_project_ui <- function(id) {
