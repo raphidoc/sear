@@ -1,0 +1,112 @@
+---
+title: "server_setup"
+author: "Raphaël Mabit"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This document is (originaly / mainly taken / greatly inspired) from [https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean/](Dean Attali tutorial) to setup an Rstudio and Shiny server. The only purpose of this document is to give up-to-date guidance for the specificities of the `sear` app shiny server setup.
+
+## nginx
+
+Install `nginx`
+
+```
+sudo apt-get update
+sudo apt-get -y install nginx
+```
+
+The default file that is served is located at `/var/www/html/index.nginx-debian.html`
+The configuration file is located at `/etc/nginx/nginx.conf`
+
+```
+sudo service nginx stop
+sudo service nginx start
+sudo service nginx restart
+```
+
+The default nginx settings only allow file uploads of 1MB, to be able to upload larger files, you’ll need to set the client_max_body_size nginx parameter in nginx.conf file.
+
+
+## R
+
+Kinetic (22.10) (The DigitalOcean Droplet) is not yet LTS and therfore is not supported by [https://cran.r-project.org/bin/linux/ubuntu/](CRAN) so we use Jammy (22.04)
+
+You can get the name of your release and replace "Jammy" with the command `$(lsb_release -cs)`.
+
+```
+sudo add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu Jammy-cran40/"
+```
+
+Add the public key to the repositorie
+
+```
+gpg --keyserver keyserver.ubuntu.com --recv-key E298A3A825C0D65DFD57CBB651716619E084DAB9
+gpg -a --export E298A3A825C0D65DFD57CBB651716619E084DAB9 | sudo apt-key add -
+```
+
+Install R
+
+```
+sudo apt-get update
+sudo apt-get install r-base
+```
+
+Install libraries for devtools and it's dependencies
+
+```
+sudo apt install libcurl4-gnutls-dev libxml2-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev
+```
+
+Install R packages as su (Super User) to make them available to all users on the machine. 
+
+```
+sudo su - -c "R -e \"install.packages('devtools')\""
+sudo su - -c "R -e \"install.packages('shiny')\""
+```
+
+## Rstudio server
+
+```
+sudo apt install gdebi-core
+```
+
+Check the latest version of [https://posit.co/download/rstudio-server/](Rstudio Server)
+
+```
+wget https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2022.07.2-576-amd64.deb
+```
+
+Install it
+
+```
+sudo gdebi rstudio-server-2022.07.2-576-amd64.deb
+```
+
+## Shiny server
+
+Could automatically fetch the latest with some web scrapping technique ?
+
+latest [https://posit.co/download/shiny-server/](Shiny Server)
+
+```
+wget https://download3.rstudio.org/ubuntu-18.04/x86_64/shiny-server-1.5.19.995-amd64.deb
+```
+
+```
+sudo gdebi shiny-server-1.5.19.995-amd64.deb
+```
+
+add the lines `preserve_logs true;` and `sanitize_errors false;` to the shiny server configuration file `/etc/shiny-server/shiny-server.conf` (and then restarting the server)
+
+## Note on UQAR network
+
+The UQAR network doesn't allow connection to a server service based on port number. The solution is to use a reverse proxy, so that nginx will listen on port 80 (default HTTP port) at the URL /shiny and will internally redirect that to port 3838. Same for RStudio - we can have nginx listen at /rstudio and redirect it to port 8787.
+
+```
+sudo nano /etc/nginx/sites-enabled/default
+```

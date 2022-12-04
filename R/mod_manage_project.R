@@ -14,7 +14,11 @@ mod_manage_project_ui <- function(id) {
   ns <- NS(id)
   tagList(
     dropdownButton(
-      shinyDirButton(id = ns("Select"), label = "Select", title = "Open or create a project root folder", multiple = FALSE),
+      actionGroupButtons(
+        c(ns("New"), ns("Open")),
+        labels=c("New project", "Open project"),
+        direction = "vertical"
+      ),
       circle = F,
       label = textOutput(ns("ProjectName")),
       tootltip = textOutput(ns("ProjectPath"))
@@ -29,34 +33,45 @@ mod_manage_project_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # output$ProjectList <- renderUI({
-    #
-    #   selectizeInput(ns("ObsList"), "ObsList", choices = c("", ObsMeta()$UUID), selected = NULL, multiple = F)
-    # })
-    #
+    observeEvent(
+      input$New,
+      {
+        showModal(ModalNew)
+      }
+    )
 
-    # Server side function of shinyDirButton
-    shinyDirChoose(input, id = "Select", allowDirCreate = T, roots = c(Data = "~", root = "/"))
+    ModalNew <- modalDialog(
+      textInput(ns("NewProj"),"Enter a project name", value = "", placeholder = "super_duper"),
+      title = "Creating new project",
+      footer = tagList(
+        actionButton(ns("cancel"), "Cancel")
+      )
+    )
+
+    observeEvent(
+      input$NewProj,
+      {
+        browser()
+
+        dir.create("input$NewProj")
+      }
+    )
+
+    ModalOpen <- modalDialog(
+      selectizeInput(ns("ProjList"), "Select a project", choices = "", selected = NULL, multiple = F),
+      title = "Opening an existing project",
+      footer = tagList(
+        actionButton(ns("cancel"), "Cancel")
+      )
+    )
 
     # Store project Name and path in a reactive value
     Project <- reactive({
-      # input$Select gets cumputed as soon as the button is clicked (before a folder is choosed),
-      # this early computation leed to error as input$Select is first an integer then a list.
-      req(is.list(input$Select))
-
-      Path <- parseDirPath(roots = c(Data = "~", root = "/"), input$Select)
-
-      Name <- str_extract(Path, "(?<=/)[^/]*$")
-
-      list(
-        Path = Path,
-        Name = Name
-      )
     })
 
     # Update UI element to display project name and path
     output$ProjectPath <- renderText({
-      validate(need(is.list(input$Select), message = "Project: None"))
+      validate(need(is.list(input$S), message = "Project: None"))
 
       Project()$Path
     })
