@@ -112,7 +112,7 @@ Also need to install `sear` dependencies :
 sudo su - -c "R -e \"install.packages(c('clock', 'config', 'DBI', 'dplyr', 'DT', 'golem', 'hms', 'lubridate', 'plotly', 'raster', 'readr', 'reticulate', 'RSQLite', 'sf', 'shinydashboard', 'shinyFeedback'))\""
 
 
-sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe', 'shinyjs', 'sodium'))\""
+sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe', 'shinyjs', 'sodium', 'listviewer', 'sfheaders', 'htmlwidgets', 'gsw', 'pracma'))\""
 
 ```
 

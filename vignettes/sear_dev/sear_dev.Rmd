@@ -54,10 +54,11 @@ HOCRTimeIndex <- purrr::map(
     zone = "UTC")
 )
 ```
-
 # Foreword
 
-> Do we have a way to manage and process data in a usable and consistent way ? No... Ok so it's On !
+The idea behind this application software originated from a conversation with myself during the first year of my master thesis. 
+
+> Do we have a way to manage and process data in a usable and consistent way ? No. Ok so it's On !
 
 * [https://en.wikipedia.org/wiki/Usability](Usability) : 
 
@@ -66,6 +67,50 @@ HOCRTimeIndex <- purrr::map(
 * [https://en.wikipedia.org/wiki/Consistency_(disambiguation)](Consistency) : 
 
 > A consistent theory is one that does not lead to a logical contradiction.
+
+# Dev, test and demo
+
+A small dataset is needed for developing, testing and demonstrating the app.
+This dataset must be representative of real wolrd data with flaws (missing byte, ...)
+It must allow to exploit the tools of the app at their fullest (filtering and processing combinations).
+
+For this purpose we will used a reduced version of the AlgaeWise data.
+
+This section keeps track of the code used to produce this dataset.
+
+## Raw
+
+The first step is to identified on a full version of this dataset the data that will be included in the reduced version.
+For that we use time interval by raw file.
+
+The resulting trimmed raw data is stored in `extdata/demo/raw`. 
+
+```{r}
+D02 <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
+D05 <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15")) 
+D0615 <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15")) 
+D0618 <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15")) 
+D07 <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15")) 
+D08 <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15")) 
+```
+
+### SeaDooMTE
+
+To filter the .txt files we apply a function on each one with the corresponding interval
+
+To filter the .bin files we guess the position of the relevant packets by packets length, approximate number of packets per second, total number of packet and recording start time.
+
+### BioSonic
+
+To filter the .csv file we filter for data not falling in any interval with `case_when` (vectorized `if else`)
+
+## Parsed
+
+This reduced raw data is then parse with the `sear` function and saved in `extdata/demo/parsed`
+
+## SQLite
+
+TODO
 
 # UI
 
