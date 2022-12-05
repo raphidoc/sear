@@ -32,11 +32,9 @@ mod_manage_project_server <- function(id) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    observeEvent(
-      input$New,
-      {
-        showModal(ModalNew)
-      }
+    Project <- reactiveValues(
+      Path = "",
+      Name = ""
     )
 
     ModalNew <- modalDialog(
@@ -48,14 +46,19 @@ mod_manage_project_server <- function(id) {
       )
     )
 
+    observeEvent(input$New,
+      {
+        showModal(ModalNew)
+      }
+    )
+
     observeEvent(input$cancel,
       {
         removeModal()
       }
     )
 
-    observeEvent(
-      input$create,
+    observeEvent(input$create,
       {
         message(getwd())
 
@@ -63,15 +66,18 @@ mod_manage_project_server <- function(id) {
 
         message(paste0("Connected as: ", user))
 
-        ProjPath <- file.path("~","sear_project",input$NewProj)
+        ProjPath <- normalizePath(file.path("~","sear_project",input$NewProj))
 
         dir.create(ProjPath, recursive = T)
 
-        setwd(ProjPath)
+        #setwd(ProjPath)
 
-        message(getwd())
+        #message(getwd())
 
-        #dir.create("input$NewProj")
+        Project$Path <- ProjPath
+        Project$Name <- basename(ProjPath)
+
+        removeModal()
       }
     )
 
@@ -83,15 +89,11 @@ mod_manage_project_server <- function(id) {
       )
     )
 
-    # Store project Name and path in a reactive value
-    Project <- reactive({
-    })
-
     # Update UI element to display project name and path
     output$ProjectPath <- renderText({
       validate(need(is.list(input$S), message = "Project: None"))
 
-      Project()$Path
+      Project$Path
     })
 
     output$ProjectName <- renderText({
@@ -103,9 +105,9 @@ mod_manage_project_server <- function(id) {
     # Check if .searproj file already exist if not create the default one
 
     SearTbl <- reactive({
-      req(Project())
+      req(Project$Path)
 
-      searproj <- file.path(Project()$Path, glue::glue(Project()$Name, ".searproj"))
+      searproj <- file.path(Project$Path, glue::glue(Project$Name, ".searproj"))
 
       if (file.exists(searproj)) {
         message("Reading ", searproj)
@@ -114,7 +116,7 @@ mod_manage_project_server <- function(id) {
 
         SearTbl <- SearTbl %>%
           mutate(
-            ProjPath = Project()$Path,
+            ProjPath = Project$Path,
             Updated = Sys.time()
           )
 
@@ -127,9 +129,9 @@ mod_manage_project_server <- function(id) {
         message("Creating ", searproj)
 
         SearTbl <- tibble::tibble(
-          ProjName = Project()$Name,
+          ProjName = Project$Name,
           Created = Sys.time(),
-          ProjPath = Project()$Path
+          ProjPath = Project$Path
         )
 
         write_csv(SearTbl, searproj)

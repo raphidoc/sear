@@ -7,7 +7,6 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-#' @import lubridate
 mod_select_data_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -355,7 +354,9 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
           source = "map"
         ) %>% PlotDef()
 
-        htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.hmtl"))
+        # To get the map objects reference
+        #htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.hmtl"))
+
       } else {
         # Determine survey area bounding box and crop coastline accordingly
 

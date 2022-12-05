@@ -117,7 +117,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
         #browser()
 
-        # Need to figure out how to compute on BioSonic Load
+        # TODO Need to figure out how to compute on BioSonic Load
         # | !is.null(BioSonic$BioSonic())
 
         if (nrow(OldMainLog) == nrow(PrimMainLog)) {
@@ -135,14 +135,19 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
           # Also this time index represents all three hocr, could start by keeping only one
 
           DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, MTELog$HOCRTimeIndex())
+          message("HOCR synthesis done")
 
           DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, MTELog$SBE19()$DateTime)
+          message("SBE19 synthesis done")
 
           DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, MTELog$SeaOWL()$DateTime)
+          message("SeaOWL synthesis done")
 
           DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, MTELog$BBFL2()$DateTime)
+          message("BBFL2 synthesis done")
 
           DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, PrimBioSonic$DateTime)
+          message("BioSonic synthesis done")
 
           PrimMainLog <- PrimMainLog %>%
             mutate(

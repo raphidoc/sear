@@ -18,7 +18,7 @@ skip_if_no_kaitaistruct <- function() {
 
   reticulate::virtualenv_create("pysear")
   reticulate::virtualenv_install("pysear", "kaitaistruct")
-  reticulate::use_virtualenv("pysear")
+  reticulate::use_virtualenv("pysear", required = T)
 
   # use superassignment to update global reference to kaitaistruct
   kaitaistruct <<- reticulate::import("kaitaistruct", delay_load = TRUE)

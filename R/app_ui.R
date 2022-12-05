@@ -20,7 +20,6 @@ app_ui <- function(request) {
         )
       ),
       dashboardSidebar(
-        verbatimTextOutput("auth_output"),
         mod_manage_project_ui("manage_project"),
         sidebarMenu(
           menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
@@ -67,8 +66,6 @@ app_ui <- function(request) {
     )
   )
 }
-
-app_ui <- shinymanager::secure_app(app_ui, enable_admin = TRUE)
 
 #' Add external Resources to the Application
 #'
