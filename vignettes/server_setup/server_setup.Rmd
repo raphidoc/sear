@@ -47,8 +47,6 @@ sudo systemctl restart nginx
 sudo systemctl status nginx
 ```
 
-
-
 ## R
 
 Kinetic (22.10) (The DigitalOcean Droplet) is not yet LTS and therfore is not supported by [CRAN](https://cran.r-project.org/bin/linux/ubuntu/) so we use Jammy (22.04)
@@ -112,7 +110,7 @@ Also need to install `sear` dependencies :
 sudo su - -c "R -e \"install.packages(c('clock', 'config', 'DBI', 'dplyr', 'DT', 'golem', 'hms', 'lubridate', 'plotly', 'raster', 'readr', 'reticulate', 'RSQLite', 'sf', 'shinydashboard', 'shinyFeedback'))\""
 
 
-sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe', 'shinyjs', 'sodium'))\""
+sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe', 'shinyjs', 'sodium', 'shinymanager', 'keyring'))\""
 
 ```
 

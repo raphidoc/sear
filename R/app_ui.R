@@ -2,7 +2,7 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @import shiny shinydashboard plotly
+#' @import shiny shinydashboard plotly shinymanager
 #' @noRd
 app_ui <- function(request) {
   tagList(
@@ -17,19 +17,58 @@ app_ui <- function(request) {
           href = "https://github.com/raphidoc/sear",
           tags$img(src = "www/logo_sear.png", width = "100px", height = "40px"),
           "sear"
-        ),
-        uiOutput("LogOutBtn")
+        )
       ),
       dashboardSidebar(
-        uiOutput("SideBar")
+        verbatimTextOutput("auth_output"),
+        mod_manage_project_ui("manage_project"),
+        sidebarMenu(
+          menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
+          menuItem("Processing", tabName = "Processing", icon = icon("gears"))
+        ),
+        # mod_filter_trim_ui("filter_trim"),
+        # mod_discretize_ui("discretize"),
+        mod_L1b_process_ui("L1b_process"),
+        mod_manage_db_ui("manage_db")#,
+        # sidebarMenu(
+        #   menuItem("DataBase", tabName = "DataBase", icon = icon("database"))
+        # )
       )
       ,
       dashboardBody(
-        uiOutput("Body")
+        tabItems(
+          tabItem(tabName = "Settings",
+                  fluidRow(
+                    column(
+                      width = 6,
+                      mod_parse_data_ui("parse_data")
+                    ),
+                    column(
+                      width = 6,
+                      mod_parse_cal_ui("parse_cal")
+                    )
+                  )
+          ),
+
+          tabItem(tabName = "Processing",
+                  fluidRow(
+                    column(
+                      width = 6,
+                      mod_select_data_ui("select_data")
+                    ),
+                    column(
+                      width = 6,
+                      mod_L1L2_ui("L1L2")
+                    )
+                  )
+          )
+        )
       )
     )
   )
 }
+
+app_ui <- shinymanager::secure_app(app_ui, enable_admin = TRUE)
 
 #' Add external Resources to the Application
 #'
