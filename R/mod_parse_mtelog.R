@@ -38,6 +38,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
     output$Load <- renderUI({
       req(SearTbl())
 
+      validate(need(CalData$CalHOCR(), message = "Need HOCR calibration data"))
+
       fluidRow(
         column(
           width = 6,
@@ -50,6 +52,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
     Input <- reactive(input$Files)
 
     observeEvent(
+      #ignoreInit = T,
       Input(),
       {
 
@@ -109,8 +112,6 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
         PotHOCR <- file.path(ParsedDir, paste0("hocr_",DateTime,".rds"))
         PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
         PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
-
-        browser()
 
         if (any(str_detect(InstList, "OCR")) & !file.exists(PotHOCR)) {
 
@@ -191,7 +192,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
     # ParsedData is used to keep track of the loaded metadata (Apla) against MainLog
     ParsedData <- eventReactive(
-      ignoreInit = TRUE,
+      #ignoreInit = TRUE,
       {
         c(
           ParsedFiles()
