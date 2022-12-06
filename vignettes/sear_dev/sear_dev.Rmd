@@ -67,6 +67,10 @@ HOCRTimeIndex <- purrr::map(
 
 > A consistent theory is one that does not lead to a logical contradiction.
 
+Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problem is best solved today by web-based application. That's why sear is such an application.
+
+This software is originally developed to provide a common ground in ocean optics science data management and processing. If your willing for us to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future. We may be able to leave behind the need to reinvent the wheel each new generation of young scientist.
+
 # UI
 
 ## Style
