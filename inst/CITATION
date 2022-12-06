@@ -1,0 +1,16 @@
+citHeader("To cite sear in publications use:")
+
+citEntry(
+  entry    = "Article",
+  title    = "sear, web-based software for ocean optic data management and processing",
+  author   = "Raphaël Mabit,
+  journal  = "Journal of Atmoshperic and Oceanic Technology",
+  year     = "2023",
+  volume   = ,
+  number   = ,
+  pages    = ,
+  url      = ,
+  textVersion = paste(
+
+  )
+)

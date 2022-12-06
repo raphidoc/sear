@@ -42,7 +42,7 @@ mod_manage_project_server <- function(id) {
       title = "Creating new project",
       footer = tagList(
         actionButton(ns("create"), "Create"),
-        actionButton(ns("cancel"), "Cancel")
+        modalButton("Cancel")
       )
     )
 
@@ -82,12 +82,54 @@ mod_manage_project_server <- function(id) {
     )
 
     ModalOpen <- modalDialog(
-      selectizeInput(ns("ProjList"), "Select a project", choices = "", selected = NULL, multiple = F),
+      selectizeInput(
+        ns("ProjList"),
+        "Select a project",
+        choices = c("", list.files(
+          normalizePath(file.path("~","sear_project")),
+          full.names = T)),
+        selected = NULL,
+        multiple = F),
       title = "Opening an existing project",
       footer = tagList(
-        actionButton(ns("cancel"), "Cancel")
+        modalButton("Cancel")
       )
     )
+
+    observeEvent(
+      ignoreInit = T,
+      input$Open,
+      {
+        showModal(ModalOpen)
+      }
+    )
+
+    test_input <- function(input){
+      if (!is.null(input)) {
+        if (input == "") {
+          return(NULL)
+        } else {
+          T
+        }
+      }
+    }
+
+    observeEvent(
+      ignoreInit = T,
+      ignoreNULL = T,
+      {test_input(input$ProjList)},
+      {
+        Project$Path <- input$ProjList
+        Project$Name <- basename(input$ProjList)
+
+        removeModal()
+      }
+    )
+
+    # ProjFolders <- reactiveVal(
+    #   list.files(normalizePath(file.path("~","sear_project")), full.names = T)
+    #   )
+
 
     # Update UI element to display project name and path
     output$ProjectPath <- renderText({
