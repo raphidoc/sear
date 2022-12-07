@@ -71,7 +71,21 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(L1$InstrumentList(), "HOCR"))) {
 
-          progress$set(value = 0.1, detail = "HOCR")
+          # Create a callback function to update progress.
+          # Each time this is called:
+          # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
+          #   distance. If non-NULL, it will set the progress to that value.
+          # - It also accepts optional detail text.
+          UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
+            if (is.null(value)) {
+              value <- progress$getValue()
+              value <- value + (progress$getMax() - value) / 5
+            }
+            progress$set(value = value, message = message, detail = detail)
+          }
+
+
+          #progress$set(value = 0.1, message = "HOCR")
 
           FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
 
@@ -100,7 +114,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
                 RawHOCR = FiltRawHOCR,
                 CalHOCR = CalData$CalHOCR(),
                 HOCRDark = HOCRDark,
-                MainLogDate = unique(date(SelData$SelMainLog()$DateTime))
+                MainLogDate = unique(date(SelData$SelMainLog()$DateTime)),
+                UpdateProgress
               ),
               shiny = T,
               trace_back = TRUE
@@ -111,6 +126,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         # SBE19 L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1$InstrumentList(), "SBE19"))) {
+
+          progress$set(message = "Processing L1b: ", value = progress$getValue())
 
           progress$set(value = 0.3, detail = "SBE19")
 

@@ -274,14 +274,17 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
 #' @return Return L1b HOCR data in a tidy long format
 #'
 #' @noRd
-cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
+cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
+
+  # If we were passed a progress update function, call it
+  if (is.function(UpdateProgress)) {
+    text <- "HOCR"
+    UpdateProgress(message = text)
+  }
 
   RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., MainLogDate))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
-
-  # There will be a problem here if some HCOR packet have corrupted Instrument and SN.
-  # Have to filter and remove those corrupted pakect before, in the tidy_hocr function ?
 
   GlobCal <- RawData %>%
     group_by(Instrument, SN) %>%
@@ -295,6 +298,11 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
 
   GlobCal <- left_join(GlobCal, CalHOCR$SAMPLE, by = c("Instrument", "SN"))
 
+  # If we were passed a progress update function, call it
+  if (is.function(UpdateProgress)) {
+    text <- "add OPTIC3"
+    UpdateProgress(detail = text)
+  }
 
   # Add OPTIC3 to raw data --------------------------------------------------
 
@@ -308,13 +316,28 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
 
   # Calibrate time ----------------------------------------------------------
 
+  if (is.function(UpdateProgress)) {
+    detail <- "calibrate time"
+    UpdateProgress(detail = detail)
+  }
+
   GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = RawData, .y = INTTIME, .f = ~ cal_inttime(.x, .y)))
 
   # Calibrate optical channels ----------------------------------------------
 
+  if (is.function(UpdateProgress)) {
+    detail <- "calibrate optical channels"
+    UpdateProgress(detail = detail)
+  }
+
   GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = Instrument, ~ cal_optic3(.x, .y)))
 
   # Interpolate time coordinate ---------------------------------------------
+
+  if (is.function(UpdateProgress)) {
+    detail <- "time interpolation"
+    UpdateProgress(detail = detail)
+  }
 
   HOCRLong <- GlobCal %>% # OPTIC3
     mutate(CalData = purrr::map(
@@ -385,6 +408,11 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
   HOCRWide <- HOCRWide %>%
     mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
 
+  if (is.function(UpdateProgress)) {
+    detail <- "dark correction"
+    UpdateProgress(detail = detail)
+  }
+
   # Apply dark correction
 
   HOCRWide <- left_join(HOCRWide, HOCRDark, by = c("SN"))
@@ -403,6 +431,11 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate) {
     mutate(AproxData = purrr::map2(AproxData, DarkAproxData, cor_dark))
 
   # Transform back to long format
+
+  if (is.function(UpdateProgress)) {
+    detail <- "long time no sea"
+    UpdateProgress(detail = detail)
+  }
 
   HOCRLong <- HOCRWide %>%
     mutate(AproxData = purrr::map(
