@@ -71,6 +71,298 @@ Software as a Service offer a solution to have a common architecture and code ba
 
 This software is originally developed to provide a common ground in ocean optics science data management and processing. If your willing for us to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future. We may be able to leave behind the need to reinvent the wheel each new generation of young scientist.
 
+# Dev Test and Demo dataset
+
+Because of continous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
+To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is addded when loading the final .bin and .txt files, it takes XXX minutes to compute.
+To develop, test and demonstrate the software capabilities, a small dataset is needed. As the most complete to date (2022), with the full data logger suit (except suna) plus BioSonic and r2Sonic, and spanning over multiple days, the AlgaeWise(2022) data offer the best option.
+
+## Reduce raw data
+
+To reduce the raw .bin and .txt data we start by identifying with the help of the app, on the full parsed data set, the time interval of the observation that we would like to keep. 
+We also identifies the position of the corresponding HOCR binary packets on the time index.
+
+```{r}
+full <- "/D/Data/sear_test_data/full/"
+reduced <- "/D/Data/sear_test_data/reduced/"
+```
+
+
+TODO: Describe the selected data and explain it's utility (the logic of the selection)
+
+```{r eval=FALSE, include=TRUE}
+# Cloudy and wave that day
+D02 <- list(
+  strftime(seq(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"), by = 1), format="%H:%M:%S", tz = "GMT") 
+  )
+
+D05 <- list(
+  strftime(seq(ymd_hms("2022-07-05 11:50:27"), ymd_hms("2022-07-05 11:51:02"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-05 14:14:51"), ymd_hms("2022-07-05 14:21:16"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-05 14:40:20"), ymd_hms("2022-07-05 14:40:47"), by = 1), format="%H:%M:%S", tz = "GMT")
+  )
+
+D0615 <- list(
+  strftime(seq(ymd_hms("2022-07-06 15:48:00"), ymd_hms("2022-07-06 15:55:00"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-06 16:54:45"), ymd_hms("2022-07-06 17:02:41"), by = 1), format="%H:%M:%S", tz = "GMT")
+  )
+
+D0618 <- list(
+  strftime(seq(ymd_hms("2022-07-06 20:26:50"), ymd_hms("2022-07-06 20:29:28"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-06 20:48:26"), ymd_hms("2022-07-06 20:50:28"), by = 1), format="%H:%M:%S", tz = "GMT")
+  )
+
+D07 <- list(
+  strftime(seq(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"), by = 1), format="%H:%M:%S", tz = "GMT")
+  
+  )
+
+D08 <- list(
+  strftime(seq(ymd_hms("2022-07-08 19:10:42"), ymd_hms("2022-07-08 19:14:52"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-08 19:36:28"), ymd_hms("2022-07-08 19:39:19"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-08 20:47:42"), ymd_hms("2022-07-08 20:50:10"), by = 1), format="%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-08 20:53:44"), ymd_hms("2022-07-08 20:56:34"), by = 1), format="%H:%M:%S", tz = "GMT")
+  )
+
+```
+
+### Reducing txt files. Easy Peasy Lemon Squeezy !
+
+```{r eval=FALSE, include=TRUE}
+trim_MTELog <- function(If, Of, TimeSeq, n_head){
+  
+  Head <- readr::read_lines(If, n_max = n_head)
+  readr::write_lines(Head, Of)
+  
+  Data <- readr::read_lines(If, skip = n_head)
+  
+  Pat <- str_c(unlist(TimeSeq), collapse = "|")
+  Tind <- str_detect(Data, Pat)
+  any(Tind)
+  readr::write_lines(Data[Tind], Of, append = T)
+}
+
+If <- file.path(full,"DATA_20220702_154124.txt")
+Of <- file.path(reduced,"DATA_20220702_154124.txt")
+trim_MTELog(If,Of, D02, n_head = 6)
+
+If <- file.path(full,"DATA_20220705_105732.txt")
+Of <- file.path(reduced,"DATA_20220705_105732.txt")
+trim_MTELog(If,Of,D05, n_head = 6)  
+
+If <- file.path(full,"DATA_20220706_153838.txt")
+Of <- file.path(reduced,"DATA_20220706_153838.txt")
+trim_MTELog(If,Of,D0615, n_head = 6)
+
+If <- file.path(full,"DATA_20220706_183905.txt")
+Of <- file.path(reduced,"DATA_20220706_183905.txt")
+trim_MTELog(If,Of,D0618, n_head = 6)  
+
+
+If <- file.path(full,"DATA_20220707_181725.txt")
+Of <- file.path(reduced,"DATA_20220707_181725.txt")
+trim_MTELog(If,Of,D07, n_head = 6)
+
+If <- file.path(full,"DATA_20220708_165254.txt")
+Of <- file.path(reduced,"DATA_20220708_165254.txt")
+trim_MTELog(If,Of,D08, n_head = 6)
+
+
+If <- file.path(full,"SBES_20220701_20220708.csv")
+Of <- file.path(reduced,"SBES_20220701_20220708.csv")
+trim_MTELog(If,Of,list(D02,D05,D0615,D0618,D07,D08), n_head = 1)
+```
+
+### Reducing HOCR binary file ... Raaaaagh ...
+
+Count Number of byte by file, divide by number of byte per packets, find position of packets to extract with the time index.
+
+I just realize now that the header size is equal to any packet size. Now it make a lot of sense why there was so much empty space after the header !
+The fixed size memory entry is 512 bytes. I would like to learn more about that ! 
+Wah ! new discovery ! the `dd` command use 512 as a default number of bytes for the `-bs` argument !
+Whats behind this number !?
+
+```{r eval=FALSE, include=TRUE}
+trim_hocr <- function(If, Of, TimeIndex, TimeInt) {
+  
+  # Copy header
+  system2('dd', paste0("if=",If, " bs=512", " count=",1, " >>",Of))
+  
+  for (Tint in TimeInt) {
+    print(Tint)
+    
+    ind <- which(purrr::map_lgl(.x = TimeIndex, ~ .x %within% Tint))
+    BytesStart <- min(ind)#*512
+    BytesEnd <- max(ind)#*512
+    Skip <- BytesStart-1 
+    Count <- BytesEnd-BytesStart
+    
+    print(Skip)
+    print(Count)
+    
+    # Append matching packets
+    system2('dd', paste0("if=",If, " bs=512", " skip=",Skip, " count=",Count, " >>",Of))
+    
+  }
+}
+
+#MTEHeader <- 512
+MTEBytes <- 512
+
+######### F02
+
+# use  < to remove the filename
+F02bin <- file.path(full,"DATA_20220702_154124.bin")
+F02out <- file.path(reduced,"DATA_20220702_154124.bin")
+F02Nbytes <- as.numeric(system2('wc', paste0("-c < ", F02bin), stdout = T))
+
+F02Nbytes/MTEBytes
+# 84409
+
+RawHOCR <- sear:::read_hocr(F02bin)
+#Invalid HOCR packets detected and removed: 17
+# 84409 - 17 - 1 = 84391 yeah !
+
+TimeIndex <- purrr::map(
+  .x = RawHOCR,
+  ~ clock::date_time_parse(
+    paste0(ymd("20220702"), " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
+TimeInt <- list(
+  interval(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00")),
+  interval(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45")),
+  interval(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"))
+  )
+
+trim_hocr(If = F02bin, Of = F02out, TimeIndex, TimeInt)
+
+######### F05
+
+# use  < to remove the filename
+F05bin <- file.path(full,"DATA_20220705_105732.bin")
+F05out <- file.path(reduced,"DATA_20220705_105732.bin")
+
+RawHOCR <- sear:::read_hocr(F05bin)
+#Invalid HOCR packets detected and removed: 17
+# 84409 - 17 - 1 = 84391 yeah !
+
+TimeIndex <- purrr::map(
+  .x = RawHOCR,
+  ~ clock::date_time_parse(
+    paste0(ymd("20220705"), " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
+TimeInt <- list(
+  interval(ymd_hms("2022-07-05 11:50:27"), ymd_hms("2022-07-05 11:51:02")),
+  interval(ymd_hms("2022-07-05 14:14:51"), ymd_hms("2022-07-05 14:21:16")),
+  interval(ymd_hms("2022-07-05 14:40:20"), ymd_hms("2022-07-05 14:40:47"))
+  )
+
+trim_hocr(If = F05bin, Of = F05out, TimeIndex, TimeInt)
+
+######### F0615
+
+# use  < to remove the filename
+F0615bin <- file.path(full,"DATA_20220706_153838.bin")
+F0615out <- file.path(reduced,"DATA_20220706_153838.bin")
+
+RawHOCR <- sear:::read_hocr(F0615bin)
+#Invalid HOCR packets detected and removed: 17
+# 84409 - 17 - 1 = 84391 yeah !
+
+TimeIndex <- purrr::map(
+  .x = RawHOCR,
+  ~ clock::date_time_parse(
+    paste0(ymd("20220706"), " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
+TimeInt <- list(
+  interval(ymd_hms("2022-07-06 15:48:00"), ymd_hms("2022-07-06 15:55:00")),
+  interval(ymd_hms("2022-07-06 16:54:45"), ymd_hms("2022-07-06 17:02:41"))
+  )
+
+trim_hocr(If = F0615bin, Of = F0615out, TimeIndex, TimeInt)
+
+######### F0618
+
+# use  < to remove the filename
+F0618bin <- file.path(full,"DATA_20220706_183905.bin")
+F0618out <- file.path(reduced,"DATA_20220706_183905.bin")
+
+RawHOCR <- sear:::read_hocr(F0618bin)
+#Invalid HOCR packets detected and removed: 17
+# 84409 - 17 - 1 = 84391 yeah !
+
+TimeIndex <- purrr::map(
+  .x = RawHOCR,
+  ~ clock::date_time_parse(
+    paste0(ymd("20220706"), " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
+TimeInt <- list(
+  interval(ymd_hms("2022-07-06 20:26:50"), ymd_hms("2022-07-06 20:29:28")),
+  interval(ymd_hms("2022-07-06 20:48:26"), ymd_hms("2022-07-06 20:50:28"))
+  )
+
+trim_hocr(If = F0618bin, Of = F0618out, TimeIndex, TimeInt)
+
+######### F07
+
+# use  < to remove the filename
+F07bin <- file.path(full,"DATA_20220707_181725.bin")
+F07out <- file.path(reduced,"DATA_20220707_181725.bin")
+
+RawHOCR <- sear:::read_hocr(F07bin)
+#Invalid HOCR packets detected and removed: 17
+# 84409 - 17 - 1 = 84391 yeah !
+
+TimeIndex <- purrr::map(
+  .x = RawHOCR,
+  ~ clock::date_time_parse(
+    paste0(ymd("20220707"), " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
+TimeInt <- list(
+  interval(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"))
+  )
+
+trim_hocr(If = F07bin, Of = F07out, TimeIndex, TimeInt)
+
+######### F08
+
+# use  < to remove the filename
+F08bin <- file.path(full,"DATA_20220708_165254.bin")
+F08out <- file.path(reduced,"DATA_20220708_165254.bin")
+
+RawHOCR <- sear:::read_hocr(F08bin)
+#Invalid HOCR packets detected and removed: 17
+# 84409 - 17 - 1 = 84391 yeah !
+
+TimeIndex <- purrr::map(
+  .x = RawHOCR,
+  ~ clock::date_time_parse(
+    paste0(ymd("20220708"), " ", hms::as_hms(.x$gpstime / 1000)),
+    zone = "UTC")
+)
+
+TimeInt <- list(
+  interval(ymd_hms("2022-07-08 19:10:42"), ymd_hms("2022-07-08 19:14:52")),
+  interval(ymd_hms("2022-07-08 19:36:28"), ymd_hms("2022-07-08 19:39:19")),
+  interval(ymd_hms("2022-07-08 20:47:42"), ymd_hms("2022-07-08 20:50:10")),
+  interval(ymd_hms("2022-07-08 20:53:44"), ymd_hms("2022-07-08 20:56:34"))
+  )
+
+trim_hocr(If = F08bin, Of = F08out, TimeIndex, TimeInt)
+```
+
 # UI
 
 ## Style
@@ -106,7 +398,11 @@ Just select the .csv file processed with the dedicated software (biosonic Visual
 
 ## Selection display
 
-When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `DataParsed`), a data synthesis is calculated from the `DateTime` values of each instrument. As this per-row operation takes time, `MainLog` is saved under `.sear/data/parsed/main_log_[:digit:]{8}_[:digit:]{6}.csv`. 
+### MainLog
+
+When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `DataParsed`), a data synthesis is calculated from the `DateTime` values of each instrument. As this per-row operation takes time, `MainLog` is saved under `.sear/data/parsed/main_log_[:digit:]{8}_[:digit:]{6}.csv`.
+
+TODO: could be improved by computing only for the new piece of Apla data that is added (but still on the complete time index of instrument) or could filter the time index of instrument by the interval of min and max time of the new piece of apla !
 
 ```{r}
 MainLog <- Apla %>%

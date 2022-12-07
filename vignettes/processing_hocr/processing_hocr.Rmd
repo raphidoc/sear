@@ -42,6 +42,8 @@ HOCR data is stored in .raw file in a mix of ASCII and binary format.
 
 To use kaitai struct in C++, have to install the [runtime library](https://github.com/kaitai-io/kaitai_struct_cpp_stl_runtime).
 
+take a look at cpp11 instead of Rcpp as it seem a more up to date version.
+
 # Read raw file
 
 To read the binaary HOCR file we will pass by the kaitai struct parser trough python (or cpp as it may improve speed, have to test).

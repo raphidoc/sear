@@ -22,6 +22,19 @@ mod_L1L2_hocr_ui <- function(id) {
 mod_L1L2_hocr_server <- function(id, Obs) {
   # stopifnot(is.reactive(L1bData))
 
+  PlyFont <- list(family = "Times New Roman", size = 18)
+  BlackSquare <- list(
+    type = "rect",
+    fillcolor = "transparent",
+    line = list(width = 0.5),
+    xref = "paper",
+    yref = "paper",
+    x0 = 0,
+    x1 = 1,
+    y0 = 0,
+    y1 = 1
+  )
+
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -29,18 +42,7 @@ mod_L1L2_hocr_server <- function(id, Obs) {
     output$HOCRL1b <- renderPlotly({
       validate(need(nrow(Obs$HOCR$L1b) != 0, "No L1b data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
-      BlackSquare <- list(
-        type = "rect",
-        fillcolor = "transparent",
-        line = list(width = 0.5),
-        xref = "paper",
-        yref = "paper",
-        x0 = 0,
-        x1 = 1,
-        y0 = 0,
-        y1 = 1
-      )
+
 
       ply <- Obs$HOCR$L1b %>%
         # filter(str_detect(Instrument, "HPL")) %>%
@@ -95,7 +97,7 @@ mod_L1L2_hocr_server <- function(id, Obs) {
       p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.035) %>%
         add_annotations(
           text = ~ TeX("\\text{Wavelength [nm]}"),
-          x = 0.5,
+          x = 0.4,
           y = -0.1,
           yref = "paper",
           xref = "paper",
@@ -106,8 +108,10 @@ mod_L1L2_hocr_server <- function(id, Obs) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text = TeX("\\text{E}_\\text{s}"))),
-          yaxis2 = list(title = list(text = TeX("\\text{L}_\\text{u}"))) # ,
+          yaxis = list(title = list(text ="Es" #TeX("\\text{E}_\\text{s}")
+                                    )),
+          yaxis2 = list(title = list(text = "Lu" #TeX("\\text{L}_\\text{u}")
+                                     )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T) %>%
@@ -153,7 +157,27 @@ mod_L1L2_hocr_server <- function(id, Obs) {
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 
-      subplot(Rrsplot, KLuplot)
+      subplot(Rrsplot, KLuplot) %>%
+        add_annotations(
+          text = ~ TeX("\\text{Wavelength [nm]}"),
+          x = 0.4,
+          y = -0.1,
+          yref = "paper",
+          xref = "paper",
+          xanchor = "middle",
+          yanchor = "bottom",
+          showarrow = FALSE,
+          font = list(size = 18)
+        ) %>%
+        layout(
+          font = PlyFont,
+          yaxis = list(title = list(text = "Rrs"#TeX("\\text{R}_\\text{rs}")
+                                    )),
+          yaxis2 = list(title = list(text = "Klu"#TeX("\\text{K}_\\text{Lu}")
+                                     )) # ,
+          # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
+        ) %>%
+        config(mathjax = "cdn", displayModeBar = T)
     })
 
   })

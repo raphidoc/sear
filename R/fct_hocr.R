@@ -42,15 +42,17 @@ read_hocr <- function(BinFile) {
     error = function(...) NA
   ))
 
+  NaPackets <- 0
   if (any(is.na(RawHOCR))) {
     RawHOCR <- RawHOCR[-which(is.na(RawHOCR))]
+    NaPackets <- which(is.na(RawHOCR))
   }
 
   # check for invalid packet
   ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors = "ignore"), "SAT(HPL|HSE|HED|PLD)"))
 
   if (any(!ValidInd)) {
-    message("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)))
+    message("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)) + NaPackets)
 
     RawHOCR[ValidInd]
   } else {

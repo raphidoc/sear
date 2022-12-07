@@ -71,7 +71,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
             rawpath = file.path(RawDir, name)
           )
 
-        file.copy(Files$datapath, Files$rawpath)
+        # CAREFUL HERE ! should diplay a modal asking the user to confirm the overwrite operation
+        file.copy(Files$datapath, Files$rawpath, overwrite = T)
 
         # Variables to create parsed files
 

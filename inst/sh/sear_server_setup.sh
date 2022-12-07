@@ -59,4 +59,8 @@ sudo nano /etc/nginx/sites-enabled/default
 sudo systemctl restart nginx
 sudo systemctl status nginx
 
+# local MathJax copy
+sudo git clone --branch legacy-v2 https://github.com/mathjax/MathJax/ /MathJax
+sudo chgrp -R searuser /MathJax
+
 

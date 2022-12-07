@@ -133,15 +133,15 @@ mod_manage_project_server <- function(id) {
 
     # Update UI element to display project name and path
     output$ProjectPath <- renderText({
-      validate(need(is.list(input$S), message = "Project: None"))
+      validate(need(length(Project$Path) > 0, message = "Project: None"))
 
       Project$Path
     })
 
     output$ProjectName <- renderText({
-      validate(need(is.list(input$Select), message = "Project: None"))
+      validate(need(length(Project$Name) > 0, message = "Project: None"))
 
-      Project()$Name
+      Project$Name
     })
 
     # Check if .searproj file already exist if not create the default one

@@ -32,17 +32,38 @@ echo "In"
 whoami
 pwd
 
+mkdir .ssh
+
+# Add key for pop-os
+
+
+# Add ssh key for pop
+read -s -p "Enter private key for pop: " PopKey
+
+echo '$PopKey' > .ssh/authorized_keys
+
+# and GitHub
+read -s -p "Enter private key for github: " GitKey
+
+echo '$GitKey' > .ssh/id_ed25519
+
+chmod 400 .ssh/id_ed25519
+
 # Clone sear
-mkdir ShinyApps
-cd ShinyApps
-git clone git@github.com:raphidoc/sear.git
-cd sear
-git fetch
-git checkout demo
+#mkdir ShinyApps
+#cd ShinyApps
+#git clone git@github.com:raphidoc/sear.git
+#cd sear
+#git fetch
+#git checkout demo
+
+# Set MathJax path
+export PLOTLY_MATHJAX_PATH=/MathJax
+echo "Sys.setenv('PLOTLY_MATHJAX_PATH' = '$PLOTLY_MATHJAX_PATH')" >> ~/.Rprofile
 
 echo "Out"
 EOF
 
-echo $sudoPW | sudo systemctl restart shiny-server
-echo $sudoPW | sudo systemctl status shiny-server
+#echo $sudoPW | sudo systemctl restart shiny-server
+#echo $sudoPW | sudo systemctl status shiny-server
 
