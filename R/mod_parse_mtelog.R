@@ -11,7 +11,7 @@
 mod_parse_mtelog_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    waiter::use_waiter(),
+    #waiter::use_waiter(),
     uiOutput(outputId = ns("Load"))
   )
 }
@@ -56,11 +56,19 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
       Input(),
       {
 
-        waiter <- waiter::Waiter$new()
-        waiter$show()
-        on.exit(waiter$hide())
+        # waiter <- waiter::Waiter$new()
+        # waiter$show()
+        # on.exit(waiter$hide())
+
+        # Create a Progress object
+        progress <- shiny::Progress$new()
+        progress$set(message = "Parsing MTE: ", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
 
         # Copy files in raw dir
+
+        progress$set(value = 0.1, detail = "Copy raw file")
 
         RawDir <- file.path(SearTbl()$ProjPath, "sear", "data", "raw")
 
@@ -88,6 +96,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # Applanix
 
+        progress$set(value = 0.2, detail = "Applanix")
+
         PotApla <- file.path(ParsedDir, paste0("apla_",DateTime,".csv"))
 
         if (any(str_detect(InstList, "APLA")) & !file.exists(PotApla)) {
@@ -110,6 +120,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
         #   InstrumentList <- str_remove(InstrumentList, "OCR1|OCR2|OCR3")
         # }
 
+        progress$set(value = 0.3, detail = "HOCR")
+
         PotHOCR <- file.path(ParsedDir, paste0("hocr_",DateTime,".rds"))
         PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
         PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
@@ -123,7 +135,11 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           # Dont know the logger date format so quick fix with Apla date
           AplaDate <- unique(date(PrimApla$DateTime))
 
+          progress$set(value = 0.4, message = "Calibrate HOCR dark")
+
           PrimHOCRDark <- cal_dark(PrimHocrDarkRaw, CalHOCR = CalData$CalHOCR(), AplaDate)
+
+          progress$set(value = 0.5, message = "Creating HOCR time index")
 
           # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
@@ -140,6 +156,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
           PrimHOCRTimeIndex <- TimeIndex
 
+          progress$set(value = 0.6, message = "Writing HOCR data")
+
           write_rds(PrimHOCR, PotHOCR)
 
           write_rds(PrimHOCRDark, PotHOCRDark)
@@ -148,7 +166,11 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         }
 
+        progress$set(message = "Parsing MTE: ", value = 0.6)
+
         # SBE19
+
+        progress$set(value = 0.7, detail = "SBE19")
 
         PotSBE19 <- file.path(ParsedDir, paste0("sbe19_",DateTime,".csv"))
 
@@ -162,6 +184,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # SeaOWL
 
+        progress$set(value = 0.8, detail = "SeaOWL")
+
         PotSeaOWL <- file.path(ParsedDir, paste0("seaowl_",DateTime,".csv"))
 
         if (any(str_detect(InstList, "OWL")) & !file.exists(PotSeaOWL)) {
@@ -174,6 +198,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # BBFL2
 
+        progress$set(value = 0.9, detail = "BBFL2")
+
         PotBBFL2 <- file.path(ParsedDir, paste0("bbfl2_",DateTime,".csv"))
 
         if (any(str_detect(InstList, "ECO")) & !file.exists(PotBBFL2)) {
@@ -183,6 +209,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           write_csv(PrimBBFL2, PotBBFL2)
 
         }
+
+        progress$set(value = 1, detail = "Done")
 
       }
     )
@@ -201,11 +229,15 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
       },
       {
 
-        waiter <- waiter::Waiter$new()
-        waiter$show()
-        on.exit(waiter$hide())
+        # Create a Progress object
+        progress <- shiny::Progress$new()
+        progress$set(message = "Loading data: ", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
 
         # Applanix
+
+        progress$set(value = 0.1, detail = "Applanix")
 
         NameApla <- c("apla_[:digit:]{8}_[:digit:]{6}\\.csv")
 
@@ -221,6 +253,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # HOCR
 
+        progress$set(value = 0.2, detail = "HOCR")
+
         NameHOCR <- c("hocr_[:digit:]{8}_[:digit:]{6}\\.rds")
 
         if (any(str_detect(ParsedFiles(), NameHOCR))) {
@@ -232,6 +266,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           HOCR(temp)
 
         }
+
+        progress$set(value = 0.3, detail = "HOCR dark")
 
         NameHOCRDark <- c("hocr_dark_[:digit:]{8}_[:digit:]{6}\\.rds")
 
@@ -282,6 +318,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         }
 
+        progress$set(value = 0.4, detail = "HOCR time index")
+
         NameHOCRTimeIndex <- c("hocr_time_index_[:digit:]{8}_[:digit:]{6}\\.rds")
 
         if (any(str_detect(ParsedFiles(), NameHOCRTimeIndex))) {
@@ -296,6 +334,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # SBE19
 
+        progress$set(value = 0.5, detail = "SBE19")
+
         NameSBE19 <- c("sbe19_[:digit:]{8}_[:digit:]{6}\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameSBE19))) {
@@ -307,6 +347,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
         }
 
         # SeaOWL
+
+        progress$set(value = 0.6, detail = "SeaOWL")
 
         NameSeaOWL <- c("seaowl_[:digit:]{8}_[:digit:]{6}\\.csv")
 
@@ -320,6 +362,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
         # BBFL2
 
+        progress$set(value = 0.7, detail = "BBFL2")
+
         NameBBFL2 <- c("bbfl2_[:digit:]{8}_[:digit:]{6}\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameBBFL2))) {
@@ -329,6 +373,8 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           BBFL2(read_csv(PotBBFL2))
 
         }
+
+        progress$set(value = 1, detail = "Done")
 
         return(Apla())
 

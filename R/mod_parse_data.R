@@ -10,7 +10,6 @@
 mod_parse_data_ui <- function(id){
   ns <- NS(id)
   tagList(
-    waiter::use_waiter(),
     uiOutput(outputId = ns("TabPanel"))
   )
 }
@@ -106,9 +105,11 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       },
       {
 
-        waiter <- waiter::Waiter$new()
-        waiter$show()
-        on.exit(waiter$hide())
+        # Create a Progress object
+        progress <- shiny::Progress$new()
+        progress$set(message = "MainLog check", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
 
         OldMainLog <- MainLog()
 
@@ -124,9 +125,13 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
           message("MainLog up to date")
 
+          progress$set(value = 1, detail = " up to date")
+
         } else {
 
           message("Updating MainLog")
+
+          progress$set(value = 0, message = "Updating MainLog: ")
 
           PrimBioSonic <- BioSonic$BioSonic()
 
@@ -134,20 +139,27 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
           # Should we reduce the time index by second to optimize computation time ?
           # Also this time index represents all three hocr, could start by keeping only one
 
+          progress$set(value = 0.1, detail = "HOCR synthesis")
           DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, MTELog$HOCRTimeIndex())
           message("HOCR synthesis done")
 
+          progress$set(value = 0.5, detail = "SBE19 synthesis")
           DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, MTELog$SBE19()$DateTime)
           message("SBE19 synthesis done")
 
+          progress$set(value = 0.6, detail = "SeaOWL synthesis")
           DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, MTELog$SeaOWL()$DateTime)
           message("SeaOWL synthesis done")
 
+          progress$set(value = 0.7, detail = "BBFL2 synthesis")
           DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, MTELog$BBFL2()$DateTime)
           message("BBFL2 synthesis done")
 
+          progress$set(value = 0.8, detail = "BioSonic synthesis")
           DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, PrimBioSonic$DateTime)
           message("BioSonic synthesis done")
+
+          progress$set(value = 0.9, detail = "Saving")
 
           PrimMainLog <- PrimMainLog %>%
             mutate(
@@ -180,6 +192,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
           PrimMainLog <- write_csv(MainLog(), PotMainLog)
 
+          progress$set(value = 0.1, detail = "Done")
 
         }
 

@@ -27,21 +27,20 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
       req(L1$ParsedFiles())
 
       tagList(
-        waiter::use_waiter(),
-        #mod_select_instrument_ui(ns("select_instrument")),
-        actionButton(ns("ProcessL1b"), "ProcessL1b")
+        actionButton(ns("ProcessL1b"), "Process L1b")
       )
     })
-
-    #Instrument <- mod_select_instrument_server("select_instrument", L1)
 
     observeEvent(
       input$ProcessL1b,
       label = "processL1b",
       {
-        waiter <- waiter::Waiter$new()
-        waiter$show()
-        on.exit(waiter$hide())
+
+        # Create a Progress object
+        progress <- shiny::Progress$new()
+        progress$set(message = "Processing L1b: ", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
 
         if (is.null(L1$InstrumentList())) {
           showModal(modalDialog(
@@ -71,6 +70,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         # HOCR L1b ----------------------------------------------------------------
 
         if (any(str_detect(L1$InstrumentList(), "HOCR"))) {
+
+          progress$set(value = 0.1, detail = "HOCR")
 
           FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
 
@@ -110,6 +111,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         # SBE19 L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1$InstrumentList(), "SBE19"))) {
+
+          progress$set(value = 0.3, detail = "SBE19")
 
           Lon <- mean(SelData$SelMainLog()$Lon)
           Lat <- mean(SelData$SelMainLog()$Lat)
@@ -178,6 +181,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(L1$InstrumentList(), "SeaOWL"))) {
 
+          progress$set(value = 0.4, detail = "SeaOWL")
+
           SeaOWL <- L1$SeaOWL() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(SeaOWL) == 0) {
@@ -211,6 +216,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         # BBFL2 L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1$InstrumentList(), "BBFL2"))) {
+
+          progress$set(value = 0.5, detail = "BBFL2")
 
           BBFL2 <- L1$BBFL2() %>% filter(DateTime %within% TimeInt)
 
@@ -246,6 +253,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         if (any(str_detect(L1$InstrumentList(), "BioSonic"))) {
 
+          progress$set(value = 0.6, detail = "BioSonic")
+
           BioSonicL1b <- L1$BioSonic() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(BioSonicL1b) == 0) {
@@ -262,6 +271,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
           }
         }
+
+        progress$set(value = 1, detail = "Done")
 
       }
     )
