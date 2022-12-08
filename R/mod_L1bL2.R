@@ -27,8 +27,6 @@ mod_L1bL2_server <- function(id, Obs) {
     output$TabPanel <- renderUI({
       req(nrow(Obs$Metadata) != 0)
 
-      browser()
-
       tabsetPanel(
         id = ns("Tabset"),
         type = "pills",

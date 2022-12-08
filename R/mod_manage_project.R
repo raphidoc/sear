@@ -133,13 +133,13 @@ mod_manage_project_server <- function(id) {
 
     # Update UI element to display project name and path
     output$ProjectPath <- renderText({
-      validate(need(length(Project$Path) > 0, message = "Project: None"))
+      validate(need(Project$Path != "", message = "Project: None"))
 
       Project$Path
     })
 
     output$ProjectName <- renderText({
-      validate(need(length(Project$Name) > 0, message = "Project: None"))
+      validate(need(Project$Name != "", message = "Project: None"))
 
       Project$Name
     })

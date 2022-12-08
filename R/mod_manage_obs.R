@@ -21,7 +21,8 @@ mod_manage_obs_ui <- function(id) {
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, SelData, SelObs, Obs) {
+mod_manage_obs_server <- function(id, DB, L2, SelData, SelObs,
+                                  Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -44,8 +45,8 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, SelObs, Obs) {
     # by populating the reactive data table needed
     observeEvent(
       c(
-        SelData$SelUUID(),
-        SelObs$SelUUID()
+        SelData$SelUUID()#,
+        #SelObs$SelUUID()
       ),
       {
         # Metadata

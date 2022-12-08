@@ -44,8 +44,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
 
         # Create metadata for the selected L1a point
 
-        browser()
-
         Obs$Metadata <- tibble(
           ObsName = "NA",
           ObsType = "NA",

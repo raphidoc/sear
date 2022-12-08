@@ -75,13 +75,14 @@ mod_L2_select_server <- function(id, DB, ManObs, Obs){
           ObsList[[paste0("Obs",i())]] <- Obs
         }
 
-        mod_L1bL2_server(paste0("L1bL2_", i()), ObsList[[paste0("Obs",i())]])
+        #mod_L1bL2_server(paste0("L1bL2_", i()), ObsList[[paste0("Obs",i())]])
+        mod_L2_hocr_server(paste0("L2_hocr", i()), ObsList[[paste0("Obs",i())]]$HOCR$L2)
 
         insertUI(
           selector = paste0("#Obs", i()),
           where = "afterBegin",
           ui = tagList(
-            mod_L1bL2_ui(ns(paste0("L1bL2_", i())))
+            mod_L2_hocr_ui(ns(paste0("L2_hocr", i())))
           )
         )
 
