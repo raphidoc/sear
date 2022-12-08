@@ -28,38 +28,64 @@ app_ui <- function(request) {
         # mod_filter_trim_ui("filter_trim"),
         # mod_discretize_ui("discretize"),
         mod_L1b_process_ui("L1b_process"),
-        mod_manage_db_ui("manage_db")#,
-        # sidebarMenu(
-        #   menuItem("DataBase", tabName = "DataBase", icon = icon("database"))
-        # )
+        mod_manage_db_ui("manage_db"),
+        sidebarMenu(
+          menuItem("DataBase", tabName = "Database", icon = icon("database"))
+        ),
+        mod_L2_select_ui("L2_select")$Map
       )
       ,
       dashboardBody(
         tabItems(
-          tabItem(tabName = "Settings",
-                  fluidRow(
-                    column(
-                      width = 6,
-                      mod_parse_data_ui("parse_data")
-                    ),
-                    column(
-                      width = 6,
-                      mod_parse_cal_ui("parse_cal")
-                    )
-                  )
+          tabItem(
+            tabName = "Settings",
+            fluidRow(
+              column(
+                width = 6,
+                mod_parse_data_ui("parse_data")
+              ),
+              column(
+                width = 6,
+                mod_parse_cal_ui("parse_cal")
+              )
+            )
           ),
-
-          tabItem(tabName = "Processing",
-                  fluidRow(
-                    column(
-                      width = 6,
-                      mod_select_data_ui("select_data")
-                    ),
-                    column(
-                      width = 6,
-                      mod_L1L2_ui("L1L2")
-                    )
-                  )
+          tabItem(
+            tabName = "Processing",
+            fluidRow(
+              column(
+                width = 6,
+                mod_L1a_select_ui("L1a_select")
+              ),
+              column(
+                width = 6,
+                mod_L1bL2_ui("L1bL2")
+              )
+            )
+          ),
+          tabItem(
+            tabName = "Database",
+            fluidRow(
+              column(
+                id = "Obs1",
+                width = 6,
+                #mod_L2_select_ui("L2_select")$Map
+              ),
+              column(
+                id = "Obs2",
+                width = 6
+              )
+            ),
+            fluidRow(
+              column(
+                id = "Obs3",
+                width = 6
+              ),
+              column(
+                id = "Obs4",
+                width = 6
+              )
+            )
           )
         )
       )

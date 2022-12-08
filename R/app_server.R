@@ -67,15 +67,17 @@ app_server <- function(input, output, session) {
 
   CalData <- mod_parse_cal_server("parse_cal", SearTbl)
 
-  DB <- mod_manage_db_server("manage_db", SearTbl, SelData, Obs)
+  DB <- mod_manage_db_server("manage_db", SearTbl, Obs)
 
-  L1 <- mod_parse_data_server("parse_data", SearTbl, CalData, MainLog)
+  L1a <- mod_parse_data_server("parse_data", SearTbl, CalData, MainLog)
 
-  SelData <- mod_select_data_server("select_data", MainLog, DB, Obs, ManObs, L1)
+  L1aSelect <- mod_L1a_select_server("L1a_select", MainLog, DB, Obs, ManObs, L1a)
 
-  L1b <- mod_L1b_process_server("L1b_process", L1, SelData, CalData, Obs)
+  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs)
 
-  L2 <- mod_L1L2_server("L1L2", L1b, Obs)
+  L2 <- mod_L1bL2_server("L1bL2", Obs)
 
-  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
+  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, L1aSelect, SelObs, Obs)
+
+  SelObs <- mod_L2_select_server("L2_select", DB, ManObs, Obs)
 }

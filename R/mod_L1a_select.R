@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_select_data_ui <- function(id) {
+mod_L1a_select_ui <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
@@ -29,7 +29,7 @@ mod_select_data_ui <- function(id) {
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
+mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
   stopifnot(is.reactive(MainLog))
 
   moduleServer(id, function(input, output, session) {
@@ -42,8 +42,8 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
       tagList(
         checkboxGroupInput(
           ns("Instrument"), "Intrument",
-          choices = L1$InstrumentList(),
-          selected = L1$InstrumentList(),
+          choices = L1a$InstrumentList(),
+          selected = L1a$InstrumentList(),
           inline = TRUE,
           width = NULL,
           choiceNames = NULL,
@@ -188,7 +188,7 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
 
     observeEvent(
       event_data("plotly_click", source = "map"),
-      label = "Click Obs",
+      label = "Click Obs select data",
       ignoreInit = T,
       {
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
@@ -419,9 +419,9 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
 
     # Module output -----------------------------------------------------------
     list(
-      MainLog = MainLog,
+      #MainLog = MainLog,
       SubMainLog = SubMainLog,
-      SelMainLog = SelMainLog,
+      MainLog = SelMainLog,
       SelID = SelID,
       SelUUID = SelUUID,
       Map = Map
@@ -430,7 +430,7 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
 }
 
 ## To be copied in the UI
-# mod_selection_display_ui("selection_display_1")
+# mod_L1a_select_ui("L1a_select")
 
 ## To be copied in the server
-# mod_selection_display_server("selection_display_1")
+# mod_L1a_select_server("L1a_select")

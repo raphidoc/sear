@@ -21,7 +21,7 @@ mod_manage_obs_ui <- function(id) {
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
+mod_manage_obs_server <- function(id, DB, L2, SelData, SelObs, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -43,7 +43,10 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
     # UUID selection event trigger data display -------------------------------
     # by populating the reactive data table needed
     observeEvent(
-      req(SelData$SelUUID()),
+      c(
+        SelData$SelUUID(),
+        SelObs$SelUUID()
+      ),
       {
         # Metadata
         # Have to query data based on UUID

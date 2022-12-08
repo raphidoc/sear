@@ -17,7 +17,7 @@ mod_manage_db_ui <- function(id) {
 #' manage_db Server Functions
 #'
 #' @noRd
-mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
+mod_manage_db_server <- function(id, SearTbl, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 

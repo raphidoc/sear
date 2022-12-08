@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_L1L2_ui <- function(id) {
+mod_L1bL2_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("TabPanel"))
@@ -17,7 +17,7 @@ mod_L1L2_ui <- function(id) {
 #' L1L2_obs Server Functions
 #'
 #' @noRd
-mod_L1L2_server <- function(id, L1b, Obs) {
+mod_L1bL2_server <- function(id, Obs) {
   # stopifnot(is.reactive(L1b$Data))
 
   moduleServer(id, function(input, output, session) {
@@ -26,6 +26,8 @@ mod_L1L2_server <- function(id, L1b, Obs) {
     # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
       req(nrow(Obs$Metadata) != 0)
+
+      browser()
 
       tabsetPanel(
         id = ns("Tabset"),
@@ -73,34 +75,6 @@ mod_L1L2_server <- function(id, L1b, Obs) {
     #   })
 
     # Obs tab -------------------------------------------------------------
-    ObsTbl <- reactiveVal({})
-
-    observeEvent(
-      L1b$ProcessL1b(), # This one create even if L1b processing fail
-      # Obs$HOCR$L1b, # This one doesnt update if L1b doesn't change
-      {
-        Obs$Metadata <- tibble(
-          ObsName = "NA",
-          ObsType = "NA",
-          ObsFlag = "NA",
-          DateTime = as.character(mean(L1b$SelMainLog()$DateTime, na.rm = T)),
-          DateTimeMin = as.character(min(L1b$SelMainLog()$DateTime, na.rm = T)),
-          DateTimeMax = as.character(max(L1b$SelMainLog()$DateTime, na.rm = T)),
-          TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
-          Lon = mean(L1b$SelMainLog()$Lon, na.rm = T),
-          Lat = mean(L1b$SelMainLog()$Lat, na.rm = T),
-          LonMin = min_geo(L1b$SelMainLog()$Lon, na.rm = T),
-          LonMax = max_geo(L1b$SelMainLog()$Lon, na.rm = T),
-          LatMin = min_geo(L1b$SelMainLog()$Lat, na.rm = T),
-          LatMax = max_geo(L1b$SelMainLog()$Lat, na.rm = T),
-          Altitude = mean(as.numeric(L1b$SelMainLog()$Altitude), na.rm = T),
-          DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
-          BoatSolAzm = mean(L1b$SelMainLog()$BoatSolAzm, na.rm = T),
-          Comment = "NA",
-          UUID = NA
-        )
-      }
-    )
 
     # DataTable used to display Obs information
     output$DataTable <- DT::renderDataTable(
@@ -190,7 +164,7 @@ mod_L1L2_server <- function(id, L1b, Obs) {
 }
 
 ## To be copied in the UI
-# mod_L1L2_ui("L1L2")
+# mod_L1bL2_ui("L1bL2")
 
 ## To be copied in the server
-# mod_L1L2_server("L1L2")
+# mod_L1bL2_server("L1bL2")

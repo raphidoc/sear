@@ -157,7 +157,7 @@ mod_L1L2_hocr_server <- function(id, Obs) {
         plot_ly() %>%
         add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
 
-      subplot(Rrsplot, KLuplot) %>%
+      subplot(Rrsplot, KLuplot, shareX = T) %>%
         add_annotations(
           text = ~ TeX("\\text{Wavelength [nm]}"),
           x = 0.4,

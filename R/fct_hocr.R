@@ -278,7 +278,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 
   # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
-    text <- "HOCR"
+    text <- "HOCR: "
     UpdateProgress(message = text)
   }
 
