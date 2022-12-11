@@ -5,91 +5,93 @@
 #' @import shiny shinydashboard plotly shinymanager
 #' @noRd
 app_ui <- function(request) {
+
+
+  Header <- dashboardHeader(
+    title = tags$a(
+      id = "app-name",
+      href = "https://github.com/raphidoc/sear",
+      tags$img(src = "www/logo_sear.png", width = "100px", height = "40px"),
+      "sear"
+    )
+  )
+
+  Sidebar <- dashboardSidebar(
+    mod_manage_project_ui("manage_project"),
+    sidebarMenu(
+      menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
+      menuItem("Processing", tabName = "Processing", icon = icon("gears"))
+    ),
+    # mod_filter_trim_ui("filter_trim"),
+    # mod_discretize_ui("discretize"),
+    mod_L1b_process_ui("L1b_process"),
+    mod_manage_db_ui("manage_db"),
+    sidebarMenu(
+      menuItem("DataBase", tabName = "Database", icon = icon("database"))
+    )
+  )
+
+  Body <- dashboardBody(
+    tabItems(
+      tabItem(
+        tabName = "Settings",
+        fluidRow(
+          column(
+            width = 6,
+            mod_parse_data_ui("parse_data")
+          ),
+          column(
+            width = 6,
+            mod_parse_cal_ui("parse_cal")
+          )
+        )
+      ),
+      tabItem(
+        tabName = "Processing",
+        fluidRow(
+          column(
+            width = 6,
+            mod_L1a_select_ui("L1a_select")
+          ),
+          column(
+            width = 6,
+            mod_L1bL2_ui("L1bL2")
+          )
+        )
+      ),
+      tabItem(
+        tabName = "Database",
+        fluidRow(
+          column(
+            id = "Obs1",
+            width = 6,
+            mod_L2_select_ui("L2_select")$Map
+          ),
+          column(
+            id = "Obs2",
+            width = 6
+          )
+        ),
+        fluidRow(
+          column(
+            id = "Obs3",
+            width = 6
+          ),
+          column(
+            id = "Obs4",
+            width = 6
+          )
+        )
+      )
+    )
+  )
+
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
     # Your application UI logic
 
-    dashboardPage(
-      dashboardHeader(
-        title = tags$a(
-          id = "app-name",
-          href = "https://github.com/raphidoc/sear",
-          tags$img(src = "www/logo_sear.png", width = "100px", height = "40px"),
-          "sear"
-        )
-      ),
-      dashboardSidebar(
-        mod_manage_project_ui("manage_project"),
-        sidebarMenu(
-          menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
-          menuItem("Processing", tabName = "Processing", icon = icon("gears"))
-        ),
-        # mod_filter_trim_ui("filter_trim"),
-        # mod_discretize_ui("discretize"),
-        mod_L1b_process_ui("L1b_process"),
-        mod_manage_db_ui("manage_db"),
-        sidebarMenu(
-          menuItem("DataBase", tabName = "Database", icon = icon("database"))
-        ),
-        mod_L2_select_ui("L2_select")$Map
-      )
-      ,
-      dashboardBody(
-        tabItems(
-          tabItem(
-            tabName = "Settings",
-            fluidRow(
-              column(
-                width = 6,
-                mod_parse_data_ui("parse_data")
-              ),
-              column(
-                width = 6,
-                mod_parse_cal_ui("parse_cal")
-              )
-            )
-          ),
-          tabItem(
-            tabName = "Processing",
-            fluidRow(
-              column(
-                width = 6,
-                mod_L1a_select_ui("L1a_select")
-              ),
-              column(
-                width = 6,
-                mod_L1bL2_ui("L1bL2")
-              )
-            )
-          ),
-          tabItem(
-            tabName = "Database",
-            fluidRow(
-              column(
-                id = "Obs1",
-                width = 6,
-                #mod_L2_select_ui("L2_select")$Map
-              ),
-              column(
-                id = "Obs2",
-                width = 6
-              )
-            ),
-            fluidRow(
-              column(
-                id = "Obs3",
-                width = 6
-              ),
-              column(
-                id = "Obs4",
-                width = 6
-              )
-            )
-          )
-        )
-      )
-    )
+    dashboardPage(Header, Sidebar, Body)
   )
 }
 

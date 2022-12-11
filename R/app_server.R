@@ -60,6 +60,8 @@ app_server <- function(input, output, session) {
     )
   )
 
+  L2Obs <- ReactiveValues()
+
 
 # Modules logic -----------------------------------------------------------
 
@@ -77,8 +79,7 @@ app_server <- function(input, output, session) {
 
   L2 <- mod_L1bL2_server("L1bL2", Obs)
 
-  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, L1aSelect, SelObs,
-                                  Obs)
+  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, L1aSelect, L2Select, Obs)
 
-  SelObs <- mod_L2_select_server("L2_select", DB, ManObs, Obs)
+  L2Select <- mod_L2_select_server("L2_select", DB, ManObs, Obs)
 }
