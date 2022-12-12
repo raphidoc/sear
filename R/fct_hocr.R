@@ -399,7 +399,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 
   if (any(purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1))) {
     MissSn <- HOCRWide$SN[purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1)]
-    stop(glue::glue("Cannot interpolate with one light record for instrument: ", MissSn))
+    stop(glue::glue("Cannot interpolate with one light record for instrument: ", paste0(MissSn, collapse = ", ")))
   }
 
   # Need to test if two non-NA values are available to interpolate

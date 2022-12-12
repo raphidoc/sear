@@ -302,10 +302,20 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
           } else {
 
             Obs$BioSonic$L1b <- BioSonicL1b %>%
-              mutate(
-                ID = seq_along(rownames(BioSonicL1b)),
-                QC = "1"
+              rename(Lon = Longitude_deg, Lat = Latitude_deg) %>%
+              select(
+                Lon,
+                Lat,
+                DateTime,
+                Altitude_mReMsl,
+                BottomElevation_m,
+                PlantHeight_m,
+                PercentCoverage
               )
+              # mutate(
+              #   ID = seq_along(rownames(BioSonicL1b)),
+              #   QC = "1"
+              # )
 
           }
         }

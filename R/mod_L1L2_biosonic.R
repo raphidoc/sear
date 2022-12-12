@@ -11,8 +11,8 @@ mod_L1L2_biosonic_ui <- function(id){
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("L1b"), height = 320),
-    # actionButton(ns("ProcessL2"), "Process L2"),
-    # plotlyOutput(ns("L2"), height = 250)
+    actionButton(ns("ProcessL2"), "Process L2"),
+    DT::DTOutput(ns("DataTable"))
   )
 }
 
@@ -41,8 +41,8 @@ mod_L1L2_biosonic_server <- function(id, Obs){
 
       ply <- Obs$BioSonic$L1b %>%
         plot_ly(
-          text = ~ID,
-          x = ~DateTime
+          text = ~DateTime,
+          x = ~seq(from = 0, to = Obs$Metadata$DistanceRun, along.with = DateTime)
         ) %>%
         add_lines(
           y = ~Altitude_mReMsl,
@@ -57,7 +57,8 @@ mod_L1L2_biosonic_server <- function(id, Obs){
           color = "Bottom"
         ) %>%
         layout(
-          shapes = BlackSquare#,
+          shapes = BlackSquare,
+          xaxis = list(title = list(text = "Distance [m]"))
           #yaxis = list(range = list(~min(BottomElevation_m, na.rm = TRUE), 0))
         )
 
@@ -65,6 +66,60 @@ mod_L1L2_biosonic_server <- function(id, Obs){
       widgetframe::frameableWidget(ply)
 
     })
+
+    observeEvent(
+      input$ProcessL2,
+      {
+
+        test <- Obs$BioSonic$L1b %>% summarise(
+          Lon = mean(Lon),
+          Lat = mean(Lat),
+          DateTime = mean(DateTime),
+          Altitude_mReMsl = mean(Altitude_mReMsl),
+          BottomElevation_m = mean(BottomElevation_m),
+          PlantHeight_m = mean(PlantHeight_m),
+          PercentCoverage = mean(PercentCoverage)
+        )
+
+        Obs$BioSonic$L2 <- test
+      }
+    )
+
+    output$DataTable <- DT::renderDataTable({
+
+      validate(need(nrow(Obs$BioSonic$L2) != 0, "Process L2 to dispaly observation statistics"))
+
+      DT::datatable(Obs$BioSonic$L2,
+                    extensions = c("Buttons", "Scroller", "Select"),
+                    # filter = "top",
+                    escape = TRUE, rownames = FALSE,
+                    style = "bootstrap",
+                    class = "compact",
+                    options = list(
+                      dom = "Brtip",
+                      select = list(style = "os", items = "row"),
+                      buttons = list(I("colvis"), "selectNone", "csv"),
+                      columnDefs = list(
+                        list(
+                          visible = FALSE,
+                          targets = c()
+                        )
+                      ),
+                      deferRender = TRUE,
+                      scrollY = 100,
+                      pageLength = 10,
+                      scroller = TRUE
+                    ),
+                    selection = "none",
+                    editable = F
+      ) %>%
+        DT::formatRound(c("Lat", "Lon"), digits=6) %>%
+        DT::formatRound(c("Altitude_mReMsl", "BottomElevation_m", "PlantHeight_m"), digits=3)
+
+    },
+    server = FALSE,
+    editable = F
+    )
 
   })
 }

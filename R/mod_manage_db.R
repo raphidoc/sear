@@ -209,6 +209,42 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           )"
         )
 
+        # BioSonic L1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `BioSonicL1b` (
+          `Lon` REAL,
+          `Lat` REAL,
+          `DateTime` REAL,
+          `Altitude_mReMsl` REAL,
+          `BottomElevation_m` REAL,
+          `PlantHeight_m` REAL,
+          `PercentCoverage` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # BioSonic L2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `BioSonicL2` (
+          `Lon` REAL,
+          `Lat` REAL,
+          `DateTime` REAL,
+          `Altitude_mReMsl` REAL,
+          `BottomElevation_m` REAL,
+          `PlantHeight_m` REAL,
+          `PercentCoverage` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
 
         ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM Metadata")))
 

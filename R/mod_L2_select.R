@@ -14,21 +14,13 @@ mod_L2_select_ui <- function(id){
     Map = box(plotlyOutput(ns("Map"), width = NULL, height = 250)),
     column(
       width = 6,
-      uiOutput(ns("Hierarchy")),
-      verbatimTextOutput(ns("results")),
-      tableOutput(ns("clickView")),
-      d3treeOutput(
-        outputId = ns("d3x"),
-        width = '1200px',
-        height = '475px'
-      )
+      uiOutput(ns("InstX")),
+      uiOutput(ns("VarX")),
+      uiOutput(ns("InstY")),
+      uiOutput(ns("VarY"))
     ),
-    column(6,
-           tableOutput(ns('table'))
-    )
 
-
-    #uiOutput(ns("Plot")),
+    uiOutput(ns("Plot")),
   )
 }
 
@@ -42,7 +34,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     SelUUID <- reactiveVal()
 
     observeEvent(
-      event_data("plotly_selected", source = "map"),
+      event_data("plotly_selected", source = "L2map"),
       label = "Click Obs display DB",
       ignoreInit = T,
       {
@@ -52,7 +44,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         if (!identical(UUID, character(0)) && any(!uuid::UUIDvalidate(UUID))) {
           showModal(modalDialog(
             title = "Invalid selection",
-            "You didn't select an Obs feature, no UUID attatched"
+            "You didn't select an L2Obs feature, no UUID attatched"
           ))
           invalidateLater(1)
         } else {
@@ -61,185 +53,85 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       }
     )
 
-    VarList <- reactiveVal()
+    InstList <- reactiveVal()
 
     observeEvent(
       nrow(L2Obs$Metadata != 0),
       {
-
-        browser()
-
         Instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
 
-        Variables <- list()
-
-        for (i in Instruments) {
-          Variables[i] <- list(str_subset(names(L2Obs[[i]]), "[^(UUID)(Wavelength)]"))
-        }
-
-        Variables <- stack(Variables) %>%
-          rename(Instruments = ind, Variables = values) %>%
-          relocate(Instruments, Variables) %>%
-          mutate(NEWCOL=NA) %>% data.frame
-
-        VarList(Variables)
-
-        # for (i in Instruments) {
-        #   Variables[i] <- list(str_subset(names(L2Obs[[i]]), "[^(UUID)(Wavelength)]"))
-        # }
-        #
-        # Variables <- stack(Variables) %>%
-        #   rename(Instruments = ind, Variables = values) %>%
-        #   relocate(Instruments, Variables) %>%
-        #   mutate(NEWCOL=NA) %>% data.frame
-        #
-        # VarList(Variables)
+        InstList(c("",Instruments))
 
       }
     )
 
-    output$Hierarchy <- renderUI({
-
-      req(VarList())
-
-      Hierarchy=names(VarList())
-      Hierarchy=head(Hierarchy,-1)
+    output$InstX <- renderUI({
+      req(InstList())
       selectizeInput(
-        ns("Hierarchy"),
-        "Tree Hierarchy",
-        choices = Hierarchy,multiple=T,selected = Hierarchy,
-        options=list(plugins=list('drag_drop','remove_button')))
+        ns("InstX"),
+        "Select a x instrument",
+        choices = InstList(),
+        selected = NULL,
+        multiple = F)
     })
 
-    network <- reactiveValues()
-
-    observeEvent(input$d3x_update,{
-
-      browser()
-
-      network$nodes <- unlist(input$d3x_update$.nodesData)
-      activeNode<-input$d3x_update$.activeNode
-      if(!is.null(activeNode)) network$click <- jsonlite::fromJSON(activeNode)
+    output$InstY <- renderUI({
+      req(InstList())
+      selectizeInput(
+        ns("InstY"),
+        "Select a y instrument",
+        choices = InstList(),
+        selected = NULL,
+        multiple = F)
     })
 
-    observeEvent(
-      once = TRUE,
-      input$d3x_update,
-      {
-        network$FirstNodes <- input$d3x_update$.nodesData
-      }
-    )
+    VarListX <- reactiveVal()
+    VarListY <- reactiveVal()
 
     observeEvent(
-      network$click,
+      req(input$InstX != ""),
       {
+        Variables <- str_subset(names(L2Obs[[input$InstX]]), "[^(UUID)(Wavelength)]")
 
-        output$clickView<-renderTable({
-          as.data.frame(network$click)
-        },caption='Last Clicked Node',caption.placement='top')
-      }
-    )
-
-    TreeStruct=eventReactive(
-      network$nodes,
-      {
-
-        df=VarList()
-        if(is.null(network$nodes)){
-          df=VarList()
-        }else{
-
-          x.filter=tree.filter(network$nodes,VarList())
-          df=plyr::ddply(
-            x.filter,
-            "ID",
-            function(a.x){
-              VarList()%>%filter_(.dots = list(a.x$FILTER))%>%distinct
-            })
-        }
-        df
+        VarListX(c("",Variables))
       }
     )
 
     observeEvent(
-      input$Hierarchy,
+      req(input$InstY != ""),
       {
-        output$d3x <- renderD3tree({
-          if(is.null(input$Hierarchy)){
-            p=VarList()
-          }else{
-            p=VarList()%>%select(one_of(c(input$Hierarchy,"NEWCOL")))%>%unique
-          }
+        Variables <- str_subset(names(L2Obs[[input$InstY]]), "[^(UUID)(Wavelength)]")
 
-          d3tree(
-            data = list(
-              root = df2tree(
-                struct = p,
-                rootname = 'x'),
-              layout = 'collapse'),
-            activeReturn = c('name','value','depth','id'),
-            height = 18)
-        })
+        VarListY(c("",Variables))
       }
     )
 
-    observeEvent(
-      network$nodes,
-      {
-
-        output$results <- renderPrint({
-          str.out=''
-          if(!is.null(network$nodes)) str.out=tree.filter(network$nodes,VarList())
-          return(str.out)
-        })
-      }
-    )
-
-
-    output$table <- renderTable(expr = {
-      TreeStruct()%>%select(-NEWCOL)
+    output$VarX <- renderUI({
+      req(VarListX())
+      selectizeInput(
+        ns("VarX"),
+        "Select a x variable",
+        choices = VarListX(),
+        selected = NULL,
+        multiple = F)
     })
 
-    # output$VarY <- renderUI({
-    #   req(yList)
-    #   selectizeInput(
-    #     ns("VarY"),
-    #     "Select a y variable",
-    #     choices = yList(),
-    #     selected = NULL,
-    #     multiple = F)
-    # })
+    output$VarY <- renderUI({
+      req(VarListY())
+      selectizeInput(
+        ns("VarY"),
+        "Select a y variable",
+        choices = VarListY(),
+        selected = NULL,
+        multiple = F)
+    })
 
     # VarX <- eventReactive(
     #   ignoreNULL = T,
     #   req(network$click$value == "Variables"),
     #   {
     #     browser()
-    #
-    #     VarX <- network$click$name
-    #     VarXid <- network$click$id
-    #
-    #     raw <- input$d3x_update$.nodesData
-    #     old <- network$FirstNodes
-    #
-    #
-    #     parsed <- tidyjson::spread_all(network$FirstNodes[[1]][["children"]])
-    #
-    #     network$FirstNodes %>% gather_object %>% json_types
-    #     Instruments <- network$FirstNodes %>% enter_object(children) %>% gather_array %>% spread_all() %>%
-    #       rename(InstName = name, InstID = id)
-    #
-    #     #Variables <-
-    #
-    #     test <- Instruments %>% gather_object() %>% json_types %>% select(InstName,InstID,name,type,..JSON) %>%
-    #       filter(name == "_children") %>% mutate(name = 'children')
-    #
-    #     test2 <- test %>% gather_array %>% spread_all
-    #
-    #
-    #     xNode <- stack(network$nodes) #input$d3x_update$.nodesData
-    #
-    #     xNew <- jsonlite::fromJSON(input$d3x_update$.nodesNew)$children
+
     #
     #     L2Obs[["HOCR"]][[VarX]]
     #
@@ -249,8 +141,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
 
     output$Plot <- renderPlotly({
       req(nrow(L2Obs$Metadata != 0))
-      req(VarX())
-      validate(need(VarX(), message = "Need x and y variables"))
+      validate(need(input$VarX() != "" & input$VarY() != "", message = "Need x and y variables"))
 
       browser()
 
@@ -336,7 +227,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       ) {
         p <- plot_mapbox(
           mode = "scattermapbox",
-          source = "map"
+          source = "L2map"
         ) %>% PlotDef()
 
         # To get the map objects reference
@@ -360,7 +251,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         CoastCrop <- sf::st_crop(Coast, BBox)
 
         p <- plot_ly(
-          source = "map",
+          source = "L2map",
         ) %>%
           add_sf(data = CoastCrop) %>%
           PlotDef(.)
