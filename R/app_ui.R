@@ -65,7 +65,7 @@ app_ui <- function(request) {
           column(
             id = "Obs1",
             width = 6,
-            mod_L2_select_ui("L2_select")$Map
+            mod_L2_select_ui("L2_select")
           ),
           column(
             id = "Obs2",

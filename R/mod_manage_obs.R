@@ -21,7 +21,7 @@ mod_manage_obs_ui <- function(id) {
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs) {
+mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -46,62 +46,33 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs) {
       {
         # Metadata
         # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM Metadata WHERE UUID='", L2Select$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM Metadata WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$Metadata <- tibble(DBI::dbFetch(res))
+        L2Obs$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # HOCR
-        # UUID have to ship with Instrument and SN to be passed to HOCR$L2
-        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='", L2Select$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(AproxData = !matches("Instrument|SN|UUID"))
-        DBI::dbClearResult(res)
-
-        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='", L2Select$SelUUID(), "';")
-        res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$HOCR$L2 <- tibble(DBI::dbFetch(res))
+        L2Obs$HOCR <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SBE19
-        qry <- paste0("SELECT * FROM SBE19L1b WHERE UUID='", L2Select$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$SBE19$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(Data = !matches("Parameter|UUID"))
-        DBI::dbClearResult(res)
-
-        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID='", L2Select$SelUUID(), "';")
-        res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$SBE19$L2 <- tibble(DBI::dbFetch(res))
+        L2Obs$SBE19 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SeaOWL
-        qry <- paste0("SELECT * FROM SeaOWLL1b WHERE UUID='", L2Select$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$SeaOWL$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(Data = !matches("Parameter|UUID"))
-        DBI::dbClearResult(res)
-
-        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID='", L2Select$SelUUID(), "';")
-        res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$SeaOWL$L2 <- tibble(DBI::dbFetch(res))
+        L2Obs$SeaOWL <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # BBFL2
-        qry <- paste0("SELECT * FROM BBFL2L1b WHERE UUID='", L2Select$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$BBFL2$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(Data = !matches("Parameter|UUID"))
-        DBI::dbClearResult(res)
-
-        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID='", L2Select$SelUUID(), "';")
-        res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$BBFL2$L2 <- tibble(DBI::dbFetch(res))
+        L2Obs$BBFL2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
       }

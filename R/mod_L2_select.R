@@ -7,35 +7,52 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
+#' @import d3Tree
 mod_L2_select_ui <- function(id){
   ns <- NS(id)
   tagList(
-    Map = plotlyOutput(ns("Map"), width = NULL, height = 250)#,
-    #Obs1 = mod_L1bL2_ui(ns("L1bL2_1")) #uiOutput(ns("Obs1"))
+    Map = box(plotlyOutput(ns("Map"), width = NULL, height = 250)),
+    column(
+      width = 6,
+      uiOutput(ns("Hierarchy")),
+      verbatimTextOutput(ns("results")),
+      tableOutput(ns("clickView")),
+      d3treeOutput(
+        outputId = ns("d3x"),
+        width = '1200px',
+        height = '475px'
+      )
+    ),
+    column(6,
+           tableOutput(ns('table'))
+    )
+
+
+    #uiOutput(ns("Plot")),
   )
 }
 
 #' L2_select Server Functions
 #'
 #' @noRd
-mod_L2_select_server <- function(id, DB, ManObs, Obs){
+mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     SelUUID <- reactiveVal()
 
     observeEvent(
-      event_data("plotly_click", source = "map"),
+      event_data("plotly_selected", source = "map"),
       label = "Click Obs display DB",
       ignoreInit = T,
       {
 
-        UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
+        UUID <- as.character(event_data("plotly_selected", source = "map")$customdata)
 
-        if (!identical(UUID, character(0)) && !uuid::UUIDvalidate(UUID)) {
+        if (!identical(UUID, character(0)) && any(!uuid::UUIDvalidate(UUID))) {
           showModal(modalDialog(
-            title = "Invalid click",
-            "You didn't click on an Obs feature, no UUID attatched"
+            title = "Invalid selection",
+            "You didn't select an Obs feature, no UUID attatched"
           ))
           invalidateLater(1)
         } else {
@@ -44,70 +61,206 @@ mod_L2_select_server <- function(id, DB, ManObs, Obs){
       }
     )
 
-    # observeEvent(
-    #   ignoreInit = T,
-    #   i() != 0,
-    #   {
-    #
-    #     browser()
-    #
-    #
-    #
-    #   })
-
-    # output$testX <- renderText("In Your Face !")
-
-
-    i <- reactiveVal(0)
+    VarList <- reactiveVal()
 
     observeEvent(
-      ignoreInit = T,
-      Obs$Metadata,
+      nrow(L2Obs$Metadata != 0),
       {
+
         browser()
 
-        i(isolate(i() + 1))
+        Instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
 
-        if (i() > 4) {
-          i(1)
-          ObsList[[paste0("Obs",i())]] <- Obs
-        } else {
-          ObsList[[paste0("Obs",i())]] <- Obs
+        Variables <- list()
+
+        for (i in Instruments) {
+          Variables[i] <- list(str_subset(names(L2Obs[[i]]), "[^(UUID)(Wavelength)]"))
         }
 
-        #mod_L1bL2_server(paste0("L1bL2_", i()), ObsList[[paste0("Obs",i())]])
-        mod_L2_hocr_server(paste0("L2_hocr", i()), ObsList[[paste0("Obs",i())]]$HOCR$L2)
+        Variables <- stack(Variables) %>%
+          rename(Instruments = ind, Variables = values) %>%
+          relocate(Instruments, Variables) %>%
+          mutate(NEWCOL=NA) %>% data.frame
 
-        insertUI(
-          selector = paste0("#Obs", i()),
-          where = "afterBegin",
-          ui = tagList(
-            mod_L2_hocr_ui(ns(paste0("L2_hocr", i())))
-          )
-        )
+        VarList(Variables)
+
+        # for (i in Instruments) {
+        #   Variables[i] <- list(str_subset(names(L2Obs[[i]]), "[^(UUID)(Wavelength)]"))
+        # }
+        #
+        # Variables <- stack(Variables) %>%
+        #   rename(Instruments = ind, Variables = values) %>%
+        #   relocate(Instruments, Variables) %>%
+        #   mutate(NEWCOL=NA) %>% data.frame
+        #
+        # VarList(Variables)
 
       }
     )
 
-    ObsList <- reactiveValues()
+    output$Hierarchy <- renderUI({
 
-    #mod_L1bL2_server("L1bL2_1", ObsList$Obs1)
+      req(VarList())
 
-    # output$Obs1 <- renderUI({
-    #   mod_L1bL2_ui(ns("L1bL2_1"))
+      Hierarchy=names(VarList())
+      Hierarchy=head(Hierarchy,-1)
+      selectizeInput(
+        ns("Hierarchy"),
+        "Tree Hierarchy",
+        choices = Hierarchy,multiple=T,selected = Hierarchy,
+        options=list(plugins=list('drag_drop','remove_button')))
+    })
+
+    network <- reactiveValues()
+
+    observeEvent(input$d3x_update,{
+
+      browser()
+
+      network$nodes <- unlist(input$d3x_update$.nodesData)
+      activeNode<-input$d3x_update$.activeNode
+      if(!is.null(activeNode)) network$click <- jsonlite::fromJSON(activeNode)
+    })
+
+    observeEvent(
+      once = TRUE,
+      input$d3x_update,
+      {
+        network$FirstNodes <- input$d3x_update$.nodesData
+      }
+    )
+
+    observeEvent(
+      network$click,
+      {
+
+        output$clickView<-renderTable({
+          as.data.frame(network$click)
+        },caption='Last Clicked Node',caption.placement='top')
+      }
+    )
+
+    TreeStruct=eventReactive(
+      network$nodes,
+      {
+
+        df=VarList()
+        if(is.null(network$nodes)){
+          df=VarList()
+        }else{
+
+          x.filter=tree.filter(network$nodes,VarList())
+          df=plyr::ddply(
+            x.filter,
+            "ID",
+            function(a.x){
+              VarList()%>%filter_(.dots = list(a.x$FILTER))%>%distinct
+            })
+        }
+        df
+      }
+    )
+
+    observeEvent(
+      input$Hierarchy,
+      {
+        output$d3x <- renderD3tree({
+          if(is.null(input$Hierarchy)){
+            p=VarList()
+          }else{
+            p=VarList()%>%select(one_of(c(input$Hierarchy,"NEWCOL")))%>%unique
+          }
+
+          d3tree(
+            data = list(
+              root = df2tree(
+                struct = p,
+                rootname = 'x'),
+              layout = 'collapse'),
+            activeReturn = c('name','value','depth','id'),
+            height = 18)
+        })
+      }
+    )
+
+    observeEvent(
+      network$nodes,
+      {
+
+        output$results <- renderPrint({
+          str.out=''
+          if(!is.null(network$nodes)) str.out=tree.filter(network$nodes,VarList())
+          return(str.out)
+        })
+      }
+    )
+
+
+    output$table <- renderTable(expr = {
+      TreeStruct()%>%select(-NEWCOL)
+    })
+
+    # output$VarY <- renderUI({
+    #   req(yList)
+    #   selectizeInput(
+    #     ns("VarY"),
+    #     "Select a y variable",
+    #     choices = yList(),
+    #     selected = NULL,
+    #     multiple = F)
     # })
 
-    output$Obs2 <- renderUI({
+    # VarX <- eventReactive(
+    #   ignoreNULL = T,
+    #   req(network$click$value == "Variables"),
+    #   {
+    #     browser()
+    #
+    #     VarX <- network$click$name
+    #     VarXid <- network$click$id
+    #
+    #     raw <- input$d3x_update$.nodesData
+    #     old <- network$FirstNodes
+    #
+    #
+    #     parsed <- tidyjson::spread_all(network$FirstNodes[[1]][["children"]])
+    #
+    #     network$FirstNodes %>% gather_object %>% json_types
+    #     Instruments <- network$FirstNodes %>% enter_object(children) %>% gather_array %>% spread_all() %>%
+    #       rename(InstName = name, InstID = id)
+    #
+    #     #Variables <-
+    #
+    #     test <- Instruments %>% gather_object() %>% json_types %>% select(InstName,InstID,name,type,..JSON) %>%
+    #       filter(name == "_children") %>% mutate(name = 'children')
+    #
+    #     test2 <- test %>% gather_array %>% spread_all
+    #
+    #
+    #     xNode <- stack(network$nodes) #input$d3x_update$.nodesData
+    #
+    #     xNew <- jsonlite::fromJSON(input$d3x_update$.nodesNew)$children
+    #
+    #     L2Obs[["HOCR"]][[VarX]]
+    #
+    #
+    #   }
+    # )
+
+    output$Plot <- renderPlotly({
+      req(nrow(L2Obs$Metadata != 0))
+      req(VarX())
+      validate(need(VarX(), message = "Need x and y variables"))
+
+      browser()
+
+      VarX
+
+      L2Obs[[]]
+
 
     })
 
-    output$Obs3 <- renderUI({
-
-    })
-
-    output$Obs4 <- renderUI({
-
-    })
 
     output$Map <- renderPlotly({
       req(DB$ObsMeta())
