@@ -38,7 +38,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
     Con <- eventReactive(
       req(SearTbl()$ProjPath),
       {
-        message("Doing SQLite stuff ... you know")
+        message("Doing L1bL2 SQLite stuff ... you know")
 
         L2Dir <- file.path(SearTbl()$ProjPath, "L2")
 

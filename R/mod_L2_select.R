@@ -147,6 +147,37 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     #   }
     # )
 
+    observeEvent(
+      {
+        event_data("plotly_hover", source = "plot")
+      },{
+
+        browser()
+
+        HovUUID <- event_data("plotly_hover", source = "plot")$customdata
+
+        HovMark <- L2Obs$Metadata %>% filter(UUID == HovUUID)
+
+        ProxyMap <- plotlyProxy(ns("Map"), session)
+
+        plotlyProxyInvoke(
+          ProxyMap,
+          "addTraces",
+          list(
+            x = list(list(HovMark$Lon)),
+            y = list(list(HovMark$Lat+0.01)),
+            mode = "scattermapbox",
+            marker = list(
+              color = "red"
+            )
+          ), list(0))
+
+        #plotlyProxyInvoke(lineProxy, "extendTraces", list(x = list(list(xData())), y = list(list(yData()))), list(0))
+
+
+      }
+    )
+
     output$Plot <- renderPlotly({
       req(nrow(L2Obs$Metadata != 0))
       req(input$VarY)
@@ -163,8 +194,12 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       if (any(VarY %in% c("Rrs","KLu"))) {
 
         p <- L2Obs[[input$InstY]] %>%
-          plot_ly() %>%
-          add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F)
+          plot_ly(
+            source = "plot",
+            customdata = ~UUID
+          ) %>%
+          add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F)%>%
+          event_register("plotly_hover")
 
       }
 

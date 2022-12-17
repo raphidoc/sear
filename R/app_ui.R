@@ -35,7 +35,8 @@ app_ui <- function(request) {
   Body <- dashboardBody(
     tabItems(
       tabItem(
-        tabName = "Settings"
+        tabName = "Settings",
+        mod_settings_ui("settings")
         ),
       tabItem(
         tabName = "Parsing",

@@ -11,7 +11,7 @@ mod_L1L2_hocr_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 320),
-    actionButton(ns("ProcessL2"), "Process L2"),
+    uiOutput(ns("ProL2")),
     plotlyOutput(ns("AOPs"), height = 250)
   )
 }
@@ -19,7 +19,7 @@ mod_L1L2_hocr_ui <- function(id) {
 #' obs_hocr Server Functions
 #'
 #' @noRd
-mod_L1L2_hocr_server <- function(id, Obs) {
+mod_L1L2_hocr_server <- function(id, Obs, Settings) {
   # stopifnot(is.reactive(L1bData))
 
   PlyFont <- list(family = "Times New Roman", size = 18)
@@ -136,11 +136,34 @@ mod_L1L2_hocr_server <- function(id, Obs) {
       }
     )
 
+    output$ProL2 <- renderUI({
+
+      validate(need({
+        Settings$HOCR$WaveMin() &
+        Settings$HOCR$WaveMax() &
+        Settings$HOCR$WaveStep() &
+        Settings$HOCR$Z1Depth() &
+        Settings$HOCR$Z1Z2Depth()
+      }, message = "Need HOCR settings"))
+
+      actionButton(ns("ProcessL2"), "Process L2")
+    })
+
     # HOCR AOPs computation
     observeEvent(
       input$ProcessL2,
       {
-        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b)
+
+        WaveSeq <- seq(
+          Settings$HOCR$WaveMin(),
+          Settings$HOCR$WaveMax(),
+          Settings$HOCR$WaveStep()
+        )
+
+        Z1Depth <- Settings$HOCR$Z1Depth()
+        Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
+
+        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth)
       }
     )
 

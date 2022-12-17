@@ -351,7 +351,17 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       ) {
         p <- plot_mapbox(
           mode = "scattermapbox",
-          source = "map"
+          source = "map",
+          selected = list(
+            marker = list(
+              color = "green"
+            )
+          ),
+          unselected = list(
+            marker = list(
+              opacity = 0.7
+            )
+          )
         ) %>% PlotDef()
 
         # To get the map objects reference

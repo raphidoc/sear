@@ -17,7 +17,7 @@ mod_L1bL2_ui <- function(id) {
 #' L1L2_obs Server Functions
 #'
 #' @noRd
-mod_L1bL2_server <- function(id, Obs) {
+mod_L1bL2_server <- function(id, Obs, Settings) {
   # stopifnot(is.reactive(L1b$Data))
 
   moduleServer(id, function(input, output, session) {
@@ -131,7 +131,7 @@ mod_L1bL2_server <- function(id, Obs) {
 
     # HOCR tab ----------------------------------------------------------------
 
-    mod_L1L2_hocr_server("L1L2_hocr", Obs)
+    mod_L1L2_hocr_server("L1L2_hocr", Obs, Settings)
 
     # SBE19 tab ---------------------------------------------------------------
 

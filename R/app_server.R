@@ -64,19 +64,21 @@ app_server <- function(input, output, session) {
 
 # Modules logic -----------------------------------------------------------
 
-  SearTbl <- mod_manage_project_server("manage_project")
+  SearProj <- mod_manage_project_server("manage_project")
 
-  CalData <- mod_parse_cal_server("parse_cal", SearTbl)
+  Settings <- mod_settings_server("settings", SearProj$History)
 
-  DB <- mod_manage_db_server("manage_db", SearTbl, Obs)
+  CalData <- mod_parse_cal_server("parse_cal", SearProj$History)
 
-  L1a <- mod_parse_data_server("parse_data", SearTbl, CalData, MainLog)
+  DB <- mod_manage_db_server("manage_db", SearProj$History, Obs)
+
+  L1a <- mod_parse_data_server("parse_data", SearProj$History, CalData, MainLog)
 
   L1aSelect <- mod_L1a_select_server("L1a_select", MainLog, DB, Obs, ManObs, L1a)
 
   L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs)
 
-  L2 <- mod_L1bL2_server("L1bL2", Obs)
+  L2 <- mod_L1bL2_server("L1bL2", Obs, Settings)
 
   ManObs <- mod_manage_obs_server("manage_obs", DB, L2, L1aSelect, L2Select, Obs, L2Obs)
 

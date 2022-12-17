@@ -466,7 +466,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 #' @return Tidy long tiblle with Rrs and KLu
 #'
 #' @noRd
-L2_hocr <- function(L1bData) {
+L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth) {
+
   L1bDataWide <- L1bData %>%
     mutate(AproxData = purrr::map(
       AproxData,
@@ -502,7 +503,7 @@ L2_hocr <- function(L1bData) {
     ))
 
   # This parameter should be an user input
-  WaveSeq <- seq(353, 800, 3)
+  #WaveSeq <- seq(353, 800, 3)
 
   approx_wave <- function(., WaveSeq) {
     tbl <- tibble(
@@ -556,9 +557,9 @@ L2_hocr <- function(L1bData) {
     unnest(cols = c(IntData)) %>%
     select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
-  DeltaDepth <- 0.15 # Algae Wise 2022
+  #Z1Z2Depth <- 0.15 # Algae Wise 2022
 
-  KLuWide <- (log(LuZ1) - log(LuZ2)) / DeltaDepth
+  KLuWide <- (log(LuZ1) - log(LuZ2)) / Z1Z2Depth
 
   KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu"))
 
@@ -573,9 +574,9 @@ L2_hocr <- function(L1bData) {
       names_transform = list(Wavelength = as.numeric)
     )
 
-  LuZ1Depth <- 0.10 # 10 cm
+  #Z1Depth <- 0.10 # 10 cm
 
-  Lw <- 0.54 * LuZ1 / exp(-LuZ1Depth * KLuWide)
+  Lw <- 0.54 * LuZ1 / exp(-Z1Depth * KLuWide)
   RrsWide <- Lw / Es
 
   RrsLong <- RrsWide %>%
