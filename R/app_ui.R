@@ -20,6 +20,7 @@ app_ui <- function(request) {
     mod_manage_project_ui("manage_project"),
     sidebarMenu(
       menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
+      menuItem("Parsing", tabName = "Parsing", icon = icon("fa-regular fa-file-lines")),
       menuItem("Processing", tabName = "Processing", icon = icon("gears"))
     ),
     # mod_filter_trim_ui("filter_trim"),
@@ -34,7 +35,10 @@ app_ui <- function(request) {
   Body <- dashboardBody(
     tabItems(
       tabItem(
-        tabName = "Settings",
+        tabName = "Settings"
+        ),
+      tabItem(
+        tabName = "Parsing",
         fluidRow(
           column(
             width = 6,
@@ -61,27 +65,7 @@ app_ui <- function(request) {
       ),
       tabItem(
         tabName = "Database",
-        fluidRow(
-          column(
-            id = "Obs1",
-            width = 6,
-            mod_L2_select_ui("L2_select")
-          ),
-          column(
-            id = "Obs2",
-            width = 6
-          )
-        ),
-        fluidRow(
-          column(
-            id = "Obs3",
-            width = 6
-          ),
-          column(
-            id = "Obs4",
-            width = 6
-          )
-        )
+        mod_L2_select_ui("L2_select")
       )
     )
   )

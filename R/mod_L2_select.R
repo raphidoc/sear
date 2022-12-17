@@ -11,16 +11,23 @@
 mod_L2_select_ui <- function(id){
   ns <- NS(id)
   tagList(
-    Map = box(plotlyOutput(ns("Map"), width = NULL, height = 250)),
-    column(
-      width = 6,
-      uiOutput(ns("InstX")),
-      uiOutput(ns("VarX")),
-      uiOutput(ns("InstY")),
-      uiOutput(ns("VarY"))
-    ),
+    fluidRow(
+      column(
+        width = 6,
+        plotlyOutput(ns("Map")),
+        uiOutput(ns("InstX")),
+        uiOutput(ns("VarX")),
+        uiOutput(ns("InstY")),
+        uiOutput(ns("VarY"))
+      ),
+      column(
+        width = 6,
+        plotlyOutput(ns("Plot"))
+      )
+    )
 
-    uiOutput(ns("Plot")),
+
+
   )
 }
 
@@ -39,7 +46,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       ignoreInit = T,
       {
 
-        UUID <- as.character(event_data("plotly_selected", source = "map")$customdata)
+        UUID <- as.character(event_data("plotly_selected", source = "L2map")$customdata)
 
         if (!identical(UUID, character(0)) && any(!uuid::UUIDvalidate(UUID))) {
           showModal(modalDialog(
@@ -50,6 +57,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         } else {
           SelUUID(UUID)
         }
+
       }
     )
 
@@ -141,14 +149,26 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
 
     output$Plot <- renderPlotly({
       req(nrow(L2Obs$Metadata != 0))
-      validate(need(input$VarX() != "" & input$VarY() != "", message = "Need x and y variables"))
+      req(input$VarY)
+      validate(need(input$VarY != "", message = "Need x and y variables"))
 
       browser()
 
-      VarX
+      InstX <- input$InstX
+      InstY <- input$InstY
+      VarX <- input$VarX
+      VarY <- input$VarY
 
-      L2Obs[[]]
+      # In case of spectral data
+      if (any(VarY %in% c("Rrs","KLu"))) {
 
+        p <- L2Obs[[input$InstY]] %>%
+          plot_ly() %>%
+          add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F)
+
+      }
+
+      p
 
     })
 
