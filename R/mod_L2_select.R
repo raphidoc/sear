@@ -147,55 +147,81 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     #   }
     # )
 
-    observeEvent(
-      {
-        event_data("plotly_hover", source = "plot")
-      },{
+    # TODO: use plotly proxy to link (highlight) map and plot
+    # by adding a trace or modifying one
 
-        browser()
-
-        HovUUID <- event_data("plotly_hover", source = "plot")$customdata
-
-        HovMark <- L2Obs$Metadata %>% filter(UUID == HovUUID)
-
-        ProxyMap <- plotlyProxy(ns("Map"), session)
-
-        plotlyProxyInvoke(
-          ProxyMap,
-          "addTraces",
-          list(
-            x = list(list(HovMark$Lon)),
-            y = list(list(HovMark$Lat+0.01)),
-            mode = "scattermapbox",
-            marker = list(
-              color = "red"
-            )
-          ), list(0))
-
-        #plotlyProxyInvoke(lineProxy, "extendTraces", list(x = list(list(xData())), y = list(list(yData()))), list(0))
-
-
-      }
-    )
+    # observeEvent(
+    #   {
+    #     event_data("plotly_hover", source = "plot")
+    #   },{
+    #
+    #     HovUUID <- event_data("plotly_hover", source = "plot")$customdata
+    #
+    #     HovMark <- L2Obs$Metadata %>% filter(UUID == HovUUID)
+    #
+    #     browser()
+    #
+    #     plotlyProxy("Map", session) %>%
+    #       plotlyProxyInvoke(
+    #         "addTraces",
+    #         list(
+    #           lon = list(HovMark$Lon),
+    #           lat = list(HovMark$Lat),
+    #           type = list("scattermapbox"),
+    #           mode = list("markers"),
+    #           marker.color = list("#FF0000")
+    #         ),
+    #         list(0)
+    #       )
+    #
+    #
+    #   }
+    # )
 
     output$Plot <- renderPlotly({
       req(nrow(L2Obs$Metadata != 0))
       req(input$VarY)
       validate(need(input$VarY != "", message = "Need x and y variables"))
 
-      browser()
+      #browser()
 
       InstX <- input$InstX
       InstY <- input$InstY
       VarX <- input$VarX
       VarY <- input$VarY
 
-      # In case of spectral data
-      if (any(VarY %in% c("Rrs","KLu"))) {
+      L2 <- L2Obs$Metadata
 
-        p <- L2Obs[[input$InstY]] %>%
+      for (i in names(L2Obs)[-1]) {
+        L2 <- left_join(L2, L2Obs[[i]], by = c("UUID"))
+      }
+
+      if (InstX != "" && InstY != "") {
+
+        p <- L2 %>%
+          filter(Wavelength %in% c(401,500,602,701)) %>%
           plot_ly(
             source = "plot",
+            text = ~UUID,
+            customdata = ~UUID
+          ) %>%
+          add_markers(
+            x = ~.data[[VarX]],
+            y = ~.data[[VarY]],
+            color = ~as.character(Wavelength),
+            showlegend = T
+            )%>%
+          event_register("plotly_hover")
+
+      }
+
+      # In case of spectral data
+      if (InstX == "" && any(VarY %in% c("Rrs","KLu"))) {
+
+        p <- L2 %>%
+          plot_ly(
+            source = "plot",
+            text = ~UUID,
             customdata = ~UUID
           ) %>%
           add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F)%>%
@@ -282,11 +308,16 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       ) {
         p <- plot_mapbox(
           mode = "scattermapbox",
-          source = "L2map"
+          source = "L2map",
+          unselected = list(
+            marker = list(
+              opacity = 0.4
+            )
+          )
         ) %>% PlotDef()
 
         # To get the map objects reference
-        #htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.hmtl"))
+        #htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.html"))
 
       } else {
         # Determine survey area bounding box and crop coastline accordingly
@@ -307,6 +338,11 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
 
         p <- plot_ly(
           source = "L2map",
+          unselected = list(
+            marker = list(
+              opacity = 0.4
+            )
+          )
         ) %>%
           add_sf(data = CoastCrop) %>%
           PlotDef(.)

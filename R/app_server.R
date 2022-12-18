@@ -62,11 +62,20 @@ app_server <- function(input, output, session) {
 
   L2Obs <- reactiveValues()
 
+  ActiveMenu <- reactiveVal(list("Settings"))
+
+  observeEvent(
+    {
+      input$ActiveMenu
+    },{
+      ActiveMenu(append(ActiveMenu(), input$ActiveMenu))
+    })
+
 # Modules logic -----------------------------------------------------------
 
   SearProj <- mod_manage_project_server("manage_project")
 
-  Settings <- mod_settings_server("settings", SearProj$History)
+  Settings <- mod_settings_server("settings", SearProj, ActiveMenu)
 
   CalData <- mod_parse_cal_server("parse_cal", SearProj$History)
 
@@ -83,4 +92,6 @@ app_server <- function(input, output, session) {
   ManObs <- mod_manage_obs_server("manage_obs", DB, L2, L1aSelect, L2Select, Obs, L2Obs)
 
   L2Select <- mod_L2_select_server("L2_select", DB, ManObs, L2Obs)
+
+  session$onSessionEnded(stopApp)
 }

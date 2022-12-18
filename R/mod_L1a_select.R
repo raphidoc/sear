@@ -18,13 +18,17 @@ mod_L1a_select_ui <- function(id) {
       ),
       column(
         width = 6,
-        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100)
+        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100)#,
+        #selectInput(ns("Style"), "Select a mapbox style", MapStyles)
       )
     ),
     plotlyOutput(ns("Map"), width = NULL, height = 500) # ,
     # DT::DTOutput(ns("DataTable"), width = NULL, height = 100)
   )
 }
+
+# get all the available mapbox styles
+#MapStyles <- schema()$layout$layoutAttributes$mapbox$style$values
 
 #' selection_display Server Functions
 #'
@@ -250,7 +254,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     # observeEvent(
     #   SelUUID(),
     #   {
-    #     plotlyProxy("map", session) %>%
+    #     plotlyProxy("Map", session) %>%
     #       plotlyProxyInvoke(
     #         "addTraces",
     #         list(
@@ -261,6 +265,18 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     #       )
     #   }
     # )
+
+    ### User input mapbox style
+    # observeEvent(
+    #   input$Style,
+    #   {
+    #   plotlyProxy("Map", session) %>%
+    #     plotlyProxyInvoke(
+    #       "relayout",
+    #       list(mapbox = list(style = input$Style))
+    #     )
+    # })
+
 
     output$Map <- renderPlotly({
       req(SubMainLog())

@@ -19,6 +19,7 @@ app_ui <- function(request) {
   Sidebar <- dashboardSidebar(
     mod_manage_project_ui("manage_project"),
     sidebarMenu(
+      id = "ActiveMenu",
       menuItem("Settings", tabName = "Settings", icon = icon("wrench")),
       menuItem("Parsing", tabName = "Parsing", icon = icon("fa-regular fa-file-lines")),
       menuItem("Processing", tabName = "Processing", icon = icon("gears"))

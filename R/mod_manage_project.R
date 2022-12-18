@@ -141,6 +141,8 @@ mod_manage_project_server <- function(id) {
 
     # Check if .searproj file already exist if not create the default one
 
+    AccessUUID <- reactiveVal(uuid::UUIDgenerate(use.time = T, output = "string"))
+
     Con <- reactive({
       req(Project$Path)
       PotSQLite <- file.path(Project$Path, "sear.sqlite")
@@ -163,7 +165,7 @@ mod_manage_project_server <- function(id) {
           SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
           ProjPath = Project$Path,
-          UUID = uuid::UUIDgenerate(use.time = T, output = "string")
+          UUID = AccessUUID()
         )
 
         DBI::dbWriteTable(Con(), "History", SearProj, append = TRUE)
@@ -199,7 +201,7 @@ mod_manage_project_server <- function(id) {
           SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
           ProjPath = Project$Path,
-          UUID = uuid::UUIDgenerate(use.time = T, output = "string")
+          UUID = AccessUUID()
         )
 
         DBI::dbWriteTable(Con(), "History", SearProj, append = TRUE)
@@ -216,7 +218,8 @@ mod_manage_project_server <- function(id) {
 
     list(
       History = History,
-      Con = Con
+      Con = Con,
+      AccessUUID = AccessUUID
     )
 
   })

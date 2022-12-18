@@ -75,6 +75,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         L2Obs$BBFL2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
+        # Biosonic
+        qry <- paste0("SELECT * FROM BioSonicL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$BioSonic <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
       }
     )
 
