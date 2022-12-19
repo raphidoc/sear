@@ -1,6 +1,6 @@
 
 
-![test](inst/app/www/logo_sear.jpg)
+![test](inst/app/www/logo_sear.png)
 
 
 # sear
