@@ -138,8 +138,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     #   ignoreNULL = T,
     #   req(network$click$value == "Variables"),
     #   {
-    #     browser()
-
     #
     #     L2Obs[["HOCR"]][[VarX]]
     #
@@ -159,7 +157,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     #
     #     HovMark <- L2Obs$Metadata %>% filter(UUID == HovUUID)
     #
-    #     browser()
     #
     #     plotlyProxy("Map", session) %>%
     #       plotlyProxyInvoke(
@@ -182,8 +179,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       req(nrow(L2Obs$Metadata != 0))
       req(input$VarY)
       validate(need(input$VarY != "", message = "Need x and y variables"))
-
-      #browser()
 
       InstX <- input$InstX
       InstY <- input$InstY

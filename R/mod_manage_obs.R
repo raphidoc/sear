@@ -188,8 +188,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         # If UUID already exist, update record in SQLite
         if (UUIDPresent & UUIDExist) {
 
-
-          browser()
 # Update Metadata ---------------------------------------------------------
 
           Metadata <- Obs$Metadata %>%

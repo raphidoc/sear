@@ -116,8 +116,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         PrimMainLog <- MTELog$Apla() %>%
           rename(Lon = Lon_DD, Lat = Lat_DD)
 
-        #browser()
-
         # TODO Need to figure out how to compute on BioSonic Load
         # | !is.null(BioSonic$BioSonic())
 

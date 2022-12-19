@@ -38,7 +38,6 @@ mod_L2_hocr_server <- function(id, L2){
 
     output$AOPs <- renderPlotly({
 
-      browser()
       # req(L2Data())
 
       validate(need(nrow(L2) != 0, "Process L2 to display AOPs"))
