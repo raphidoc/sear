@@ -2,6 +2,8 @@
 
 ![test](inst/app/www/logo_sear.png)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7459254.svg)](https://doi.org/10.5281/zenodo.7459254)
+
 
 # sear
   <!-- badges: start -->
