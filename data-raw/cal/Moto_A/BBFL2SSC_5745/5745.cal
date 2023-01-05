@@ -1,0 +1,9 @@
+InstrumentType=BBFL2
+SerialNo=5745
+CalDate=2-Jul-2019
+NTUScaleFactor=0.2410
+NTUDarkCounts=50
+PEScaleFactor=0.0555
+PEDarkCounts=50
+PCScaleFactor=0.0555
+PCDarkCounts=46

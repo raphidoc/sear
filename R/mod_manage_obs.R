@@ -21,7 +21,7 @@ mod_manage_obs_ui <- function(id) {
 #' obs_manager Server Functions
 #'
 #' @noRd
-mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
+mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -39,70 +39,128 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
 
     })
 
-
-    # UUID selection event trigger data display -------------------------------
-    # by populating the reactive data table needed
     observeEvent(
-      req(SelData$SelUUID()),
+      c(
+        L2Select$SelUUID()
+      ),
       {
         # Metadata
         # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM Metadata WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM Metadata WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$Metadata <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # HOCR
+        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$HOCR <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # SBE19
+        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$SBE19 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # SeaOWL
+        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$SeaOWL <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # BBFL2
+        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$BBFL2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # Biosonic
+        qry <- paste0("SELECT * FROM BioSonicL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$BioSonic <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+      }
+    )
+
+
+    # UUID selection event trigger data display -------------------------------
+    # by populating the Obs reactiveValues data table needed
+    observeEvent(
+      c(
+        L1aSelect$SelUUID()
+      ),
+      {
+        # Metadata
+        # Have to query data based on UUID
+        qry <- paste0("SELECT * FROM Metadata WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # HOCR
         # UUID have to ship with Instrument and SN to be passed to HOCR$L2
-        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
           nest(AproxData = !matches("Instrument|SN|UUID"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SBE19
-        qry <- paste0("SELECT * FROM SBE19L1b WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM SBE19L1b WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SBE19$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
           nest(Data = !matches("Parameter|UUID"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SBE19$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SeaOWL
-        qry <- paste0("SELECT * FROM SeaOWLL1b WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM SeaOWLL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SeaOWL$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
           nest(Data = !matches("Parameter|UUID"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SeaOWL$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # BBFL2
-        qry <- paste0("SELECT * FROM BBFL2L1b WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM BBFL2L1b WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BBFL2$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
           nest(Data = !matches("Parameter|UUID"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID='", SelData$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BBFL2$L2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # BioSonic
+        qry <- paste0("SELECT * FROM BioSonicL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$BioSonic$L1b <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        qry <- paste0("SELECT * FROM BioSonicL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$BioSonic$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
       }
@@ -129,7 +187,6 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
 
         # If UUID already exist, update record in SQLite
         if (UUIDPresent & UUIDExist) {
-
 
 # Update Metadata ---------------------------------------------------------
 
@@ -249,6 +306,10 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           BBFL2L2Up <- update_L2_param_val(L2 = Obs$BBFL2$L2,TableName = "BBFL2L2", Con = DB$Con())
 
 
+# Update BioSonic ---------------------------------------------------------
+
+          # there is no BioSonic data manipulation for now so no need to update
+
           # Check that the number of line affected is correct, should probably improve this
           # MetaUp must be only one line affected, if more means UUID collision
           # L1bUp == 3 * 137 wavelengths * bins number
@@ -276,6 +337,7 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           #   session = shiny::getDefaultReactiveDomain()
           # )
         } else {
+
           ObsUUID <- uuid::UUIDgenerate(
             use.time = T,
             output = "string"
@@ -324,6 +386,12 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           BBFL2L2 <- Obs$BBFL2$L2  %>%
             mutate(UUID = ObsUUID)
 
+          BioSonicL1b <- Obs$BioSonic$L1b  %>%
+            mutate(UUID = ObsUUID)
+
+          BioSonicL2 <- Obs$BioSonic$L2  %>%
+            mutate(UUID = ObsUUID)
+
           DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
@@ -333,6 +401,8 @@ mod_manage_obs_server <- function(id, DB, L2, SelData, Obs) {
           DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
 
           # Feedback to the user
           session$sendCustomMessage(

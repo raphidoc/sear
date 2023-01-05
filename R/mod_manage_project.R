@@ -42,7 +42,7 @@ mod_manage_project_server <- function(id) {
       title = "Creating new project",
       footer = tagList(
         actionButton(ns("create"), "Create"),
-        actionButton(ns("cancel"), "Cancel")
+        modalButton("Cancel")
       )
     )
 
@@ -82,65 +82,145 @@ mod_manage_project_server <- function(id) {
     )
 
     ModalOpen <- modalDialog(
-      selectizeInput(ns("ProjList"), "Select a project", choices = "", selected = NULL, multiple = F),
+      selectizeInput(
+        ns("ProjList"),
+        "Select a project",
+        choices = c("", list.files(
+          normalizePath(file.path("~","sear_project")),
+          full.names = T)),
+        selected = NULL,
+        multiple = F),
       title = "Opening an existing project",
       footer = tagList(
-        actionButton(ns("cancel"), "Cancel")
+        modalButton("Cancel")
       )
+    )
+
+    observeEvent(
+      ignoreInit = T,
+      input$Open,
+      {
+        showModal(ModalOpen)
+      }
+    )
+
+    test_input <- function(input){
+      if (!is.null(input)) {
+        if (input == "") {
+          return(NULL)
+        } else {
+          T
+        }
+      }
+    }
+
+    observeEvent(
+      ignoreInit = T,
+      ignoreNULL = T,
+      {test_input(input$ProjList)},
+      {
+        Project$Path <- input$ProjList
+        Project$Name <- basename(input$ProjList)
+
+        removeModal()
+      }
     )
 
     # Update UI element to display project name and path
     output$ProjectPath <- renderText({
-      validate(need(is.list(input$S), message = "Project: None"))
+      validate(need(Project$Path != "", message = "Project: None"))
 
       Project$Path
     })
 
     output$ProjectName <- renderText({
-      validate(need(is.list(input$Select), message = "Project: None"))
+      validate(need(Project$Name != "", message = "Project: None"))
 
-      Project()$Name
+      Project$Name
     })
 
     # Check if .searproj file already exist if not create the default one
 
-    SearTbl <- reactive({
+    AccessUUID <- reactiveVal(uuid::UUIDgenerate(use.time = T, output = "string"))
+
+    Con <- reactive({
+      req(Project$Path)
+      PotSQLite <- file.path(Project$Path, "sear.sqlite")
+      DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)}
+      )
+
+    History <- reactive({
       req(Project$Path)
 
-      searproj <- file.path(Project$Path, glue::glue(Project$Name, ".searproj"))
+      message("Doing sear SQLite stuff ... you know")
 
-      if (file.exists(searproj)) {
-        message("Reading ", searproj)
+      PotSQLite <- file.path(Project$Path, "sear.sqlite")
 
-        SearTbl <- read_csv(searproj)
+      if (file.exists(PotSQLite)) {
+        message("Reading ", PotSQLite)
 
-        SearTbl <- SearTbl %>%
-          mutate(
-            ProjPath = Project$Path,
-            Updated = Sys.time()
-          )
-
-        write_csv(SearTbl, searproj)
-
-        # return SearTble pbject
-        SearTbl
-
-      } else {
-        message("Creating ", searproj)
-
-        SearTbl <- tibble::tibble(
+        SearProj <- tibble::tibble(
+          DateTime = as.character(Sys.time()),
+          User = system2("echo","$USER", stdout = T),
+          SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
-          Created = Sys.time(),
-          ProjPath = Project$Path
+          ProjPath = Project$Path,
+          UUID = AccessUUID()
         )
 
-        write_csv(SearTbl, searproj)
+        DBI::dbWriteTable(Con(), "History", SearProj, append = TRUE)
 
         # return SearTble object
-        SearTbl
+        SearProj
+
+      } else {
+        message("Creating ", PotSQLite)
+
+        #Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)
+
+        # Enable foreign keys
+        DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
+
+        # Create DB schema
+        # Acces history
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS History (
+          DateTime TEXT NOT NULL,
+          User TEXT NOT NULL,
+          SearVersion TEXT NOT NULL,
+          ProjName TEXT NOT NULL,
+          ProjPath TEXT NOT NULL,
+          UUID TEXT PRIMARY KEY
+          );"
+        )
+
+        SearProj <- tibble::tibble(
+          DateTime = as.character(Sys.time()),
+          User = system2("echo","$USER", stdout = T),
+          SearVersion = as.character(packageVersion("sear")),
+          ProjName = Project$Name,
+          ProjPath = Project$Path,
+          UUID = AccessUUID()
+        )
+
+        DBI::dbWriteTable(Con(), "History", SearProj, append = TRUE)
+
+        # return SearTble object
+        SearProj
       }
 
     })
+
+
+# Module output -----------------------------------------------------------
+
+
+    list(
+      History = History,
+      Con = Con,
+      AccessUUID = AccessUUID
+    )
 
   })
 }

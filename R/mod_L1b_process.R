@@ -17,33 +17,55 @@ mod_L1b_process_ui <- function(id) {
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
+mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$L1b <- renderUI({
 
-      req(L1$ParsedFiles())
+      req(L1a$ParsedFiles())
 
       tagList(
-        waiter::use_waiter(),
-        #mod_select_instrument_ui(ns("select_instrument")),
-        actionButton(ns("ProcessL1b"), "ProcessL1b")
+        actionButton(ns("ProcessL1b"), "Process L1b")
       )
     })
-
-    #Instrument <- mod_select_instrument_server("select_instrument", L1)
 
     observeEvent(
       input$ProcessL1b,
       label = "processL1b",
       {
-        waiter <- waiter::Waiter$new()
-        waiter$show()
-        on.exit(waiter$hide())
 
-        if (is.null(L1$InstrumentList())) {
+        # Create a Progress object
+        progress <- shiny::Progress$new()
+        progress$set(message = "Processing L1b: ", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
+
+        # Create metadata for the selected L1a point
+
+        Obs$Metadata <- tibble(
+          ObsName = "NA",
+          ObsType = "NA",
+          ObsFlag = "NA",
+          DateTime = as.character(mean(L1aSelect$MainLog()$DateTime, na.rm = T)),
+          DateTimeMin = as.character(min(L1aSelect$MainLog()$DateTime, na.rm = T)),
+          DateTimeMax = as.character(max(L1aSelect$MainLog()$DateTime, na.rm = T)),
+          TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
+          Lon = mean(L1aSelect$MainLog()$Lon, na.rm = T),
+          Lat = mean(L1aSelect$MainLog()$Lat, na.rm = T),
+          LonMin = min_geo(L1aSelect$MainLog()$Lon, na.rm = T),
+          LonMax = max_geo(L1aSelect$MainLog()$Lon, na.rm = T),
+          LatMin = min_geo(L1aSelect$MainLog()$Lat, na.rm = T),
+          LatMax = max_geo(L1aSelect$MainLog()$Lat, na.rm = T),
+          Altitude = mean(as.numeric(L1aSelect$MainLog()$Altitude), na.rm = T),
+          DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
+          BoatSolAzm = mean(L1aSelect$MainLog()$BoatSolAzm, na.rm = T),
+          Comment = "NA",
+          UUID = NA
+        )
+
+        if (is.null(L1a$InstrumentList())) {
           showModal(modalDialog(
             title = "No instrument selected",
             "Please select at least one instrument to process"
@@ -65,14 +87,30 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
         Obs$BioSonic$L2 <- tibble()
 
         # Filter data point before processing to optimize execution time
-        SelDateTime <- SelData$MainLog()$DateTime[SelData$MainLog()$ID %in% SelData$SelMainLog()$ID]
+        SelDateTime <- L1aSelect$MainLog()$DateTime
         TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
 
         # HOCR L1b ----------------------------------------------------------------
 
-        if (any(str_detect(L1$InstrumentList(), "HOCR"))) {
+        if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
 
-          FiltRawHOCR <- filter_hocr(L1$HOCR(), L1$HOCRTimeIndex(), TimeInt)
+          # Create a callback function to update progress.
+          # Each time this is called:
+          # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
+          #   distance. If non-NULL, it will set the progress to that value.
+          # - It also accepts optional detail text.
+          UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
+            if (is.null(value)) {
+              value <- progress$getValue()
+              value <- value + (progress$getMax() - value) / 5
+            }
+            progress$set(value = value, message = message, detail = detail)
+          }
+
+
+          progress$set(value = 0.1, detail = "HOCR")
+
+          FiltRawHOCR <- filter_hocr(L1a$HOCR(), L1a$HOCRTimeIndex(), TimeInt)
 
           if (length(FiltRawHOCR) == 0) {
             warning(
@@ -87,9 +125,7 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
             # Select nearest dark data
             ObsTime <- int_end(TimeInt / 2)
 
-            ### CHECK FOR BUG IN HOCRDark LOADING ###
-
-            HOCRDark <- L1$HOCRDark() %>%
+            HOCRDark <- L1a$HOCRDark() %>%
               mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
               ungroup() %>%
               select(SN, DarkAproxData)
@@ -99,7 +135,8 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
                 RawHOCR = FiltRawHOCR,
                 CalHOCR = CalData$CalHOCR(),
                 HOCRDark = HOCRDark,
-                MainLogDate = unique(date(SelData$SelMainLog()$DateTime))
+                MainLogDate = unique(date(L1aSelect$MainLog()$DateTime)),
+                UpdateProgress
               ),
               shiny = T,
               trace_back = TRUE
@@ -109,12 +146,16 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # SBE19 L1b ---------------------------------------------------------------
 
-        if (any(str_detect(L1$InstrumentList(), "SBE19"))) {
+        if (any(str_detect(L1a$InstrumentList(), "SBE19"))) {
 
-          Lon <- mean(SelData$SelMainLog()$Lon)
-          Lat <- mean(SelData$SelMainLog()$Lat)
+          progress$set(message = "Processing L1b: ", value = progress$getValue())
 
-          SBE19 <- L1$SBE19() %>% filter(DateTime %within% TimeInt)
+          progress$set(value = 0.3, detail = "SBE19")
+
+          Lon <- mean(L1aSelect$MainLog()$Lon)
+          Lat <- mean(L1aSelect$MainLog()$Lat)
+
+          SBE19 <- L1a$SBE19() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(SBE19) == 0) {
             warning(
@@ -176,9 +217,11 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # SeaOWL L1b --------------------------------------------------------------
 
-        if (any(str_detect(L1$InstrumentList(), "SeaOWL"))) {
+        if (any(str_detect(L1a$InstrumentList(), "SeaOWL"))) {
 
-          SeaOWL <- L1$SeaOWL() %>% filter(DateTime %within% TimeInt)
+          progress$set(value = 0.4, detail = "SeaOWL")
+
+          SeaOWL <- L1a$SeaOWL() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(SeaOWL) == 0) {
             warning(
@@ -210,9 +253,11 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # BBFL2 L1b ---------------------------------------------------------------
 
-        if (any(str_detect(L1$InstrumentList(), "BBFL2"))) {
+        if (any(str_detect(L1a$InstrumentList(), "BBFL2"))) {
 
-          BBFL2 <- L1$BBFL2() %>% filter(DateTime %within% TimeInt)
+          progress$set(value = 0.5, detail = "BBFL2")
+
+          BBFL2 <- L1a$BBFL2() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(BBFL2) == 0) {
             warning(
@@ -244,9 +289,11 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
 
         # BioSonic L1b ---------------------------------------------------------------
 
-        if (any(str_detect(L1$InstrumentList(), "BioSonic"))) {
+        if (any(str_detect(L1a$InstrumentList(), "BioSonic"))) {
 
-          BioSonicL1b <- L1$BioSonic() %>% filter(DateTime %within% TimeInt)
+          progress$set(value = 0.6, detail = "BioSonic")
+
+          BioSonicL1b <- L1a$BioSonic() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(BioSonicL1b) == 0) {
             warning(
@@ -255,21 +302,33 @@ mod_L1b_process_server <- function(id, L1, SelData, CalData, Obs) {
           } else {
 
             Obs$BioSonic$L1b <- BioSonicL1b %>%
-              mutate(
-                ID = seq_along(rownames(BioSonicL1b)),
-                QC = "1"
+              rename(Lon = Longitude_deg, Lat = Latitude_deg) %>%
+              select(
+                Lon,
+                Lat,
+                DateTime,
+                Altitude_mReMsl,
+                BottomElevation_m,
+                PlantHeight_m,
+                PercentCoverage
               )
+              # mutate(
+              #   ID = seq_along(rownames(BioSonicL1b)),
+              #   QC = "1"
+              # )
 
           }
         }
+
+        progress$set(value = 1, detail = "Done")
 
       }
     )
 
 # Module output -----------------------------------------------------------
     list(
-      SelMainLog = SelData$SelMainLog,
-      Map = SelData$Map,
+      #SelMainLog = L1aSelect$MainLog,
+      Map = L1aSelect$Map,
       ProcessL1b = reactive(input$ProcessL1b)
     )
   })

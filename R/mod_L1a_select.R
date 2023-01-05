@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_select_data_ui <- function(id) {
+mod_L1a_select_ui <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
@@ -18,7 +18,8 @@ mod_select_data_ui <- function(id) {
       ),
       column(
         width = 6,
-        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100)
+        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100)#,
+        #selectInput(ns("Style"), "Select a mapbox style", MapStyles)
       )
     ),
     plotlyOutput(ns("Map"), width = NULL, height = 500) # ,
@@ -26,10 +27,13 @@ mod_select_data_ui <- function(id) {
   )
 }
 
+# get all the available mapbox styles
+#MapStyles <- schema()$layout$layoutAttributes$mapbox$style$values
+
 #' selection_display Server Functions
 #'
 #' @noRd
-mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
+mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
   stopifnot(is.reactive(MainLog))
 
   moduleServer(id, function(input, output, session) {
@@ -42,8 +46,8 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
       tagList(
         checkboxGroupInput(
           ns("Instrument"), "Intrument",
-          choices = L1$InstrumentList(),
-          selected = L1$InstrumentList(),
+          choices = L1a$InstrumentList(),
+          selected = L1a$InstrumentList(),
           inline = TRUE,
           width = NULL,
           choiceNames = NULL,
@@ -188,7 +192,7 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
 
     observeEvent(
       event_data("plotly_click", source = "map"),
-      label = "Click Obs",
+      label = "Click Obs select data",
       ignoreInit = T,
       {
         UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
@@ -250,7 +254,7 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
     # observeEvent(
     #   SelUUID(),
     #   {
-    #     plotlyProxy("map", session) %>%
+    #     plotlyProxy("Map", session) %>%
     #       plotlyProxyInvoke(
     #         "addTraces",
     #         list(
@@ -261,6 +265,18 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
     #       )
     #   }
     # )
+
+    ### User input mapbox style
+    # observeEvent(
+    #   input$Style,
+    #   {
+    #   plotlyProxy("Map", session) %>%
+    #     plotlyProxyInvoke(
+    #       "relayout",
+    #       list(mapbox = list(style = input$Style))
+    #     )
+    # })
+
 
     output$Map <- renderPlotly({
       req(SubMainLog())
@@ -351,7 +367,17 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
       ) {
         p <- plot_mapbox(
           mode = "scattermapbox",
-          source = "map"
+          source = "map",
+          selected = list(
+            marker = list(
+              color = "green"
+            )
+          ),
+          unselected = list(
+            marker = list(
+              opacity = 0.7
+            )
+          )
         ) %>% PlotDef()
 
         # To get the map objects reference
@@ -419,9 +445,9 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
 
     # Module output -----------------------------------------------------------
     list(
-      MainLog = MainLog,
+      #MainLog = MainLog,
       SubMainLog = SubMainLog,
-      SelMainLog = SelMainLog,
+      MainLog = SelMainLog,
       SelID = SelID,
       SelUUID = SelUUID,
       Map = Map
@@ -430,7 +456,7 @@ mod_select_data_server <- function(id, MainLog, DB, Obs, ManObs, L1) {
 }
 
 ## To be copied in the UI
-# mod_selection_display_ui("selection_display_1")
+# mod_L1a_select_ui("L1a_select")
 
 ## To be copied in the server
-# mod_selection_display_server("selection_display_1")
+# mod_L1a_select_server("L1a_select")

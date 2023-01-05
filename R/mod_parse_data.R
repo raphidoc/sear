@@ -10,7 +10,6 @@
 mod_parse_data_ui <- function(id){
   ns <- NS(id)
   tagList(
-    waiter::use_waiter(),
     uiOutput(outputId = ns("TabPanel"))
   )
 }
@@ -18,12 +17,12 @@ mod_parse_data_ui <- function(id){
 #' parse_data Server Functions
 #'
 #' @noRd
-mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
+mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     output$TabPanel <- renderUI({
-      req(SearTbl())
+      req(SearProj())
 
       tabsetPanel(
         id = ns("Tabset"),
@@ -46,14 +45,14 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
     ParsedFiles <- eventReactive(
       {
         c(
-          SearTbl(),
+          SearProj(),
           MTELog$Input(),
           BioSonic$Input()
           )
       },
       {
 
-        ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
+        ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
         if (dir.exists(ParsedDir)) {
 
@@ -67,8 +66,8 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
     )
 
     ToProcess <- mod_select_instrument_server("select_instrument", ParsedFiles)
-    MTELog <- mod_parse_mtelog_server("parse_mtelog", SearTbl, CalData, ParsedFiles)
-    BioSonic <- mod_parse_biosonic_server("parse_biosonic", SearTbl, ParsedFiles)
+    MTELog <- mod_parse_mtelog_server("parse_mtelog", SearProj, CalData, ParsedFiles)
+    BioSonic <- mod_parse_biosonic_server("parse_biosonic", SearProj, ParsedFiles)
 
 
 # MainLog -----------------------------------------------------------------
@@ -77,13 +76,13 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       ignoreInit = FALSE,
       {
         c(
-          SearTbl()
+          SearProj()
           )
       },
       {
 
         NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
-        ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
+        ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
         #PotMainLog <- file.path(ParsedDir, paste0("main_log_",SysDateTime,".csv"))
 
@@ -106,16 +105,16 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
       },
       {
 
-        waiter <- waiter::Waiter$new()
-        waiter$show()
-        on.exit(waiter$hide())
+        # Create a Progress object
+        progress <- shiny::Progress$new()
+        progress$set(message = "MainLog check", value = 0)
+        # Close the progress when this reactive exits (even if there's an error)
+        on.exit(progress$close())
 
         OldMainLog <- MainLog()
 
         PrimMainLog <- MTELog$Apla() %>%
           rename(Lon = Lon_DD, Lat = Lat_DD)
-
-        #browser()
 
         # TODO Need to figure out how to compute on BioSonic Load
         # | !is.null(BioSonic$BioSonic())
@@ -124,9 +123,13 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
           message("MainLog up to date")
 
+          progress$set(value = 1, detail = " up to date")
+
         } else {
 
           message("Updating MainLog")
+
+          progress$set(value = 0, message = "Updating MainLog: ")
 
           PrimBioSonic <- BioSonic$BioSonic()
 
@@ -134,20 +137,27 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
           # Should we reduce the time index by second to optimize computation time ?
           # Also this time index represents all three hocr, could start by keeping only one
 
+          progress$set(value = 0.1, detail = "HOCR synthesis")
           DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, MTELog$HOCRTimeIndex())
           message("HOCR synthesis done")
 
+          progress$set(value = 0.5, detail = "SBE19 synthesis")
           DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, MTELog$SBE19()$DateTime)
           message("SBE19 synthesis done")
 
+          progress$set(value = 0.6, detail = "SeaOWL synthesis")
           DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, MTELog$SeaOWL()$DateTime)
           message("SeaOWL synthesis done")
 
+          progress$set(value = 0.7, detail = "BBFL2 synthesis")
           DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, MTELog$BBFL2()$DateTime)
           message("BBFL2 synthesis done")
 
+          progress$set(value = 0.8, detail = "BioSonic synthesis")
           DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, PrimBioSonic$DateTime)
           message("BioSonic synthesis done")
+
+          progress$set(value = 0.9, detail = "Saving")
 
           PrimMainLog <- PrimMainLog %>%
             mutate(
@@ -161,7 +171,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
           MainLog(PrimMainLog)
 
-          ParsedDir <- file.path(SearTbl()$ProjPath, "sear", "data", "parsed")
+          ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
           dir.create(ParsedDir, recursive = TRUE)
 
           SysDateTime <- format(as.POSIXlt(Sys.time(), tz = "UTC"), "%Y%m%d_%H%M%S")
@@ -180,6 +190,7 @@ mod_parse_data_server <- function(id, SearTbl, CalData, MainLog){
 
           PrimMainLog <- write_csv(MainLog(), PotMainLog)
 
+          progress$set(value = 0.1, detail = "Done")
 
         }
 

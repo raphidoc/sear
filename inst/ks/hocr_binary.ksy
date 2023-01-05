@@ -1,7 +1,7 @@
 meta:
-  id: hocr
-  title: hocr datalogger binary parser
-  application: parse .bin file produced by the datalogger containing binary data from the seadoo hocr
+  id: HOCR
+  title: HOCR datalogger binary parser
+  application: parse .bin file produced by the datalogger containing binary data from the seadoo HOCR
   file-extension: bin
   encoding: ASCII
   endian: be

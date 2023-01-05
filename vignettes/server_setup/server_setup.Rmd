@@ -21,23 +21,17 @@ Install `nginx`
 
 ```
 sudo apt-get update
-sudo apt-get -y install nginx
+sudo apt -y install nginx
 ```
 
 The default file that is served is located at `/var/www/html/index.nginx-debian.html`
 The configuration file is located at `/etc/nginx/nginx.conf`
 
-```
-sudo service nginx stop
-sudo service nginx start
-sudo service nginx restart
-```
-
 The default nginx settings only allow file uploads of 1MB, to be able to upload larger files, you’ll need to set the client_max_body_size nginx parameter in nginx.conf file in `http{}` section.
 
 ```
 sudo nano /etc/nginx/nginx.conf
-client_max_body_size 200M;
+client_max_body_size 1G;
 ```
 
 Restart the nginx service and check it's status.
@@ -109,7 +103,8 @@ Also need to install `sear` dependencies :
 ```
 sudo su - -c "R -e \"install.packages(c('clock', 'config', 'DBI', 'dplyr', 'DT', 'golem', 'hms', 'lubridate', 'plotly', 'raster', 'readr', 'reticulate', 'RSQLite', 'sf', 'shinydashboard', 'shinyFeedback'))\""
 
-sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe', 'shinyjs', 'shinymanager', 'keyring', 'listviewer', 'sfheaders', 'htmlwidgets', 'gsw', 'pracma'))\""
+
+sudo su - -c "R -e \"install.packages(c('shinyWidgets', 'spsComps', 'suncalc', 'tidyr', 'uuid', 'waiter', 'widgetframe', 'shinyjs', 'sodium', 'shinymanager', 'keyring', 'gsw', 'pracma'))\""
 
 ```
 
@@ -138,6 +133,13 @@ Could automatically fetch the latest with some web scrapping technique ?
 
 latest [Shiny Server](https://posit.co/download/shiny-server/)
 
+```{r}
+SystemRelease <- system2('lsb_release', '-cs', stdout = T)
+RstudioDown <- system2('curl', 'https://posit.co/download/rstudio-server/', stdout = T)
+stringr::str_subset(RstudioDown, paste0(SystemRelease,".*","rstudio-server.*\\.deb"))
+```
+
+
 ```
 wget https://download3.rstudio.org/ubuntu-18.04/x86_64/shiny-server-1.5.19.995-amd64.deb
 ```
@@ -153,12 +155,12 @@ sudo nano /etc/shiny-server/shiny-server.conf
 ```
 
 ```
-location /users {
+location / {
   run_as :HOME_USER:;
   user_dirs;
 }
 
-location /apps {
+location / {
   run_as shiny;
   site_dir /srv/shiny-server;
   log_dir /var/log/shiny-server;
@@ -217,3 +219,21 @@ Restart and check status
 sudo systemctl restart nginx
 sudo systemctl status nginx
 ```
+
+## Sysadmin
+
+This section intend to describe how to mangage the system side of the `sear` app.
+
+### The sear user
+
+When a shiny app is launched, the `run_as` parameter in the conf file determine the system user as which the app will run.
+To correctly manage the system side authorization and persistent data storage, we create a super user with the name `sear`.
+When arriving on the log in page, it's this user who is responsible for checking the credentials against the user database.
+It's also this admin user who can create new user with shinymanager.
+The idea is that when a new user is created with shinymanager, an user is also created on the system.
+A copy of sear is made in `/home/user/ShinyApps/sear` and shiny-server has to restart to serve it to the user ... not the best but may be more secure has the user permission would be limited to it's home directory.
+The alternative would be to log in the user in the system from within shiny ... not sure about the feasibility.
+A third option is to keep the process `run_as` sear but to change the working directory to the home user.
+
+
+In both cases, here is the bash script to initiate the `sear` user

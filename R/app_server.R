@@ -97,22 +97,38 @@ app_server <- function(input, output, session) {
     )
   )
 
+  L2Obs <- reactiveValues()
+
+  ActiveMenu <- reactiveVal(list("Settings"))
+
+  observeEvent(
+    {
+      input$ActiveMenu
+    },{
+      ActiveMenu(append(ActiveMenu(), input$ActiveMenu))
+    })
 
 # Modules logic -----------------------------------------------------------
 
-  SearTbl <- mod_manage_project_server("manage_project")
+  SearProj <- mod_manage_project_server("manage_project")
 
-  CalData <- mod_parse_cal_server("parse_cal", SearTbl)
+  Settings <- mod_settings_server("settings", SearProj, ActiveMenu)
 
-  DB <- mod_manage_db_server("manage_db", SearTbl, SelData, Obs)
+  CalData <- mod_parse_cal_server("parse_cal", SearProj$History)
 
-  L1 <- mod_parse_data_server("parse_data", SearTbl, CalData, MainLog)
+  DB <- mod_manage_db_server("manage_db", SearProj$History, Obs)
 
-  SelData <- mod_select_data_server("select_data", MainLog, DB, Obs, ManObs, L1)
+  L1a <- mod_parse_data_server("parse_data", SearProj$History, CalData, MainLog)
 
-  L1b <- mod_L1b_process_server("L1b_process", L1, SelData, CalData, Obs)
+  L1aSelect <- mod_L1a_select_server("L1a_select", MainLog, DB, Obs, ManObs, L1a)
 
-  L2 <- mod_L1L2_server("L1L2", L1b, Obs)
+  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs)
 
-  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, SelData, Obs)
+  L2 <- mod_L1bL2_server("L1bL2", Obs, Settings)
+
+  ManObs <- mod_manage_obs_server("manage_obs", DB, L2, L1aSelect, L2Select, Obs, L2Obs)
+
+  L2Select <- mod_L2_select_server("L2_select", DB, ManObs, L2Obs)
+
+  session$onSessionEnded(stopApp)
 }

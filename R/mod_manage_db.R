@@ -17,7 +17,7 @@ mod_manage_db_ui <- function(id) {
 #' manage_db Server Functions
 #'
 #' @noRd
-mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
+mod_manage_db_server <- function(id, SearTbl, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -38,7 +38,7 @@ mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
     Con <- eventReactive(
       req(SearTbl()$ProjPath),
       {
-        message("Doing SQLite stuff ... you know")
+        message("Doing L1bL2 SQLite stuff ... you know")
 
         L2Dir <- file.path(SearTbl()$ProjPath, "L2")
 
@@ -202,6 +202,42 @@ mod_manage_db_server <- function(id, SearTbl, SelData, Obs) {
           `NTU` REAL,
           `PC` REAL,
           `PE` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # BioSonic L1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `BioSonicL1b` (
+          `Lon` REAL,
+          `Lat` REAL,
+          `DateTime` REAL,
+          `Altitude_mReMsl` REAL,
+          `BottomElevation_m` REAL,
+          `PlantHeight_m` REAL,
+          `PercentCoverage` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # BioSonic L2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `BioSonicL2` (
+          `Lon` REAL,
+          `Lat` REAL,
+          `DateTime` REAL,
+          `Altitude_mReMsl` REAL,
+          `BottomElevation_m` REAL,
+          `PlantHeight_m` REAL,
+          `PercentCoverage` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
             REFERENCES Metadata (UUID)
