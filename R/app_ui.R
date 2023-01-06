@@ -81,7 +81,7 @@ app_ui <- function(request) {
   )
 }
 
-app_ui <- shinymanager::secure_app(app_ui, enable_admin = TRUE)
+#app_ui <- shinymanager::secure_app(app_ui, enable_admin = TRUE)
 
 #' Add external Resources to the Application
 #'

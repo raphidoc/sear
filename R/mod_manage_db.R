@@ -108,6 +108,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `Wavelength` REAL,
           `Rrs` REAL,
           `KLu` REAL,
+          `KLu_loess` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
             REFERENCES Metadata (UUID)

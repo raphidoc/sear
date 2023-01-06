@@ -265,6 +265,13 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             )
           ), sep = "\n")
 
+          qryKLu_loess <- glue::glue_sql_collapse(purrr::pmap_chr(
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$KLu_loess),
+            .f = ~ glue::glue(
+              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+            )
+          ), sep = "\n")
+
           # Assemble query
           qry <- glue::glue_sql(
             "UPDATE HOCRL2
@@ -274,6 +281,10 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                   END,
                 KLu = CASE
                   ", qryKLu, "
+                  ELSE KLu
+                  END,
+                KLu_loess = CASE
+                  ", qryKLu_loess, "
                   ELSE KLu
                   END
             WHERE UUID = '", Obs$Metadata$UUID, "';"

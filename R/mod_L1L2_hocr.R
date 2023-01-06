@@ -179,10 +179,15 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
 
       KLuplot <- Obs$HOCR$L2 %>%
-        plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
+        plot_ly(x = ~Wavelength) %>%
+        add_lines(y = ~KLu, showlegend = F)
 
-      subplot(Rrsplot, KLuplot, shareX = T) %>%
+      if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
+        KLuplot <- KLuplot %>%
+          add_trace(x = ~Wavelength, y = ~KLu_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash'))
+      }
+
+      ply <- subplot(Rrsplot, KLuplot, shareX = T) %>%
         add_annotations(
           text = ~ TeX("\\text{Wavelength [nm]}"),
           x = 0.4,
@@ -203,6 +208,10 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T)
+
+      ply$x$source <- "KLu"
+
+      ply
     })
 
 
@@ -225,7 +234,24 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       input$SmoothKLu,
       {
 
-        browser()
+        KLu <- loess(
+          KLu ~ Wavelength,
+          Obs$HOCR$L2,
+          na.action = "na.omit",
+          span = 0.2
+          )
+
+        Obs$HOCR$L2$KLu_loess <- predict(KLu, Obs$HOCR$L2$Wavelength)
+
+        # plotlyProxy("KLu", session) %>%
+        #         plotlyProxyInvoke(
+        #           "addTraces",
+        #           list(
+        #             list(
+        #               y = Obs$HOCR$L2$KLu_loess
+        #             )
+        #           )
+        #         )
 
       }
     )

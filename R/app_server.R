@@ -30,19 +30,19 @@ app_server <- function(input, output, session) {
 
   # call the server part
   # check_credentials returns a function to authenticate users
-  res_auth <- shinymanager::secure_server(
-    check_credentials = check_credentials(
-      "~/sear_project/database.sqlite",
-      passphrase = key_get("database", "sear")
-    ),
-    keep_token = TRUE
-  )
-
-  observe(message(getwd()))
-
-  output$auth_output <- renderPrint({
-    reactiveValuesToList(res_auth)
-  })
+  # res_auth <- shinymanager::secure_server(
+  #   check_credentials = check_credentials(
+  #     "~/sear_project/database.sqlite",
+  #     passphrase = key_get("database", "sear")
+  #   ),
+  #   keep_token = TRUE
+  # )
+  #
+  # observe(message(getwd()))
+  #
+  # output$auth_output <- renderPrint({
+  #   reactiveValuesToList(res_auth)
+  # })
 
 # Global objects ----------------------------------------------------------
 
