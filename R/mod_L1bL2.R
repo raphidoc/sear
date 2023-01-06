@@ -53,6 +53,10 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
         tabPanel(
           "BioSonic",
           mod_L1L2_biosonic_ui(ns("L1L2_biosonic"))
+        ),
+        tabPanel(
+          "Rb",
+          mod_bottom_reflectance_ui(ns("bottom_reflectance"))
         )
       )
 
@@ -148,6 +152,11 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
     # BioSonic ----------------------------------------------------------------
 
     mod_L1L2_biosonic_server("L1L2_biosonic", Obs)
+
+
+    # Bottom Reflectance ------------------------------------------------------
+
+    mod_bottom_reflectance_server("bottom_reflectance", Obs)
 
 
 # Module output -----------------------------------------------------------

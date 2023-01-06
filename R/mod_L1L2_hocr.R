@@ -12,7 +12,8 @@ mod_L1L2_hocr_ui <- function(id) {
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 320),
     uiOutput(ns("ProL2")),
-    plotlyOutput(ns("AOPs"), height = 250)
+    plotlyOutput(ns("AOPs"), height = 250),
+    uiOutput(ns("SmoothKLu"))
   )
 }
 
@@ -149,7 +150,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       actionButton(ns("ProcessL2"), "Process L2")
     })
 
-    # HOCR AOPs computation
+
+# Compute AOPs ------------------------------------------------------------
     observeEvent(
       input$ProcessL2,
       {
@@ -202,6 +204,33 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         config(mathjax = "cdn", displayModeBar = T)
     })
+
+
+
+# Smooth KLu --------------------------------------------------------------
+    output$SmoothKLu <- renderUI({
+
+      validate(need({
+        Settings$HOCR$WaveMin() &
+        Settings$HOCR$WaveMax() &
+        Settings$HOCR$WaveStep() &
+        Settings$HOCR$Z1Depth() &
+        Settings$HOCR$Z1Z2Depth()
+      }, message = "Need KLu"))
+
+      actionButton(ns("SmoothKLu"), "Smooth KLu")
+    })
+
+    observeEvent(
+      input$SmoothKLu,
+      {
+
+        browser()
+
+      }
+    )
+
+
 
   })
 }
