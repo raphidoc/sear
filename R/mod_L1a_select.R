@@ -158,9 +158,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       ignoreInit = F,
       {
 
-        if (is.list(event_data("plotly_selected", source = "map"))) {
-          invalidateLater(1)
-        }
+        validate(need(!identical(event_data("plotly_selected", source = "map"), list()), message = "No data selected"))
 
         # curvenumber 0 is the Applanix trace
         ID <- event_data("plotly_selected", source = "map") %>%

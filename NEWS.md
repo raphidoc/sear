@@ -1,3 +1,9 @@
+# sear 0.1.0.9
+
+* Added `KLu_loess` smoothing and SQLite DB entry with DB migration script in `sear_dev`.
+
+* Added proper validation of `SelID()` in `L1a_select`.
+
 # sear 0.1.0
 
 * First pre prod version of `sear`

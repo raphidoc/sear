@@ -10,9 +10,9 @@
 mod_L1L2_hocr_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    plotlyOutput(ns("HOCRL1b"), height = 320),
+    plotlyOutput(ns("HOCRL1b"), height = 350),
     uiOutput(ns("ProL2")),
-    plotlyOutput(ns("AOPs"), height = 250),
+    plotlyOutput(ns("AOPs"), height = 320),
     uiOutput(ns("SmoothKLu"))
   )
 }
@@ -97,9 +97,9 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.035) %>%
         add_annotations(
-          text = ~ TeX("\\text{Wavelength [nm]}"),
-          x = 0.4,
-          y = -0.1,
+          text = ~"Wavelength [nm]",
+          x = 0.5,
+          y = -0.2,
           yref = "paper",
           xref = "paper",
           xanchor = "middle",
@@ -211,7 +211,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       ply$x$source <- "KLu"
 
-      ply
+      widgetframe::frameableWidget(ply)
     })
 
 

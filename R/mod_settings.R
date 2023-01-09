@@ -71,7 +71,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
           WaveStep = input$WaveStep,
           Z1Depth = input$Z1Depth,
           Z1Z2Depth = input$Z1Z2Depth,
-          DateTime = as.numeric(as.POSIXlt(Sys.time(), tz = "UTC")),
+          DateTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
           UUID = SearProj$AccessUUID()
         )
 

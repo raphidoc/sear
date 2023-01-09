@@ -68,15 +68,16 @@ The idea behind this application software originated from a conversation with my
 
 > A consistent theory is one that does not lead to a logical contradiction.
 
-Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problem is best solved today by web-based application. That's why sear is such an application.
+Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problems is best solved today by web-based application. That's why sear is such an application.
 
-This software is originally developed to provide a common ground in ocean optics science data management and processing. If your willing for us to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future. We may be able to leave behind the need to reinvent the wheel each new generation of young scientist.
+This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. NASA TOPS program). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
+(Also it's often by reinventing the wheel that you understand how it work and that you can appropriate some principle to develop new idea)
 
 # Dev Test and Demo dataset
 
-Because of continous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
-To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is addded when loading the final .bin and .txt files, it takes XXX minutes to compute.
-To develop, test and demonstrate the software capabilities, a small dataset is needed. As the most complete to date (2022), with the full data logger suit (except suna) plus BioSonic and r2Sonic, and spanning over multiple days, the AlgaeWise(2022) data offer the best option.
+Because of continuous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
+To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is added when loading the final .bin and .txt files, it takes XXX minutes to compute.
+To develop, test and demonstrate the software capabilities, a small data set is needed. As the most complete to date (2022), with the full data logger suit (except SUNA) plus BioSonic and r2Sonic, and spanning over multiple days, the AlgaeWise(2022) data offer the best option.
 
 ## Reduce raw data
 
@@ -90,6 +91,10 @@ reduced <- "/D/Data/sear_test_data/reduced/"
 
 
 TODO: Describe the selected data and explain it's utility (the logic of the selection)
+
+* Each different day to showcase the filtering and selection capabilities
+* Shallow (~1.5m) and deep water (~20m)
+* Full range of boat solar azimuth
 
 ```{r eval=FALSE, include=TRUE}
 # Cloudy and wave that day
@@ -180,9 +185,9 @@ trim_MTELog(If,Of,list(D02,D05,D0615,D0618,D07,D08), n_head = 1)
 
 Count Number of byte by file, divide by number of byte per packets, find position of packets to extract with the time index.
 
-I just realize now that the header size is equal to any packet size. Now it make a lot of sense why there was so much empty space after the header !
+I just realize now that the header size is equal to any packet size (512 bytes). Now it make a lot of sense why there was so much empty space after the header !
 The fixed size memory entry is 512 bytes. I would like to learn more about that !
-Wah ! new discovery ! the `dd` command use 512 as a default number of bytes for the `-bs` argument !
+Wah ! The `dd` command use 512 as a default number of bytes for the `-bs` argument !
 Whats behind this number !?
 
 ```{r eval=FALSE, include=TRUE}
@@ -391,7 +396,9 @@ The HOCR dark is a list of shutter dark values interpolated to the minute to app
 
 ### BioSonic
 
-Just select the .csv file processed with the dedicated software (biosonic Visual Aquatic)
+Just select the .csv file processed with the dedicated software (biosonic Visual Aquatic).
+
+TODO: Check the reference for the elevation values outputted by this software
 
 ### Hydroball
 
@@ -430,9 +437,13 @@ From this `MainLog`, the selection display column in the dashboard body is popul
 
 The points selected on the plotly map (lasso or box) will be processed when the `Process to L1b` button is clicked.
 
-NEED: List the required and optional NMEA string that sear will use.
+### NMEA string
 
--GPGGA
+TODO: List the required and optional NMEA string that sear will use.
+
+*Mandatory*:
+*GPGGA
+*GPVTG
 
 ### DateTime filtering
 
@@ -517,7 +528,7 @@ Could use ECMWF services (climate reanalysis) to add meteorological data to the 
 
 ## golem organization
 
-This shiny app will become quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task.
+This shiny app is becoming quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task.
 
 * fct_ : files containing the function of the app, they defined the data parsing, tidying and computation logic.
 * mod_ : files containing both frontend (`_ui` function) and backend (`_server` function) shiny logic. Inputs, reactive value, observer and consumer are defined here.
@@ -532,7 +543,63 @@ It's also there than global options such as `options(digits.secs = 3)` (to displ
 
 # SQLite backend
 
-Present the DB schema here
+Connectivity to the SQLite persistent data storage is defined in `mod_manage_db` and `mod_manage_obs`.
+
+## DB schema
+
+The SQLite scheme is defined in `mod_manage_db`.
+Present the DB scheme here
+
+## DB migration
+
+As the app evolve and integrate new variables, old databases schema need to migrate to new schema. This section keep tracks of those changes and give the SQL migration scripts used.
+
+Adapted from: https://stackoverflow.com/questions/4253804/how-do-i-add-a-new-column-in-between-two-columns
+
+### V0.1.0 -> 
+
+Create new table with the added column, here KLu_loess
+```{sql}
+CREATE TABLE NewHOCRL2 (
+  `Wavelength` REAL,
+  `Rrs` REAL,
+  `KLu` REAL,
+  `KLu_loess` REAL,
+  `UUID` TEXT,
+  FOREIGN KEY (UUID)
+    REFERENCES Metadata (UUID)
+    ON DELETE CASCADE
+);
+```
+
+Insert the old data in the new table
+```{sql}
+INSERT INTO NewHOCRL2 (
+  `Wavelength` REAL,
+  `Rrs` REAL,
+  `KLu` REAL,
+  `UUID` TEXT
+) SELECT   
+  `Wavelength` REAL,
+  `Rrs` REAL,
+  `KLu` REAL,
+  `UUID` TEXT
+FROM HOCRL2;
+```
+
+*Check that the insertion is correct*
+Delete the old table.
+```{sql}
+DROP TABLE HOCRL2;
+```
+
+Rename the new table.
+```{sql}
+ALTER TABLE NewHOCRL2 RENAME TO HOCRL2;
+```
+
+
+# SQLite frontend
 
 ## Save
 
