@@ -54,6 +54,7 @@ HOCRTimeIndex <- purrr::map(
     zone = "UTC")
 )
 ```
+
 # Foreword
 
 The idea behind this application software originated from a conversation with myself during the first year of my master thesis.
@@ -70,7 +71,7 @@ The idea behind this application software originated from a conversation with my
 
 Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problems is best solved today by web-based application. That's why sear is such an application.
 
-This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. NASA TOPS program). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
+This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. [https://science.nasa.gov/open-science/transform-to-open-science](NASA TOPS program)). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
 (Also it's often by reinventing the wheel that you understand how it work and that you can appropriate some principle to develop new idea)
 
 # Dev Test and Demo dataset

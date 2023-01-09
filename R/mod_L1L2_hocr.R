@@ -95,11 +95,11 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       Es <- Es$Plot
 
-      p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.035) %>%
+      p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.038) %>%
         add_annotations(
           text = ~"Wavelength [nm]",
           x = 0.5,
-          y = -0.2,
+          y = -0.14,
           yref = "paper",
           xref = "paper",
           xanchor = "middle",
@@ -109,9 +109,9 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text ="Es" #TeX("\\text{E}_\\text{s}")
+          yaxis = list(title = list(text ="Es [W.m-2]" #TeX("\\text{E}_\\text{s}")
                                     )),
-          yaxis2 = list(title = list(text = "Lu" #TeX("\\text{L}_\\text{u}")
+          yaxis2 = list(title = list(text = "Lu [W.sr-1.m-2]" #TeX("\\text{L}_\\text{u}")
                                      )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
@@ -187,11 +187,11 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           add_trace(x = ~Wavelength, y = ~KLu_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash'))
       }
 
-      ply <- subplot(Rrsplot, KLuplot, shareX = T) %>%
+      ply <- subplot(Rrsplot, KLuplot, shareX = T, titleX = F) %>%
         add_annotations(
-          text = ~ TeX("\\text{Wavelength [nm]}"),
-          x = 0.4,
-          y = -0.1,
+          text = ~"Wavelength [nm]", #TeX("\\text{Wavelength [nm]}"),
+          x = 0.5,
+          y = -0.15,
           yref = "paper",
           xref = "paper",
           xanchor = "middle",
@@ -201,9 +201,9 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text = "Rrs"#TeX("\\text{R}_\\text{rs}")
+          yaxis = list(title = list(text = "Rrs [sr-1]"#TeX("\\text{R}_\\text{rs}")
                                     )),
-          yaxis2 = list(title = list(text = "Klu"#TeX("\\text{K}_\\text{Lu}")
+          yaxis2 = list(title = list(text = "Klu [m-1]"#TeX("\\text{K}_\\text{Lu}")
                                      )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
