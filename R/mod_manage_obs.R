@@ -174,6 +174,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       req(input$Save),
       {
 
+        # Sanitize tables ---------------------------------------------------------
+        # Remove variables used for dev of Rb retrieval that don't belong in tables
+
+        Obs$HOCR$L2 <- Obs$HOCR$L2 %>%
+          select(Wavelength,Rrs,Rrs_loess,KLu,KLu_loess,UUID)
+
         # Does UUID is present in Metadata colnames ?
         # Now it is initiated on start so always TRUE
         UUIDPresent <- any(str_detect(names(Obs$Metadata), "UUID"))
@@ -258,6 +264,13 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             )
           ), sep = "\n")
 
+          qryRrs_loess <- glue::glue_sql_collapse(purrr::pmap_chr(
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$Rrs_loess),
+            .f = ~ glue::glue(
+              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+            )
+          ), sep = "\n")
+
           qryKLu <- glue::glue_sql_collapse(purrr::pmap_chr(
             list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$KLu),
             .f = ~ glue::glue(
@@ -279,13 +292,17 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                   ", qryRrs, "
                   ELSE Rrs
                   END,
+                  Rrs_loess = CASE
+                  ", qryRrs_loess, "
+                  ELSE Rrs_loess
+                  END,
                 KLu = CASE
                   ", qryKLu, "
                   ELSE KLu
                   END,
                 KLu_loess = CASE
                   ", qryKLu_loess, "
-                  ELSE KLu
+                  ELSE KLu_loess
                   END
             WHERE UUID = '", Obs$Metadata$UUID, "';"
           )

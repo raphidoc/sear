@@ -172,7 +172,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           showModal(modalDialog(
             title = "Invalid selection",
             "You selected discontinous data, please select only contiguous points"
-          ))
+          ), easyClose = TRUE)
           # invalidateLater(1)
           ID
         } else {
@@ -199,7 +199,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           showModal(modalDialog(
             title = "Invalid click",
             "You didn't click on an Obs feature, no UUID attatched"
-          ))
+          ), easyClose = TRUE)
           invalidateLater(1)
         } else {
           SelUUID(UUID)

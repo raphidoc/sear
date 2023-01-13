@@ -12,8 +12,8 @@ mod_L1L2_hocr_ui <- function(id) {
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 350),
     uiOutput(ns("ProL2")),
-    plotlyOutput(ns("AOPs"), height = 320),
-    uiOutput(ns("SmoothKLu"))
+    checkboxInput(ns("Smooth"), "Smooth", value = TRUE, width = NULL),
+    plotlyOutput(ns("AOPs"), height = 320)
   )
 }
 
@@ -111,7 +111,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           font = PlyFont,
           yaxis = list(title = list(text ="Es [W.m-2]" #TeX("\\text{E}_\\text{s}")
                                     )),
-          yaxis2 = list(title = list(text = "Lu [W.sr-1.m-2]" #TeX("\\text{L}_\\text{u}")
+          yaxis2 = list(title = list(text = "Lu [W.m-2.sr-1]" #TeX("\\text{L}_\\text{u}")
                                      )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
@@ -165,7 +165,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         Z1Depth <- Settings$HOCR$Z1Depth()
         Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
 
-        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth)
+        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+                               input$Smooth, Obs)
       }
     )
 
@@ -176,15 +177,20 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
+        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = T)
+
+      if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
+        Rrsplot <- Rrsplot %>%
+          add_trace(x = ~Wavelength, y = ~Rrs_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash', color = 'red'))
+      }
 
       KLuplot <- Obs$HOCR$L2 %>%
         plot_ly(x = ~Wavelength) %>%
-        add_lines(y = ~KLu, showlegend = F)
+        add_lines(y = ~KLu, showlegend = T)
 
       if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
         KLuplot <- KLuplot %>%
-          add_trace(x = ~Wavelength, y = ~KLu_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash'))
+          add_trace(x = ~Wavelength, y = ~KLu_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash', color = 'red'))
       }
 
       ply <- subplot(Rrsplot, KLuplot, shareX = T, titleX = F) %>%
@@ -229,34 +235,6 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       actionButton(ns("SmoothKLu"), "Smooth KLu")
     })
-
-    observeEvent(
-      input$SmoothKLu,
-      {
-
-        KLu <- loess(
-          KLu ~ Wavelength,
-          Obs$HOCR$L2,
-          na.action = "na.omit",
-          span = 0.2
-          )
-
-        Obs$HOCR$L2$KLu_loess <- predict(KLu, Obs$HOCR$L2$Wavelength)
-
-        # plotlyProxy("KLu", session) %>%
-        #         plotlyProxyInvoke(
-        #           "addTraces",
-        #           list(
-        #             list(
-        #               y = Obs$HOCR$L2$KLu_loess
-        #             )
-        #           )
-        #         )
-
-      }
-    )
-
-
 
   })
 }

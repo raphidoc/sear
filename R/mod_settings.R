@@ -129,6 +129,9 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
 
     })
 
+    #TODO: Validate input unit (meter) based on reasonable value assumption.
+    # For example if input = 15, user probably want to say 0.15 ... from personal experience
+
     output$PositionHOCR <- renderUI({
       req(SearProj$History())
 
@@ -143,7 +146,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
       tagList(
         numericInput(
           ns("Z1Depth"),
-          "LuZ1Depth",
+          "LuZ1Depth [m]",
           Z1Depth,
           min = NA,
           max = NA,
@@ -152,7 +155,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
         ),
         numericInput(
           ns("Z1Z2Depth"),
-          "Depth difference LuZ1-LuZ2",
+          "Depth difference LuZ1-LuZ2 [m]",
           Z1Z2Depth,
           min = NA,
           max = NA,

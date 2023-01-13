@@ -74,6 +74,12 @@ Software as a Service offer a solution to have a common architecture and code ba
 This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. [https://science.nasa.gov/open-science/transform-to-open-science](NASA TOPS program)). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
 (Also it's often by reinventing the wheel that you understand how it work and that you can appropriate some principle to develop new idea)
 
+The name "sear" come from a play of word with "sea R" and "seer", meaning having the power of vision (future or whatever). I discover later that in English sear is a verb meaning:
+
+* To burn something with sudden intense heat
+* An image, emotion, or feeling having a sudden and strong effect on someone
+
+
 # Dev Test and Demo dataset
 
 Because of continuous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
@@ -564,6 +570,7 @@ Create new table with the added column, here KLu_loess
 CREATE TABLE NewHOCRL2 (
   `Wavelength` REAL,
   `Rrs` REAL,
+  `Rrs_loess` REAL,
   `KLu` REAL,
   `KLu_loess` REAL,
   `UUID` TEXT,
@@ -576,15 +583,17 @@ CREATE TABLE NewHOCRL2 (
 Insert the old data in the new table
 ```{sql}
 INSERT INTO NewHOCRL2 (
-  `Wavelength` REAL,
-  `Rrs` REAL,
-  `KLu` REAL,
-  `UUID` TEXT
+  `Wavelength`,
+  `Rrs`,
+  `KLu`,
+  `KLu_loess`,
+  `UUID`
 ) SELECT   
-  `Wavelength` REAL,
-  `Rrs` REAL,
-  `KLu` REAL,
-  `UUID` TEXT
+  `Wavelength`,
+  `Rrs`,
+  `KLu`,
+  `KLu_loess`,
+  `UUID`
 FROM HOCRL2;
 ```
 

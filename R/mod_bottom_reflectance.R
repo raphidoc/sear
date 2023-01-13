@@ -39,22 +39,46 @@ mod_bottom_reflectance_server <- function(id, Obs){
         y1 = 1
       )
 
-      #browser()
+       browser()
+      #
+      # KZ <- Obs$HOCR$L2
+      # test <- KZ %>%
+      #   mutate(
+      #     KZ = KLu_loess*(Obs$BioSonic$L2$BottomElevation_m),
+      #     eKZ = exp(-KZ),
+      #     Rw = pi*Rrs_loess,
+      #     Rb = Rw/eKZ
+      #     )
 
-      KZ <- Obs$HOCR$L2$KLu_loess * Obs$BioSonic$L2$BottomElevation_m
+      KZ <- Obs$HOCR$L2$KLu_loess * (Obs$BioSonic$L2$BottomElevation_m)
 
-      #Rb <- Obs$HOCR$L2$Rrs/exp(1)^-KZ
-
-      Obs$HOCR$L2 <- Obs$HOCR$L2 %>%
+      Obs$HOCR$L2 <- isolate(Obs$HOCR$L2) %>%
         mutate(
-          Rb = Rrs/exp(1)^(-KZ)
+          RbI = pi*Rrs_loess/exp(-KZ)
         )
 
       ply <- Obs$HOCR$L2 %>% plot_ly() %>%
         add_lines(
           x = ~Wavelength,
-          y = ~Rb,
-          showlegend = F,
+          y = ~RbI,
+          showlegend = T,
+          name = "RbI"
+        ) %>% add_lines(
+          x = ~Wavelength,
+          y = ~RbII,
+          showlegend = T,
+          name = "RbII",
+        ) %>%
+        add_lines(
+          x = ~Wavelength,
+          y = ~pi*Rrs_loess,
+          showlegend = T,
+          name = "Rw",
+          fill = 'tonexty'
+        ) %>%
+        layout(
+          yaxis =list(range=c(0,100)),
+          xaxis =list(range=c(400,750))
         )
 
       # Set source for selection event
