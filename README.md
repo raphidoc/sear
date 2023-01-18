@@ -14,7 +14,7 @@
   [![Codecov test coverage](https://codecov.io/gh/raphidoc/sear/branch/main/graph/badge.svg)](https://app.codecov.io/gh/raphidoc/sear?branch=main)
   <!-- badges: end -->
   
-The sear package is primarly designed to manage and process data for the [FORSCE SeaDoo project](https://ldgizc.uqar.ca/Web/infrastructures-et-equipements/forsce#forsce-english). Along it's development the idea come that it could be more, something like a platform to manage and process ocean optic data coming from any numbers of instruments and platform. This could be achieve by defining the architecture common to all ocean optic projects, the specifics of each instrument and platform and the method to be applied upon them. It would improve the efficiency of the analysts and give an solution to common problems faced with data management, processing and quality control.
+The sear package is primarly designed to manage and process data for the [FORSCE SeaDoo project](https://ldgizc.uqar.ca/Web/infrastructures-et-equipements/forsce#forsce-english). Along it's development the idea come that it could be more, something like a platform to manage and process ocean optic data coming from any numbers of instruments and platform. This could be achieve by defining the architecture common to all ocean optic projects, the specifics of each instrument and platform and the method to be applied upon them. It would improve the efficiency of the analysts and give a solution to common problems faced with data management, processing and quality control.
   
 ## Code of Conduct
   
