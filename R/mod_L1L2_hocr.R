@@ -12,7 +12,8 @@ mod_L1L2_hocr_ui <- function(id) {
   tagList(
     plotlyOutput(ns("HOCRL1b"), height = 350),
     uiOutput(ns("ProL2")),
-    checkboxInput(ns("Smooth"), "Smooth", value = TRUE, width = NULL),
+    checkboxInput(ns("Loess"), "Loess", value = TRUE, width = NULL),
+    numericInput(ns("Span"), "span", 0.1, step = 0.01),
     plotlyOutput(ns("AOPs"), height = 320)
   )
 }
@@ -166,7 +167,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
 
         Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
-                               input$Smooth, Obs)
+                               input$Loess,input$Span, Obs)
       }
     )
 
@@ -177,7 +178,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = T)
+        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = T) %>%
+        layout(shapes = BlackSquare)
 
       if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
         Rrsplot <- Rrsplot %>%
@@ -186,7 +188,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       KLuplot <- Obs$HOCR$L2 %>%
         plot_ly(x = ~Wavelength) %>%
-        add_lines(y = ~KLu, showlegend = T)
+        add_lines(y = ~KLu, showlegend = T) %>%
+        layout(shapes = BlackSquare)
 
       if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
         KLuplot <- KLuplot %>%

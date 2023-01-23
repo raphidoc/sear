@@ -10,7 +10,8 @@
 mod_parse_data_ui <- function(id){
   ns <- NS(id)
   tagList(
-    uiOutput(outputId = ns("TabPanel"))
+    uiOutput(outputId = ns("TabPanel")),
+    textOutput(ns("SurveyDuration"))
   )
 }
 
@@ -90,9 +91,9 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           PotMainLog <- str_subset(ParsedFiles(), NameMainLog)
 
-          PrimMainLog <- read_csv(PotMainLog)
+          OldMainLog <- read_csv(PotMainLog)
 
-          MainLog(PrimMainLog)
+          MainLog(OldMainLog)
 
         }
 
@@ -131,30 +132,43 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           progress$set(value = 0, message = "Updating MainLog: ")
 
+          #browser()
+
           PrimBioSonic <- BioSonic$BioSonic()
 
-          # HOCR often record 2/3 bin per second.
-          # Should we reduce the time index by second to optimize computation time ?
-          # Also this time index represents all three hocr, could start by keeping only one
+          # Keep only one record by second (minimum necessary to compare against)
+          HOCRTimeIndex <- unique(MTELog$HOCRTimeIndex())
 
           progress$set(value = 0.1, detail = "HOCR synthesis")
-          DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, MTELog$HOCRTimeIndex())
+          DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, HOCRTimeIndex)
           message("HOCR synthesis done")
 
+
+          SBE19TimeIndex <- ymd_hms(unique(format(MTELog$SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
+
           progress$set(value = 0.5, detail = "SBE19 synthesis")
-          DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, MTELog$SBE19()$DateTime)
+          DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, SBE19TimeIndex)
           message("SBE19 synthesis done")
 
+
+          SeaOWLTimeIndex <- ymd_hms(unique(format(MTELog$SeaOWL()$DateTime, "%Y-%m-%d %H:%M:%S")))
+
           progress$set(value = 0.6, detail = "SeaOWL synthesis")
-          DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, MTELog$SeaOWL()$DateTime)
+          DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, SeaOWLTimeIndex)
           message("SeaOWL synthesis done")
 
+
+          BBFL2TimeIndex <- ymd_hms(unique(format(MTELog$BBFL2()$DateTime, "%Y-%m-%d %H:%M:%S")))
+
           progress$set(value = 0.7, detail = "BBFL2 synthesis")
-          DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, MTELog$BBFL2()$DateTime)
+          DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, BBFL2TimeIndex)
           message("BBFL2 synthesis done")
 
+
+          BioSonicTimeIndex <- ymd_hms(unique(format(PrimBioSonic$DateTime, "%Y-%m-%d %H:%M:%S")))
+
           progress$set(value = 0.8, detail = "BioSonic synthesis")
-          DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, PrimBioSonic$DateTime)
+          DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, BioSonicTimeIndex)
           message("BioSonic synthesis done")
 
           progress$set(value = 0.9, detail = "Saving")
@@ -196,6 +210,16 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
       }
     )
+
+    output$SurveyDuration <- renderText({
+
+      validate(need(MainLog(), message = "Need MainLog"))
+
+      Time <- MainLog()$DateTime
+
+      as.character(dseconds(length(Time)))
+
+    })
 
 # Module output -----------------------------------------------------------
 

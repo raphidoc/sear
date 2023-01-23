@@ -467,7 +467,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 #'
 #' @noRd
 L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
-                    smooth, Obs) {
+                    Loess, Span, Obs) {
 
   L1bDataWide <- L1bData %>%
     mutate(AproxData = purrr::map(
@@ -575,13 +575,15 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
       names_transform = list(Wavelength = as.numeric)
     )
 
-  if (smooth) {
+  #browser()
+
+  if (Loess) {
 
     KLuloess <- loess(
       KLu ~ Wavelength,
       data = KLuLong,
       na.action = "na.omit",
-      span = 0.2
+      span = Span
     )
 
     KLuLong <- KLuLong %>%
@@ -600,32 +602,6 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
 
   }
 
-
-# RbII computation --------------------------------------------------------
-  EsLong <- L1bAproxLong %>%
-    select(!AproxData) %>%
-    filter(SN == "1397" | SN == "1396") %>%
-    unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime|CalData|UUID|Type")) %>%
-    rename(Es = Channels)
-
-  LuZ2Long <- L1bAproxLong %>%
-    select(!AproxData) %>%
-    filter(SN == "1416" | SN == "1414") %>%
-    unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime|CalData|UUID|Type")) %>%
-    rename(LuZ2 = Channels)
-
-  RbII <- left_join(KLuLong, EsLong, by = c("Wavelength")) %>%
-    left_join(LuZ2Long, by = c("Wavelength"))
-
-  RbII <- RbII %>%
-    mutate(
-      Esb = Es/exp(-KLu_loess*Obs$BioSonic$L2$BottomElevation_m),
-      Lub = LuZ2/exp(-KLu_loess*Obs$BioSonic$L2$BottomElevation_m),
-      RbII = Lub/Esb
-    )
-
   #Z1Depth <- 0.10 # 10 cm
 
   Lw <- 0.54 * LuZ1 / exp(-Z1Depth * KLuWide)
@@ -642,13 +618,13 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
       names_transform = list(Wavelength = as.numeric)
     )
 
-  if (smooth) {
+  if (Loess) {
 
     Rrsloess <- loess(
       Rrs ~ Wavelength,
       data = RrsLong,
       na.action = "na.omit",
-      span = 0.2
+      span = Span
     )
 
     RrsLong <- RrsLong %>%
@@ -658,8 +634,43 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
 
   }
 
-  L2Data <- left_join(RrsLong, RbII, by = "Wavelength") #%>%
-   # left_join(, by = "Wavelength")
+  L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
+
+
+  # RbII computation --------------------------------------------------------
+
+  if(!is.null(Obs$BioSonic$L2$BottomElevation_m)) {
+
+    EsLong <- L1bAproxLong %>%
+      select(!AproxData) %>%
+      filter(SN == "1397" | SN == "1396") %>%
+      unnest(cols = c(IntData)) %>%
+      select(!matches("Instrument|SN|DateTime|CalData|UUID|Type")) %>%
+      rename(Es = Channels)
+
+    LuZ2Long <- L1bAproxLong %>%
+      select(!AproxData) %>%
+      filter(SN == "1416" | SN == "1414") %>%
+      unnest(cols = c(IntData)) %>%
+      select(!matches("Instrument|SN|DateTime|CalData|UUID|Type")) %>%
+      rename(LuZ2 = Channels)
+
+    RbII <- left_join(KLuLong, EsLong, by = c("Wavelength")) %>%
+      left_join(LuZ2Long, by = c("Wavelength"))
+
+    RbII <- RbII %>%
+      mutate(
+        Edb = Es/exp(-KLu_loess*Obs$BioSonic$L2$BottomElevation_m),
+        Lub = LuZ2/exp(-KLu_loess*Obs$BioSonic$L2$BottomElevation_m),
+        RbII = (pi*Lub)/Edb
+      ) %>%
+      select(Wavelength, RbII)
+
+    L2Data <- L2Data %>%
+      left_join(RbII, by = "Wavelength")
+
+  }
+
 
   # Populate UUID if exist
   if (any(names(L1bData) == "UUID")) {

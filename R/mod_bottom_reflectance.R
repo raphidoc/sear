@@ -39,7 +39,6 @@ mod_bottom_reflectance_server <- function(id, Obs){
         y1 = 1
       )
 
-       browser()
       #
       # KZ <- Obs$HOCR$L2
       # test <- KZ %>%
@@ -63,12 +62,12 @@ mod_bottom_reflectance_server <- function(id, Obs){
           y = ~RbI,
           showlegend = T,
           name = "RbI"
-        ) %>% add_lines(
-          x = ~Wavelength,
-          y = ~RbII,
-          showlegend = T,
-          name = "RbII",
-        ) %>%
+        ) %>% #add_lines(
+        #   x = ~Wavelength,
+        #   y = ~RbII,
+        #   showlegend = T,
+        #   name = "RbII",
+        # ) %>%
         add_lines(
           x = ~Wavelength,
           y = ~pi*Rrs_loess,
@@ -77,7 +76,8 @@ mod_bottom_reflectance_server <- function(id, Obs){
           fill = 'tonexty'
         ) %>%
         layout(
-          yaxis =list(range=c(0,100)),
+          shapes = BlackSquare,
+          yaxis =list(range=c(0,1)),
           xaxis =list(range=c(400,750))
         )
 

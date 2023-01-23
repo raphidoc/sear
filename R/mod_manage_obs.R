@@ -166,7 +166,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       }
     )
 
-
 # Save to SQLite ----------------------------------------------------------
     UUID <- reactiveVal()
 
@@ -174,11 +173,13 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       req(input$Save),
       {
 
+        #browser()
+
         # Sanitize tables ---------------------------------------------------------
         # Remove variables used for dev of Rb retrieval that don't belong in tables
 
         Obs$HOCR$L2 <- Obs$HOCR$L2 %>%
-          select(Wavelength,Rrs,Rrs_loess,KLu,KLu_loess,UUID)
+          select(matches("Wavelength|Rrs|Rrs_loess|KLu|KLu_loess|RbI|UUID"))
 
         # Does UUID is present in Metadata colnames ?
         # Now it is initiated on start so always TRUE
@@ -285,6 +286,13 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             )
           ), sep = "\n")
 
+          qryRbI <- glue::glue_sql_collapse(purrr::pmap_chr(
+            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$RbI),
+            .f = ~ glue::glue(
+              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+            )
+          ), sep = "\n")
+
           # Assemble query
           qry <- glue::glue_sql(
             "UPDATE HOCRL2
@@ -292,7 +300,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                   ", qryRrs, "
                   ELSE Rrs
                   END,
-                  Rrs_loess = CASE
+                Rrs_loess = CASE
                   ", qryRrs_loess, "
                   ELSE Rrs_loess
                   END,
@@ -303,6 +311,10 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                 KLu_loess = CASE
                   ", qryKLu_loess, "
                   ELSE KLu_loess
+                  END,
+                RbI = CASE
+                  ", qryRbI, "
+                  ELSE RbI
                   END
             WHERE UUID = '", Obs$Metadata$UUID, "';"
           )
@@ -338,11 +350,14 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
 
           # there is no BioSonic data manipulation for now so no need to update
 
+
+# Update feedback UI ------------------------------------------------------
+
           # Check that the number of line affected is correct, should probably improve this
           # MetaUp must be only one line affected, if more means UUID collision
           # L1bUp == 3 * 137 wavelengths * bins number
           # L2Up == User input wavelength
-          test <- all(MetaUp == 1, unique(HOCRL1bUp) == 411, HOCRL2Up == 150)
+          test <- all(MetaUp == 1)#, unique(HOCRL1bUp) == 411, HOCRL2Up == 150)
 
           # Feedback to the user
           session$sendCustomMessage(

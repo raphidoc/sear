@@ -9,7 +9,7 @@ read_biosonic <- function(CSVFile) {
 
   BioSonic <- read_delim(
     CSVFile,
-    delim = ";"
+    delim = ","
     ) %>%
     rename(DateTime = Time) %>%
     mutate(DateTime = ymd_hms(DateTime))

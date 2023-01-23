@@ -18,7 +18,8 @@ mod_L1a_select_ui <- function(id) {
       ),
       column(
         width = 6,
-        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100)#,
+        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100),
+        textOutput(ns("SurveyDuration"))#,
         #selectInput(ns("Style"), "Select a mapbox style", MapStyles)
       )
     ),
@@ -54,7 +55,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           choiceValues = NULL
         ),
         dateRangeInput(
-          ns("DateFilter"), "DateFilter",
+          ns("DateFilter"), "Date",
           start = min(lubridate::date(MainLog()$DateTime)),
           end = max(lubridate::date(MainLog()$DateTime)),
           min = min(lubridate::date(MainLog()$DateTime)),
@@ -77,8 +78,8 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           width = NULL,
           step = 1
         ),
-        sliderInput(ns("SolAzmLimit"), "BoatSolAzm", value = c(90, 180), min = 0, max = 360),
-        numericInput(ns("SpeedLimit"), "Speed", 6, step = 0.1)
+        sliderInput(ns("SolAzmLimit"), "BoatSolAzm [degree]", value = c(90, 180), min = 0, max = 360),
+        numericInput(ns("SpeedLimit"), "Speed [kn]", 6, step = 0.1)
       )
     })
 
@@ -171,8 +172,9 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         if (!all(abs(diff(ID)) == 1)) {
           showModal(modalDialog(
             title = "Invalid selection",
-            "You selected discontinous data, please select only contiguous points"
-          ), easyClose = TRUE)
+            "You selected discontinous data, please select only contiguous points",
+            easyClose = TRUE
+          ))
           # invalidateLater(1)
           ID
         } else {
@@ -198,8 +200,9 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         if (!identical(UUID, character(0)) && !uuid::UUIDvalidate(UUID)) {
           showModal(modalDialog(
             title = "Invalid click",
-            "You didn't click on an Obs feature, no UUID attatched"
-          ), easyClose = TRUE)
+            "You didn't click on an Obs feature, no UUID attatched",
+            easyClose = TRUE
+          ))
           invalidateLater(1)
         } else {
           SelUUID(UUID)
@@ -243,7 +246,6 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
 
       MainLog()[MainLog()$ID %in% SelID(), ]
     })
-
 
     # Map for data selection --------------------------------------------------
 
@@ -439,6 +441,19 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
             )
           )
         )
+    })
+
+
+# Infos on displayed data -------------------------------------------------
+
+    output$SurveyDuration <- renderText({
+
+      validate(need(nrow(SubMainLog()) != 0, message = "No data to display with those filters"))
+
+      Time <- SubMainLog()$DateTime
+
+      as.character(dseconds(length(Time)))
+
     })
 
     # Module output -----------------------------------------------------------

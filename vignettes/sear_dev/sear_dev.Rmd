@@ -423,7 +423,6 @@ TODO: could be improved by computing only for the new piece of Apla data that is
 MainLog <- Apla %>%
   rename(Lon = Lon_DD, Lat = Lat_DD)
 
-
 data_synthesis_any_near <- function(x, y, tol = 3) {
   purrr::map_lgl(
           .x = x,
@@ -563,9 +562,9 @@ As the app evolve and integrate new variables, old databases schema need to migr
 
 Adapted from: https://stackoverflow.com/questions/4253804/how-do-i-add-a-new-column-in-between-two-columns
 
-### V0.1.0 -> 
+### V0.1.0 -> V0.2.0
 
-Create new table with the added column, here KLu_loess
+Create new table with the added column, here Rrs_loess KLu_loess, RbI
 ```{sql}
 CREATE TABLE NewHOCRL2 (
   `Wavelength` REAL,
@@ -573,6 +572,7 @@ CREATE TABLE NewHOCRL2 (
   `Rrs_loess` REAL,
   `KLu` REAL,
   `KLu_loess` REAL,
+  `RbI` REAL,
   `UUID` TEXT,
   FOREIGN KEY (UUID)
     REFERENCES Metadata (UUID)
@@ -585,12 +585,14 @@ Insert the old data in the new table
 INSERT INTO NewHOCRL2 (
   `Wavelength`,
   `Rrs`,
+  `Rrs_loess`,
   `KLu`,
   `KLu_loess`,
   `UUID`
 ) SELECT   
   `Wavelength`,
   `Rrs`,
+  `Rrs_loess`,
   `KLu`,
   `KLu_loess`,
   `UUID`
@@ -607,7 +609,6 @@ Rename the new table.
 ```{sql}
 ALTER TABLE NewHOCRL2 RENAME TO HOCRL2;
 ```
-
 
 # SQLite frontend
 
