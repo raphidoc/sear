@@ -1,6 +1,6 @@
 Package: sear
 Title: An Amazing Shiny App
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person("Raphael", "Mabit", , "raphael.mabit@gmail.com", role = c("aut", "cre"))
 Description: Data processing and management for the FORSCE SeaDoo project.

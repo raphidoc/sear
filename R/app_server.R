@@ -7,6 +7,43 @@
 # define some credentials
 app_server <- function(input, output, session) {
 
+  # # Use keyring package to set keys
+  # keyring::key_set("user", "sear")
+  #
+  # # Init DB using credentials data
+  # credentials <- data.frame(
+  #   user = c("sear"),
+  #   password = keyring::key_get("user", "sear"),
+  #   # password will automatically be hashed
+  #   admin = c(TRUE),
+  #   stringsAsFactors = FALSE
+  # )
+  #
+  # keyring::key_set("database", "sear")
+  #
+  # # Init the database
+  # shinymanager::create_db(
+  #   credentials_data = credentials,
+  #   sqlite_path = "~/sear_project/database.sqlite", # will be created
+  #   passphrase = keyring::key_get("database", "sear")
+  # )
+
+  # call the server part
+  # check_credentials returns a function to authenticate users
+  # res_auth <- shinymanager::secure_server(
+  #   check_credentials = check_credentials(
+  #     "~/sear_project/database.sqlite",
+  #     passphrase = key_get("database", "sear")
+  #   ),
+  #   keep_token = TRUE
+  # )
+  #
+  # observe(message(getwd()))
+  #
+  # output$auth_output <- renderPrint({
+  #   reactiveValuesToList(res_auth)
+  # })
+
 # Global objects ----------------------------------------------------------
 
   #format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")

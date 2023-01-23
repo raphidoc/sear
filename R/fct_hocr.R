@@ -466,7 +466,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 #' @return Tidy long tiblle with Rrs and KLu
 #'
 #' @noRd
-L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth) {
+L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
+                    Loess, Span, Obs) {
 
   L1bDataWide <- L1bData %>%
     mutate(AproxData = purrr::map(
@@ -547,13 +548,13 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth) {
 
   LuZ1 <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1416" | SN == "1413") %>%
+    filter(SN == "1415" | SN == "1413") %>%
     unnest(cols = c(IntData)) %>%
     select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
   LuZ2 <- L1bAproxWide %>%
     select(!AproxData) %>%
-    filter(SN == "1415" | SN == "1414") %>%
+    filter(SN == "1416" | SN == "1414") %>%
     unnest(cols = c(IntData)) %>%
     select(!matches("Instrument|SN|DateTime|CalData|UUID"))
 
@@ -574,6 +575,33 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth) {
       names_transform = list(Wavelength = as.numeric)
     )
 
+  #browser()
+
+  if (Loess) {
+
+    KLuloess <- loess(
+      KLu ~ Wavelength,
+      data = KLuLong,
+      na.action = "na.omit",
+      span = Span
+    )
+
+    KLuLong <- KLuLong %>%
+      mutate(
+        KLu_loess = predict(KLuloess, Wavelength)
+      )
+
+    KLuWide <- KLuLong %>%
+      select(Wavelength, KLu_loess) %>%
+      pivot_wider(
+        names_from = "Wavelength",
+        names_prefix = "KLu_loess_",
+        names_sep = "_",
+        values_from = c(KLu_loess)
+      )
+
+  }
+
   #Z1Depth <- 0.10 # 10 cm
 
   Lw <- 0.54 * LuZ1 / exp(-Z1Depth * KLuWide)
@@ -590,7 +618,59 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth) {
       names_transform = list(Wavelength = as.numeric)
     )
 
+  if (Loess) {
+
+    Rrsloess <- loess(
+      Rrs ~ Wavelength,
+      data = RrsLong,
+      na.action = "na.omit",
+      span = Span
+    )
+
+    RrsLong <- RrsLong %>%
+      mutate(
+        Rrs_loess = predict(Rrsloess, Wavelength)
+      )
+
+  }
+
   L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
+
+
+  # RbII computation --------------------------------------------------------
+
+  if(!is.null(Obs$BioSonic$L2$BottomElevation_m)) {
+
+    EsLong <- L1bAproxLong %>%
+      select(!AproxData) %>%
+      filter(SN == "1397" | SN == "1396") %>%
+      unnest(cols = c(IntData)) %>%
+      select(!matches("Instrument|SN|DateTime|CalData|UUID|Type")) %>%
+      rename(Es = Channels)
+
+    LuZ2Long <- L1bAproxLong %>%
+      select(!AproxData) %>%
+      filter(SN == "1416" | SN == "1414") %>%
+      unnest(cols = c(IntData)) %>%
+      select(!matches("Instrument|SN|DateTime|CalData|UUID|Type")) %>%
+      rename(LuZ2 = Channels)
+
+    RbII <- left_join(KLuLong, EsLong, by = c("Wavelength")) %>%
+      left_join(LuZ2Long, by = c("Wavelength"))
+
+    RbII <- RbII %>%
+      mutate(
+        Edb = Es/exp(-KLu_loess*Obs$BioSonic$L2$BottomElevation_m),
+        Lub = LuZ2/exp(-KLu_loess*Obs$BioSonic$L2$BottomElevation_m),
+        RbII = (pi*Lub)/Edb
+      ) %>%
+      select(Wavelength, RbII)
+
+    L2Data <- L2Data %>%
+      left_join(RbII, by = "Wavelength")
+
+  }
+
 
   # Populate UUID if exist
   if (any(names(L1bData) == "UUID")) {

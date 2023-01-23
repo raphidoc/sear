@@ -40,9 +40,12 @@ mod_L1L2_biosonic_server <- function(id, Obs){
       )
 
       ply <- Obs$BioSonic$L1b %>%
+        mutate(
+          Distance = seq(from = 0, to = Obs$Metadata$DistanceRun, along.with = DateTime)
+        ) %>%
         plot_ly(
           text = ~DateTime,
-          x = ~seq(from = 0, to = Obs$Metadata$DistanceRun, along.with = DateTime)
+          x = ~Distance
         ) %>%
         add_lines(
           y = ~Altitude_mReMsl,

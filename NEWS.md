@@ -1,3 +1,15 @@
+# sear 0.2.0
+
+* Added `Rrs_loess` and `RbI` computation and storage in SQLite `HOCRL2` table with DB migration script in `sear_dev`.
+
+* Lowered computation time of `data_synthesis` by passing time vector unique to the second.
+
+# sear 0.1.0.9
+
+* Added `KLu_loess` smoothing and SQLite DB entry with DB migration script in `sear_dev`.
+
+* Added proper validation of `SelID()` in `L1a_select`.
+
 # sear 0.1.0
 
 * First pre prod version of `sear`

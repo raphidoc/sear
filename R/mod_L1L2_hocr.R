@@ -10,9 +10,11 @@
 mod_L1L2_hocr_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    plotlyOutput(ns("HOCRL1b"), height = 320),
+    plotlyOutput(ns("HOCRL1b"), height = 350),
     uiOutput(ns("ProL2")),
-    plotlyOutput(ns("AOPs"), height = 250)
+    checkboxInput(ns("Loess"), "Loess", value = TRUE, width = NULL),
+    numericInput(ns("Span"), "span", 0.1, step = 0.01),
+    plotlyOutput(ns("AOPs"), height = 320)
   )
 }
 
@@ -94,11 +96,11 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       Es <- Es$Plot
 
-      p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.035) %>%
+      p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.038) %>%
         add_annotations(
-          text = ~ TeX("\\text{Wavelength [nm]}"),
-          x = 0.4,
-          y = -0.1,
+          text = ~"Wavelength [nm]",
+          x = 0.5,
+          y = -0.14,
           yref = "paper",
           xref = "paper",
           xanchor = "middle",
@@ -108,9 +110,9 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text ="Es" #TeX("\\text{E}_\\text{s}")
+          yaxis = list(title = list(text ="Es [W.m-2]" #TeX("\\text{E}_\\text{s}")
                                     )),
-          yaxis2 = list(title = list(text = "Lu" #TeX("\\text{L}_\\text{u}")
+          yaxis2 = list(title = list(text = "Lu [W.m-2.sr-1]" #TeX("\\text{L}_\\text{u}")
                                      )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
@@ -149,7 +151,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       actionButton(ns("ProcessL2"), "Process L2")
     })
 
-    # HOCR AOPs computation
+
+# Compute AOPs ------------------------------------------------------------
     observeEvent(
       input$ProcessL2,
       {
@@ -163,7 +166,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         Z1Depth <- Settings$HOCR$Z1Depth()
         Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
 
-        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth)
+        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+                               input$Loess,input$Span, Obs)
       }
     )
 
@@ -174,17 +178,29 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       Rrsplot <- Obs$HOCR$L2 %>%
         plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
+        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = T) %>%
+        layout(shapes = BlackSquare)
+
+      if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
+        Rrsplot <- Rrsplot %>%
+          add_trace(x = ~Wavelength, y = ~Rrs_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash', color = 'red'))
+      }
 
       KLuplot <- Obs$HOCR$L2 %>%
-        plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
+        plot_ly(x = ~Wavelength) %>%
+        add_lines(y = ~KLu, showlegend = T) %>%
+        layout(shapes = BlackSquare)
 
-      subplot(Rrsplot, KLuplot, shareX = T) %>%
+      if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
+        KLuplot <- KLuplot %>%
+          add_trace(x = ~Wavelength, y = ~KLu_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash', color = 'red'))
+      }
+
+      ply <- subplot(Rrsplot, KLuplot, shareX = T, titleX = F) %>%
         add_annotations(
-          text = ~ TeX("\\text{Wavelength [nm]}"),
-          x = 0.4,
-          y = -0.1,
+          text = ~"Wavelength [nm]", #TeX("\\text{Wavelength [nm]}"),
+          x = 0.5,
+          y = -0.15,
           yref = "paper",
           xref = "paper",
           xanchor = "middle",
@@ -194,13 +210,33 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text = "Rrs"#TeX("\\text{R}_\\text{rs}")
+          yaxis = list(title = list(text = "Rrs [sr-1]"#TeX("\\text{R}_\\text{rs}")
                                     )),
-          yaxis2 = list(title = list(text = "Klu"#TeX("\\text{K}_\\text{Lu}")
+          yaxis2 = list(title = list(text = "Klu [m-1]"#TeX("\\text{K}_\\text{Lu}")
                                      )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T)
+
+      ply$x$source <- "KLu"
+
+      widgetframe::frameableWidget(ply)
+    })
+
+
+
+# Smooth KLu --------------------------------------------------------------
+    output$SmoothKLu <- renderUI({
+
+      validate(need({
+        Settings$HOCR$WaveMin() &
+        Settings$HOCR$WaveMax() &
+        Settings$HOCR$WaveStep() &
+        Settings$HOCR$Z1Depth() &
+        Settings$HOCR$Z1Z2Depth()
+      }, message = "Need KLu"))
+
+      actionButton(ns("SmoothKLu"), "Smooth KLu")
     })
 
   })

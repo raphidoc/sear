@@ -236,4 +236,4 @@ The alternative would be to log in the user in the system from within shiny ... 
 A third option is to keep the process `run_as` sear but to change the working directory to the home user.
 
 
-In both cases, here is the bash script to initiate the `sear` user 
+In both cases, here is the bash script to initiate the `sear` user

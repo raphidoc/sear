@@ -107,7 +107,10 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           "CREATE TABLE IF NOT EXISTS `HOCRL2` (
           `Wavelength` REAL,
           `Rrs` REAL,
+          `Rrs_loess` REAL,
           `KLu` REAL,
+          `KLu_loess` REAL,
+          `RbI` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
             REFERENCES Metadata (UUID)

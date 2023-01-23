@@ -14,7 +14,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-This vignette intend to document the development and the functionality of the 
+This vignette intend to document the development and the functionality of the
 `sear_app()` function. This function is the top level function that call the
 shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
 
@@ -57,29 +57,38 @@ HOCRTimeIndex <- purrr::map(
 
 # Foreword
 
-> Do we have a way to manage and process data in a usable and consistent way ? No... Ok so it's On !
+The idea behind this application software originated from a conversation with myself during the first year of my master thesis.
 
-* [https://en.wikipedia.org/wiki/Usability](Usability) : 
+> Do we have a way to manage and process data in a usable and consistent way ? No. Ok so it's On !
+
+* [https://en.wikipedia.org/wiki/Usability](Usability) :
 
 > Capacity of a system to provide a condition for its users to perform the tasks safely, effectively, and efficiently while enjoying the experience.
 
-* [https://en.wikipedia.org/wiki/Consistency_(disambiguation)](Consistency) : 
+* [https://en.wikipedia.org/wiki/Consistency_(disambiguation)](Consistency) :
 
 > A consistent theory is one that does not lead to a logical contradiction.
 
-Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problem is best solved today by web-based application. That's why sear is such an application.
+Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problems is best solved today by web-based application. That's why sear is such an application.
 
-This software is originally developed to provide a common ground in ocean optics science data management and processing. If your willing for us to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future. We may be able to leave behind the need to reinvent the wheel each new generation of young scientist.
+This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. [https://science.nasa.gov/open-science/transform-to-open-science](NASA TOPS program)). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
+(Also it's often by reinventing the wheel that you understand how it work and that you can appropriate some principle to develop new idea)
+
+The name "sear" come from a play of word with "sea R" and "seer", meaning having the power of vision (future or whatever). I discover later that in English sear is a verb meaning:
+
+* To burn something with sudden intense heat
+* An image, emotion, or feeling having a sudden and strong effect on someone
+
 
 # Dev Test and Demo dataset
 
-Because of continous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
-To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is addded when loading the final .bin and .txt files, it takes XXX minutes to compute.
-To develop, test and demonstrate the software capabilities, a small dataset is needed. As the most complete to date (2022), with the full data logger suit (except suna) plus BioSonic and r2Sonic, and spanning over multiple days, the AlgaeWise(2022) data offer the best option.
+Because of continuous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
+To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is added when loading the final .bin and .txt files, it takes XXX minutes to compute.
+To develop, test and demonstrate the software capabilities, a small data set is needed. As the most complete to date (2022), with the full data logger suit (except SUNA) plus BioSonic and r2Sonic, and spanning over multiple days, the AlgaeWise(2022) data offer the best option.
 
 ## Reduce raw data
 
-To reduce the raw .bin and .txt data we start by identifying with the help of the app, on the full parsed data set, the time interval of the observation that we would like to keep. 
+To reduce the raw .bin and .txt data we start by identifying with the help of the app, on the full parsed data set, the time interval of the observation that we would like to keep.
 We also identifies the position of the corresponding HOCR binary packets on the time index.
 
 ```{r}
@@ -90,12 +99,16 @@ reduced <- "/D/Data/sear_test_data/reduced/"
 
 TODO: Describe the selected data and explain it's utility (the logic of the selection)
 
+* Each different day to showcase the filtering and selection capabilities
+* Shallow (~1.5m) and deep water (~20m)
+* Full range of boat solar azimuth
+
 ```{r eval=FALSE, include=TRUE}
 # Cloudy and wave that day
 D02 <- list(
   strftime(seq(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00"), by = 1), format="%H:%M:%S", tz = "GMT"),
   strftime(seq(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"), by = 1), format="%H:%M:%S", tz = "GMT") 
+  strftime(seq(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"), by = 1), format="%H:%M:%S", tz = "GMT")
   )
 
 D05 <- list(
@@ -116,7 +129,7 @@ D0618 <- list(
 
 D07 <- list(
   strftime(seq(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"), by = 1), format="%H:%M:%S", tz = "GMT")
-  
+
   )
 
 D08 <- list(
@@ -132,12 +145,12 @@ D08 <- list(
 
 ```{r eval=FALSE, include=TRUE}
 trim_MTELog <- function(If, Of, TimeSeq, n_head){
-  
+
   Head <- readr::read_lines(If, n_max = n_head)
   readr::write_lines(Head, Of)
-  
+
   Data <- readr::read_lines(If, skip = n_head)
-  
+
   Pat <- str_c(unlist(TimeSeq), collapse = "|")
   Tind <- str_detect(Data, Pat)
   any(Tind)
@@ -179,32 +192,32 @@ trim_MTELog(If,Of,list(D02,D05,D0615,D0618,D07,D08), n_head = 1)
 
 Count Number of byte by file, divide by number of byte per packets, find position of packets to extract with the time index.
 
-I just realize now that the header size is equal to any packet size. Now it make a lot of sense why there was so much empty space after the header !
-The fixed size memory entry is 512 bytes. I would like to learn more about that ! 
-Wah ! new discovery ! the `dd` command use 512 as a default number of bytes for the `-bs` argument !
+I just realize now that the header size is equal to any packet size (512 bytes). Now it make a lot of sense why there was so much empty space after the header !
+The fixed size memory entry is 512 bytes. I would like to learn more about that !
+Wah ! The `dd` command use 512 as a default number of bytes for the `-bs` argument !
 Whats behind this number !?
 
 ```{r eval=FALSE, include=TRUE}
 trim_hocr <- function(If, Of, TimeIndex, TimeInt) {
-  
+
   # Copy header
   system2('dd', paste0("if=",If, " bs=512", " count=",1, " >>",Of))
-  
+
   for (Tint in TimeInt) {
     print(Tint)
-    
+
     ind <- which(purrr::map_lgl(.x = TimeIndex, ~ .x %within% Tint))
     BytesStart <- min(ind)#*512
     BytesEnd <- max(ind)#*512
-    Skip <- BytesStart-1 
+    Skip <- BytesStart-1
     Count <- BytesEnd-BytesStart
-    
+
     print(Skip)
     print(Count)
-    
+
     # Append matching packets
     system2('dd', paste0("if=",If, " bs=512", " skip=",Skip, " count=",Count, " >>",Of))
-    
+
   }
 }
 
@@ -374,14 +387,14 @@ The UI use the 'norwegian blue' (The dead parrot) #4f89b0, rgb(79, 137, 176) as 
 The first step to work with `sear` is to select a project folder. A project folder is identified by the presence of a `.searproj` file, this file additionally contain relevant metadata such as the project path, date of creation and last update. Other useful information could be added.
 If the selected folder does not contains `.searproj` file, one is created. The root of the project is set as the folder in which this file live.
 
-The app will also look for folder and data files to re-initiate the app state as it was in the last processing save. 
+The app will also look for folder and data files to re-initiate the app state as it was in the last processing save.
 
 ## Load Data
 
 ### MTE data logger
 
 If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw MTE files (.bin and .txt) are saved in `.sear/data/raw`. On load, the app will parse and save the resulting applanix data, HOCR packet, HOCR dark packet, HOCR Time index, SBE19, SeaOwl and BBFL2 in `.sear/data/parsed`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time (~2/3 min for .bin = 46 MB).
-If parsed data is already present, it will be read at the project selection. 
+If parsed data is already present, it will be read at the project selection.
 
 #### HOCR specific files
 
@@ -390,7 +403,9 @@ The HOCR dark is a list of shutter dark values interpolated to the minute to app
 
 ### BioSonic
 
-Just select the .csv file processed with the dedicated software (biosonic Visual Aquatic)
+Just select the .csv file processed with the dedicated software (biosonic Visual Aquatic).
+
+TODO: Check the reference for the elevation values outputted by this software
 
 ### Hydroball
 
@@ -407,7 +422,6 @@ TODO: could be improved by computing only for the new piece of Apla data that is
 ```{r}
 MainLog <- Apla %>%
   rename(Lon = Lon_DD, Lat = Lat_DD)
-
 
 data_synthesis_any_near <- function(x, y, tol = 3) {
   purrr::map_lgl(
@@ -429,9 +443,13 @@ From this `MainLog`, the selection display column in the dashboard body is popul
 
 The points selected on the plotly map (lasso or box) will be processed when the `Process to L1b` button is clicked.
 
-NEED: List the required and optional NMEA string that sear will use.
+### NMEA string
 
--GPGGA
+TODO: List the required and optional NMEA string that sear will use.
+
+*Mandatory*:
+*GPGGA
+*GPVTG
 
 ### DateTime filtering
 
@@ -514,9 +532,9 @@ Could use ECMWF services (climate reanalysis) to add meteorological data to the 
 
 # Server
 
-## golem organization 
+## golem organization
 
-This shiny app will become quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task. 
+This shiny app is becoming quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task.
 
 * fct_ : files containing the function of the app, they defined the data parsing, tidying and computation logic.
 * mod_ : files containing both frontend (`_ui` function) and backend (`_server` function) shiny logic. Inputs, reactive value, observer and consumer are defined here.
@@ -531,7 +549,68 @@ It's also there than global options such as `options(digits.secs = 3)` (to displ
 
 # SQLite backend
 
-Present the DB schema here
+Connectivity to the SQLite persistent data storage is defined in `mod_manage_db` and `mod_manage_obs`.
+
+## DB schema
+
+The SQLite scheme is defined in `mod_manage_db`.
+Present the DB scheme here
+
+## DB migration
+
+As the app evolve and integrate new variables, old databases schema need to migrate to new schema. This section keep tracks of those changes and give the SQL migration scripts used.
+
+Adapted from: https://stackoverflow.com/questions/4253804/how-do-i-add-a-new-column-in-between-two-columns
+
+### V0.1.0 -> V0.2.0
+
+Create new table with the added column, here Rrs_loess KLu_loess, RbI
+```{sql}
+CREATE TABLE NewHOCRL2 (
+  `Wavelength` REAL,
+  `Rrs` REAL,
+  `Rrs_loess` REAL,
+  `KLu` REAL,
+  `KLu_loess` REAL,
+  `RbI` REAL,
+  `UUID` TEXT,
+  FOREIGN KEY (UUID)
+    REFERENCES Metadata (UUID)
+    ON DELETE CASCADE
+);
+```
+
+Insert the old data in the new table
+```{sql}
+INSERT INTO NewHOCRL2 (
+  `Wavelength`,
+  `Rrs`,
+  `Rrs_loess`,
+  `KLu`,
+  `KLu_loess`,
+  `UUID`
+) SELECT   
+  `Wavelength`,
+  `Rrs`,
+  `Rrs_loess`,
+  `KLu`,
+  `KLu_loess`,
+  `UUID`
+FROM HOCRL2;
+```
+
+*Check that the insertion is correct*
+Delete the old table.
+```{sql}
+DROP TABLE HOCRL2;
+```
+
+Rename the new table.
+```{sql}
+ALTER TABLE NewHOCRL2 RENAME TO HOCRL2;
+```
+
+# SQLite frontend
 
 ## Save
 
@@ -547,7 +626,7 @@ QUESTION: Would it be relevant to separate the `QC` in it's own table ?
 When the `Save` button is pressed, feedback is given to the user in the form of a `session$sendCustomMessage`.
 
 Note reagarding diffference bettwen the `WHERE` and the `CASE WHEN` approach for updating SQLite.
-Whith 
+Whith
 
 ## Delete
 
