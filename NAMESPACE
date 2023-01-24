@@ -2,7 +2,6 @@
 
 export(data_synthesis)
 export(run_app)
-import(d3Tree)
 import(dplyr)
 import(gsw)
 import(keyring)
