@@ -2,7 +2,7 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @import shiny shinydashboard plotly shinymanager
+#' @import shiny shinydashboard plotly
 #' @noRd
 app_ui <- function(request) {
 
