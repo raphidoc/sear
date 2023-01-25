@@ -1,10 +1,18 @@
 Package: sear
-Title: An Amazing Shiny App
+Title: Data Management and Processing for Ocean Optics
 Version: 0.2.0
 Authors@R: 
     person("Raphael", "Mabit", , "raphael.mabit@gmail.com", role = c("aut", "cre"))
-Description: Data processing and management for the FORSCE SeaDoo project.
+Description: A modular shiny software to manage and process ocean optics
+    data. You load your raw data, it parse, discretize and process
+    according to your survey design. It create your analysis ready
+    database in the format of your choice and keep track of the QA/QC
+    process. If you need to inspect some data with a finer look, the
+    software allow you to do it by hand. The software is here for you, not
+    you for him.
 License: GNU3
+URL: https://github.com/raphidoc/sear
+BugReports: https://github.com/raphidoc/sear/issues
 Imports: 
     clock,
     config (>= 0.3.1),
@@ -20,8 +28,10 @@ Imports:
     methods,
     pkgload,
     plotly,
+    pracma,
     purrr,
     raster,
+    Rcpp (>= 1.0.9),
     readr,
     reticulate,
     RSQLite,
@@ -37,9 +47,7 @@ Imports:
     tidyr,
     uuid,
     waiter,
-    widgetframe,
-    Rcpp (>= 1.0.9)
-LinkingTo: Rcpp
+    widgetframe
 Suggests: 
     covr,
     knitr,
@@ -47,9 +55,12 @@ Suggests:
     rmarkdown,
     spelling,
     testthat (>= 3.0.0)
+LinkingTo: 
+    Rcpp
+VignetteBuilder: 
+    knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
 RoxygenNote: 7.2.2
-VignetteBuilder: knitr

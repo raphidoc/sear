@@ -39,13 +39,16 @@ mod_L1L2_biosonic_server <- function(id, Obs){
         y1 = 1
       )
 
+      pal <- c("Watercraft"="blue", "Canopy"="green", "Bottom"="brown")
+
       ply <- Obs$BioSonic$L1b %>%
         mutate(
           Distance = seq(from = 0, to = Obs$Metadata$DistanceRun, along.with = DateTime)
         ) %>%
         plot_ly(
           text = ~DateTime,
-          x = ~Distance
+          x = ~Distance,
+          colors = pal
         ) %>%
         add_lines(
           y = ~Altitude_mReMsl,

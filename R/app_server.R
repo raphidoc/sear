@@ -2,7 +2,7 @@
 #'
 #' @param input,output,session Internal parameters for {shiny}.
 #'     DO NOT REMOVE.
-#' @import shiny shinymanager lubridate listviewer gsw pracma
+#' @import shiny shinymanager lubridate gsw pracma
 #' @noRd
 # define some credentials
 app_server <- function(input, output, session) {

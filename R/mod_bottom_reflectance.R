@@ -56,12 +56,16 @@ mod_bottom_reflectance_server <- function(id, Obs){
           RbI = pi*Rrs_loess/exp(-KZ)
         )
 
-      ply <- Obs$HOCR$L2 %>% plot_ly() %>%
+      pal <- c("Rw"="turquoise", "RbI"="orange")
+
+      ply <- Obs$HOCR$L2 %>% plot_ly(
+        colors = pal
+      ) %>%
         add_lines(
           x = ~Wavelength,
           y = ~RbI,
           showlegend = T,
-          name = "RbI"
+          color = "RbI"
         ) %>% #add_lines(
         #   x = ~Wavelength,
         #   y = ~RbII,
@@ -72,7 +76,7 @@ mod_bottom_reflectance_server <- function(id, Obs){
           x = ~Wavelength,
           y = ~pi*Rrs_loess,
           showlegend = T,
-          name = "Rw",
+          color = "Rw",
           fill = 'tonexty'
         ) %>%
         layout(
