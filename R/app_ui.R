@@ -13,7 +13,7 @@ app_ui <- function(request) {
       href = "https://github.com/raphidoc/sear",
       target="_blank",
       rel="noopener noreferrer",
-      tags$img(src = "www/logo_sear.png", width = "100px", height = "40px"),
+      tags$img(src = "www/logo_sear_2.png", width = "100px", height = "40px"),
       "sear"
     )
   )
