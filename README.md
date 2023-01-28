@@ -17,7 +17,8 @@ It allow to load, parse, display, process and save the data. Permanent data stor
 
 Along it's development the idea come that it could be more, something like a platform to manage and process ocean optic data coming from any numbers of instruments and platform. This could be achieve by defining the architecture common to all ocean optic projects, the specifics of each instrument and platform and the method to be applied upon them. It would improve the efficiency of the analysts and give a solution to common problems faced with data management, processing and quality control.
 
-![demo video](https://www.youtube.com/watch?v=U6CH2Ictvo4)
+[![demo video](https://img.youtube.com/vi/U6CH2Ictvo4/0.jpg)](https://www.youtube.com/watch?v=U6CH2Ictvo4)
+
 
 ## Features
 
