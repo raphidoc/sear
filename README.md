@@ -61,9 +61,9 @@ Along it's development the idea come that it could be more, something like a pla
 
 ## Instalation
 
-The software can be installed from GitHub. 
+The software can be installed from GitHub.
 To simplify the installation process, a python virtual env is created to use the python binary parser created with [Kaitai Struct](https://kaitai.io/)
-  
+
 ## Code of Conduct
-  
+
   Please note that the sear project is released with a [Contributor Code of Conduct](https://contributor-covenant.org/version/2/1/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.
