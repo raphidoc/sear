@@ -68,3 +68,9 @@ To simplify the installation process, a python virtual env is created to use the
 ## Code of Conduct
 
   Please note that the sear project is released with a [Contributor Code of Conduct](https://contributor-covenant.org/version/2/1/CODE_OF_CONDUCT.html). By contributing to this project, you agree to abide by its terms.
+
+## Contributors
+
+Raphaël Mabit: Author and maintainer
+Daniela Walch: Help with logo design, point to relevant resources (wallace 2)
+Bruno Dionne: Help with binary parsing
