@@ -33,7 +33,7 @@ library(suncalc)
 ```
 
 ```{r}
-ConFile <- system.file("extdata", "DATA_20220705_105732.txt", package = "sear", mustWork = T)
+ConFile <- system.file("data-raw", "reduced", "DATA_20220705_105732.txt", package = "sear", mustWork = T)
 
 MTELog <- sear:::read_mtelog(ConFile)
 
@@ -41,7 +41,7 @@ Apla <- sear:::read_apla(MTELog)
 
 SBE19 <- sear:::read_sbe19(MTELog)
 
-BinFile <- system.file("extdata", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
+BinFile <- system.file("data-raw", "reduced", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
 
 HOCR <- sear:::read_hocr(BinFile)
 
@@ -69,21 +69,20 @@ The idea behind this application software originated from a conversation with my
 
 > A consistent theory is one that does not lead to a logical contradiction.
 
-Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problems is best solved today by web-based application. That's why sear is such an application.
+Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problems is best solved today by web-based application. That's why *sear* is such an application.
 
 This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. [https://science.nasa.gov/open-science/transform-to-open-science](NASA TOPS program)). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
 (Also it's often by reinventing the wheel that you understand how it work and that you can appropriate some principle to develop new idea)
 
-The name "sear" come from a play of word with "sea R" and "seer", meaning having the power of vision (future or whatever). I discover later that in English sear is a verb meaning:
+The name *sear* come from a play of word with "sea R" and "seer", meaning having the power of vision (future or whatever). I discover later that in English sear is a verb meaning:
 
 * To burn something with sudden intense heat
 * An image, emotion, or feeling having a sudden and strong effect on someone
 
-
 # Dev Test and Demo dataset
 
 Because of continuous acquisition, the HOCR SeaDoo data recorded by the MTE data logger is quite large (46.6M) and take time to parse from binary (~5.20 min giving 1 min to load 8.9M with a python virtualenv).
-To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is added when loading the final .bin and .txt files, it takes XXX minutes to compute.
+To parse and load the full AlgaeWise dataset (195.8M) it take 22 min just to parse HOCR, the other time consuming operation is to create the data synthesis for each instrument (see section [MainLog]), for now MainLog is recreated from scratch each time data is added when loading the final .bin and .txt files, it takes XXX (too long) minutes to compute.
 To develop, test and demonstrate the software capabilities, a small data set is needed. As the most complete to date (2022), with the full data logger suit (except SUNA) plus BioSonic and r2Sonic, and spanning over multiple days, the AlgaeWise(2022) data offer the best option.
 
 ## Reduce raw data
@@ -95,7 +94,6 @@ We also identifies the position of the corresponding HOCR binary packets on the 
 full <- "/D/Data/sear_test_data/full/"
 reduced <- "/D/Data/sear_test_data/reduced/"
 ```
-
 
 TODO: Describe the selected data and explain it's utility (the logic of the selection)
 
@@ -401,15 +399,16 @@ If parsed data is already present, it will be read at the project selection.
 The HOCR time index optimize processing time for the selection of HOCR packet within a time interval.
 The HOCR dark is a list of shutter dark values interpolated to the minute to apply dark correction.
 
-### BioSonic
+### BioSonic MX
 
 Just select the .csv file processed with the dedicated software (biosonic Visual Aquatic).
 
 TODO: Check the reference for the elevation values outputted by this software
+TODO: Create a processing pipline from the MX raw data
 
 ### Hydroball
 
-*COULD BE DONE*
+TODO: Create a processing pipline for the hydroball WISE-Man 2019 setup.
 
 ## Selection display
 
@@ -430,12 +429,16 @@ data_synthesis_any_near <- function(x, y, tol = 3) {
           )
 }
 
-SyntSBE19 <- data_synthesis_any_near(MainLog$DateTime, SBE19$DateTime)
+MainLog <- MainLog %>% mutate(
+  SyntSBE19 = data_synthesis_any_near(DateTime, SBE19$DateTime),
+  SynHOCR = data_synthesis_any_near(DateTime, HOCRTimeIndex),
+)
 
-SyntHOCR <- data_synthesis_any_near(MainLog$DateTime, HOCRTimeIndex)
-
-microbenchmark(times = 1,
-  data_synthesis_any_near(MainLog$DateTime, HOCRTimeIndex)
+microbenchmark::microbenchmark(times = 1,
+  MainLog %>% mutate(
+  SyntSBE19 = data_synthesis_any_near(DateTime, SBE19$DateTime),
+  SynHOCR = data_synthesis_any_near(DateTime, HOCRTimeIndex),
+  )
 )
 ```
 
@@ -447,7 +450,7 @@ The points selected on the plotly map (lasso or box) will be processed when the 
 
 TODO: List the required and optional NMEA string that sear will use.
 
-*Mandatory*:
+**Mandatory**:
 *GPGGA
 *GPVTG
 
@@ -455,15 +458,15 @@ TODO: List the required and optional NMEA string that sear will use.
 
 DateTime classe is huge to store as is. As number of second since origin it is up to 100 times smaller.
 
-*MANDATORY*
+**MANDATORY**
 
 ### Speed
 
-*MANDATORY*: can be directly taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
+**MANDATORY**: can be directly taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
 
 ### Azimuth polar plot
 
-*MANDATORY*: boat azimuth can be taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
+**MANDATORY**: boat azimuth can be taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
 
 First compute the sun azimuth.
 
@@ -525,10 +528,75 @@ temp %>%
 
 Instrument available to process are detected from the loaded files. For now the processing is tailored to the SeaDoo configuration.
 
-*NEED* think about generalization of processing with different instruments configuration, usage of \*.con files (similar to ProSoft)
+*NEED* think about generalization of processing with different instruments configuration. 
+usage of \*.con files (similar to ProSoft) ?
 
 *OPTIONAL*
-Could use ECMWF services (climate reanalysis) to add meteorological data to the interface. Like clouds on the selection map ?
+Could use ECMWF services (climate reanalysis) to add meteorological data to the interface.
+Clouds overlay on the selection map ?
+Clouds percentage, Wind speed in the area (?) as metadata ?
+
+# Automatic processing
+
+As the quantity of data acquired in continuous acquisition quickly become large, it is necessary to automatize the processing. Full automation is of course possible and in this case, the interactivity offered by *sear* would not matter much. However I think that the analyst need's to keep an eye (or at least be able to) on the data. Therefore the goals of this section are threefold:
+* Developing the logic for automatic processing, from L1 to L2 including QC
+* Preserving the analyst ability to judge things and to interact with the data
+* Maintaining data consistency through the interaction of the human and the computer.
+
+## Time is of the essence
+
+The algorithmic logic for the discretization based on time slicing is as follow:
+1. Start from the first `DateTime` (x) take the next `DateTime` (y), with a minimum of three seconds difference.
+2. If y is more than ten seconds away replace x by y+1 and start over at step 1
+3. Try to process with that time `interval(x, y)`
+4. If there is not enough data (HOCR), add +1 second to y and retry step 3.
+5. If processing is successful, select the next x after y and continue from step one.
+
+*TODO* check inclusive exclusive intervals ends.
+
+```{r}
+Cond <- T
+i = 1
+j = 1
+while (T){
+  
+  if (length(MainLog$DateTime) < i+1){
+    print("This is the end")
+    break
+  }
+  
+  j = i
+  
+  x = MainLog$DateTime[i]
+  y = MainLog$DateTime[j+1]
+
+  if (interval(x,y) > seconds(10)){
+    i = j + 1
+    next
+  }
+  
+  # Step 1, iter until interval < 3 sec
+  while (interval(x,y) < seconds(3)){
+    
+    if (length(MainLog$DateTime) < j+1){
+      print("This is the end")
+      break
+    }
+    
+    j = j+1
+    y = MainLog$DateTime[j]
+  }
+  
+  # At this point. this should always be true
+  # Step 3 and 4, processing should happen at this stage
+  if (!interval(x,y) > seconds(10) & !interval(x,y) < seconds(3)){
+      print(paste(i, interval(x,y)))
+  }
+  
+  i = j + 1
+}
+```
+
 
 # Server
 
