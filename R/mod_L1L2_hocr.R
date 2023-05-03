@@ -122,8 +122,12 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       # Set source for selection event
       p$x$source <- "HOCRL1b"
 
+      # Save graph
+      save_image(p, file=file.path(path.expand("~"), "sear_figure", "L1b.svg"), scale = 3, height = 720, width = 1280)
+
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
+
     })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
@@ -219,6 +223,9 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         config(mathjax = "cdn", displayModeBar = T)
 
       ply$x$source <- "KLu"
+
+      # Save graph
+      save_image(ply, file=file.path(path.expand("~"), "sear_figure", "AOPs.svg"), scale = 3, height = 720, width = 1280)
 
       widgetframe::frameableWidget(ply)
     })

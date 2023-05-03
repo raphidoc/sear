@@ -56,7 +56,7 @@ mod_bottom_reflectance_server <- function(id, Obs){
           RbI = pi*Rrs_loess/exp(-KZ)
         )
 
-      pal <- c("Rw"="turquoise", "RbI"="orange")
+      pal <- c("Rw"="turquoise", "BRI"="orange")
 
       ply <- Obs$HOCR$L2 %>% plot_ly(
         colors = pal
@@ -65,7 +65,7 @@ mod_bottom_reflectance_server <- function(id, Obs){
           x = ~Wavelength,
           y = ~RbI,
           showlegend = T,
-          color = "RbI"
+          color = "BRI"
         ) %>% #add_lines(
         #   x = ~Wavelength,
         #   y = ~RbII,
@@ -81,12 +81,15 @@ mod_bottom_reflectance_server <- function(id, Obs){
         ) %>%
         layout(
           shapes = BlackSquare,
-          yaxis =list(range=c(0,1)),
-          xaxis =list(range=c(400,750))
+          #yaxis =list(range=c(0,1)),
+          xaxis =list(range=c(400,700))
         )
 
       # Set source for selection event
-      ply$x$source <- "Rb"
+      ply$x$source <- "BRI"
+
+      # Save graph
+      save_image(ply, file=file.path(path.expand("~"), "sear_figure", "BRI.svg"), scale = 3, height = 720, width = 1280)
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(ply)

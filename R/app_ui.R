@@ -28,11 +28,10 @@ app_ui <- function(request) {
     ),
     # mod_filter_trim_ui("filter_trim"),
     # mod_discretize_ui("discretize"),
-    mod_L1b_process_ui("L1b_process"),
-    mod_manage_db_ui("manage_db"),
     sidebarMenu(
       menuItem("DataBase", tabName = "Database", icon = icon("database"))
-    )
+    ),
+    mod_manage_db_ui("manage_db")
   )
 
   Body <- dashboardBody(
@@ -59,7 +58,11 @@ app_ui <- function(request) {
         fluidRow(
           column(
             width = 6,
-            mod_L1a_select_ui("L1a_select")
+            mod_L1a_select_ui("L1a_select"),
+            fluidRow(
+              mod_L1b_process_ui("L1b_process"),
+              mod_automatic_processing_ui("automatic_processing")
+              )
           ),
           column(
             width = 6,

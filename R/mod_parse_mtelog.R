@@ -154,7 +154,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
             stop("HOCRTimeIndex not the same length as HOCR !")
           }
 
-          PrimHOCRTimeIndex <- TimeIndex
+          PrimHOCRTimeIndex <- as.POSIXct(unlist(TimeIndex), tz = "UTC")
 
           progress$set(value = 0.6, message = "Writing HOCR data")
 
@@ -326,7 +326,12 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
 
           PotHOCRTimeIndex <- str_subset(ParsedFiles(), NameHOCRTimeIndex)
 
-          temp <- unlist(purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)), recursive = F)
+          # unlist convert posixct DateTime representation back to number of seconds
+          temp <- as.POSIXct(
+            unlist(
+              purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
+              recursive = T),
+            tz = "UTC")
 
           HOCRTimeIndex(temp)
 

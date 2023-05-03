@@ -212,9 +212,7 @@ mod_manage_project_server <- function(id) {
 
     })
 
-
 # Module output -----------------------------------------------------------
-
 
     list(
       History = History,

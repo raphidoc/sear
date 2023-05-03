@@ -604,7 +604,7 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
 
   #Z1Depth <- 0.10 # 10 cm
 
-  Lw <- 0.54 * LuZ1 / exp(-Z1Depth * KLuWide)
+  Lw <- 0.54 * LuZ1 * exp(-Z1Depth * KLuWide)
   RrsWide <- Lw / Es
 
   RrsLong <- RrsWide %>%

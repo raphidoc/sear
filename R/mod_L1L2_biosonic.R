@@ -68,6 +68,9 @@ mod_L1L2_biosonic_server <- function(id, Obs){
           #yaxis = list(range = list(~min(BottomElevation_m, na.rm = TRUE), 0))
         )
 
+      # Save graph
+      save_image(ply, file=file.path(path.expand("~"), "sear_figure", "SBES.svg"), scale = 3 , height = 720, width = 1280)
+
       # Iframe to render svg properly
       widgetframe::frameableWidget(ply)
 

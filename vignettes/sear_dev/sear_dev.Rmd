@@ -19,7 +19,7 @@ This vignette intend to document the development and the functionality of the
 shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
 
 ```{r setup}
-golem::document_and_reload()
+#golem::document_and_reload()
 
 library(sear)
 library(dplyr)
@@ -33,26 +33,31 @@ library(suncalc)
 ```
 
 ```{r}
-ConFile <- system.file("data-raw", "reduced", "DATA_20220705_105732.txt", package = "sear", mustWork = T)
+ConFile <- system.file("data-raw", "reduced", "DATA_20220706_153838.txt", package = "sear", mustWork = T)
 
 MTELog <- sear:::read_mtelog(ConFile)
 
 Apla <- sear:::read_apla(MTELog)
 
+MainLog <- Apla %>%
+  rename(Lon = Lon_DD, Lat = Lat_DD)
+
+
 SBE19 <- sear:::read_sbe19(MTELog)
 
-BinFile <- system.file("data-raw", "reduced", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
+BinFile <- system.file("data-raw", "reduced", "DATA_20220706_153838.bin", package = "sear", mustWork = T)
 
 HOCR <- sear:::read_hocr(BinFile)
 
 AplaDate <- unique(date(Apla$DateTime))
 
-HOCRTimeIndex <- purrr::map(
+HOCRTimeIndex <- as.POSIXct(unlist(purrr::map(
   .x = HOCR,
-  ~ clock::date_time_parse(
-    paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
-)
+  ~ clock::date_time_parse(paste0(
+    AplaDate, " ", hms::as_hms(.x$gpstime / 1000)
+  ),
+  zone = "UTC")
+)), tz = "UTC")
 ```
 
 # Foreword
@@ -408,7 +413,7 @@ TODO: Create a processing pipline from the MX raw data
 
 ### Hydroball
 
-TODO: Create a processing pipline for the hydroball WISE-Man 2019 setup.
+TODO: Create a processing pipeline for the hydroball WISE-Man 2019 setup.
 
 ## Selection display
 
@@ -418,9 +423,13 @@ When parsed data is loaded in the app, the `MainLog` is populated from the posit
 
 TODO: could be improved by computing only for the new piece of Apla data that is added (but still on the complete time index of instrument) or could filter the time index of instrument by the interval of min and max time of the new piece of apla !
 
+NEW: The `half_time` algorithm try to improve computation time.
+It slice the time vector by half on each iteration and match to any near
+4 or less remaining DateTime.
+
 ```{r}
-MainLog <- Apla %>%
-  rename(Lon = Lon_DD, Lat = Lat_DD)
+x <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by=1)
+y <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by=0.1)
 
 data_synthesis_any_near <- function(x, y, tol = 3) {
   purrr::map_lgl(
@@ -429,16 +438,39 @@ data_synthesis_any_near <- function(x, y, tol = 3) {
           )
 }
 
-MainLog <- MainLog %>% mutate(
-  SyntSBE19 = data_synthesis_any_near(DateTime, SBE19$DateTime),
-  SynHOCR = data_synthesis_any_near(DateTime, HOCRTimeIndex),
-)
+
+
+data_synthesis_half_time <- function(x, y, tol = 3) {
+ half_life <- function(x, y, tol = tol){
+
+    condition <- T
+    y3 <- y
+
+    while (condition){
+
+      y2 <- y3[length(y3)/2]
+
+      if (x <= y2) {
+        y3 <- y3[1:(length(y3)/2)]
+      } else {
+        y3 <- y3[(length(y3)/2+1):length(y3)]
+      }
+
+      condition <- length(y3) <= 2
+    }
+
+    return(any(near(x, y3, tol = tol)))
+  }
+
+  purrr::map_lgl(
+    .x = x,
+    ~ half_life(as.numeric(.x), as.numeric(y), tol = tol)
+  )
+}
 
 microbenchmark::microbenchmark(times = 1,
-  MainLog %>% mutate(
-  SyntSBE19 = data_synthesis_any_near(DateTime, SBE19$DateTime),
-  SynHOCR = data_synthesis_any_near(DateTime, HOCRTimeIndex),
-  )
+  AnyNear = data_synthesis_any_near(x, y, tol = 3),
+  HalfLife = data_synthesis_half_time(x, y, tol = 3)
 )
 ```
 
@@ -541,7 +573,7 @@ Clouds percentage, Wind speed in the area (?) as metadata ?
 As the quantity of data acquired in continuous acquisition quickly become large, it is necessary to automatize the processing. Full automation is of course possible and in this case, the interactivity offered by *sear* would not matter much. However I think that the analyst need's to keep an eye (or at least be able to) on the data. Therefore the goals of this section are threefold:
 * Developing the logic for automatic processing, from L1 to L2 including QC
 * Preserving the analyst ability to judge things and to interact with the data
-* Maintaining data consistency through the interaction of the human and the computer.
+* Maintaining data consistency through and within the interaction of the human and the computer.
 
 ## Time is of the essence
 
@@ -555,46 +587,49 @@ The algorithmic logic for the discretization based on time slicing is as follow:
 *TODO* check inclusive exclusive intervals ends.
 
 ```{r}
-Cond <- T
-i = 1
-j = 1
-while (T){
-  
-  if (length(MainLog$DateTime) < i+1){
-    print("This is the end")
-    break
-  }
-  
-  j = i
-  
-  x = MainLog$DateTime[i]
-  y = MainLog$DateTime[j+1]
-
-  if (interval(x,y) > seconds(10)){
-    i = j + 1
-    next
-  }
-  
-  # Step 1, iter until interval < 3 sec
-  while (interval(x,y) < seconds(3)){
-    
-    if (length(MainLog$DateTime) < j+1){
+discretize_time <- function(MainTime) {
+  i = 1
+  j = 1
+  while (T) {
+    if (length(MainTime) < i + 1) {
       print("This is the end")
       break
     }
     
-    j = j+1
-    y = MainLog$DateTime[j]
+    j = i
+    
+    x = MainTime[i]
+    y = MainTime[j + 1]
+    
+    if (interval(x, y) > seconds(10)) {
+      i = j + 1
+      next
+    }
+    
+    # Step 1, iter until interval < 3 sec
+    while (interval(x, y) < seconds(3)) {
+      if (length(MainTime) < j + 1) {
+        print("This is the end")
+        break
+      }
+      
+      j = j + 1
+      y = MainTime[j]
+    }
+    
+    # At this point. this should always be true
+    # Step 3 and 4, processing should happen at this stage
+    if (!interval(x, y) > seconds(10) & !interval(x, y) < seconds(3)) {
+      print(paste(i, interval(x, y)))
+    }
+    
+    i = j + 1
   }
-  
-  # At this point. this should always be true
-  # Step 3 and 4, processing should happen at this stage
-  if (!interval(x,y) > seconds(10) & !interval(x,y) < seconds(3)){
-      print(paste(i, interval(x,y)))
-  }
-  
-  i = j + 1
 }
+
+discretize_time(MainTime = MainLog$DateTime)
+
+
 ```
 
 

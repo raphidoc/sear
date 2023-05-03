@@ -407,6 +407,9 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           PlotDef(.)
       }
 
+      # Save graph
+      save_image(p, file=file.path(path.expand("~"), "sear_figure", "map.png"), scale = 3, height = 720, width = 1280)
+
       p
     })
 

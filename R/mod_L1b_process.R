@@ -10,7 +10,7 @@
 mod_L1b_process_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    uiOutput(outputId = ns("L1b")),
+    uiOutput(outputId = ns("L1bManual"))
   )
 }
 
@@ -22,7 +22,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    output$L1b <- renderUI({
+    output$L1bManual <- renderUI({
 
       req(L1a$ParsedFiles())
 
@@ -114,7 +114,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
 
           if (length(FiltRawHOCR) == 0) {
             warning(
-              paste0("HOCR data not found at time interval: ",TimeInt)
+              paste0("HOCR data not found at time interval: ", TimeInt)
             )
           } else if (is.null(CalData$CalHOCR())) {
             warning(
