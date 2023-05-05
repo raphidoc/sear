@@ -122,11 +122,11 @@ app_server <- function(input, output, session) {
 
   L1aSelect <- mod_L1a_select_server("L1a_select", MainLog, DB, Obs, ManObs, L1a)
 
-  Auto <- mod_automatic_processing_server(
+  AutoProcess <- mod_automatic_processing_server(
     "automatic_processing",
-    L1a, CalData, Obs, Settings, MainLog)
+    L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB)
 
-  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs)
+  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs, MainLog)
 
   L2 <- mod_L1bL2_server("L1bL2", Obs, Settings)
 

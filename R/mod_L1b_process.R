@@ -10,30 +10,24 @@
 mod_L1b_process_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    uiOutput(outputId = ns("L1bManual"))
+    actionButton(ns("ProcessL1b"), "Process L1b")
   )
 }
 
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
+mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    output$L1bManual <- renderUI({
-
-      req(L1a$ParsedFiles())
-
-      tagList(
-        actionButton(ns("ProcessL1b"), "Process L1b")
-      )
-    })
-
     observeEvent(
-      input$ProcessL1b,
+      list(
+        input$ProcessL1b
+        ),
       label = "processL1b",
+      ignoreInit = T,
       {
 
         # Create a Progress object
@@ -42,28 +36,16 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
         # Close the progress when this reactive exits (even if there's an error)
         on.exit(progress$close())
 
-        # Create metadata for the selected L1a point
-
-        Obs$Metadata <- tibble(
-          ObsName = "NA",
-          ObsType = "NA",
-          ObsFlag = "NA",
-          DateTime = as.character(mean(L1aSelect$MainLog()$DateTime, na.rm = T)),
-          DateTimeMin = as.character(min(L1aSelect$MainLog()$DateTime, na.rm = T)),
-          DateTimeMax = as.character(max(L1aSelect$MainLog()$DateTime, na.rm = T)),
-          TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
-          Lon = mean(L1aSelect$MainLog()$Lon, na.rm = T),
-          Lat = mean(L1aSelect$MainLog()$Lat, na.rm = T),
-          LonMin = min_geo(L1aSelect$MainLog()$Lon, na.rm = T),
-          LonMax = max_geo(L1aSelect$MainLog()$Lon, na.rm = T),
-          LatMin = min_geo(L1aSelect$MainLog()$Lat, na.rm = T),
-          LatMax = max_geo(L1aSelect$MainLog()$Lat, na.rm = T),
-          Altitude = mean(as.numeric(L1aSelect$MainLog()$Altitude), na.rm = T),
-          DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
-          BoatSolAzm = mean(L1aSelect$MainLog()$BoatSolAzm, na.rm = T),
-          Comment = "NA",
-          UUID = NA
+        # Create the discrete time interval and select the associated points
+        TimeInt <- interval(
+          min(L1aSelect$MainLog()$DateTime, na.rm = T),
+          max(L1aSelect$MainLog()$DateTime, na.rm = T)
         )
+
+        Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
+
+        # Create metadata for the selected L1a point
+        Obs$Metadata <- gen_metadata(Select = Select)
 
         if (is.null(L1a$InstrumentList())) {
           showModal(modalDialog(
@@ -86,10 +68,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
         Obs$BBFL2$L2 <- tibble()
         Obs$BioSonic$L2 <- tibble()
 
-        # Filter data point before processing to optimize execution time
-        SelDateTime <- L1aSelect$MainLog()$DateTime
-        TimeInt <- interval(min(SelDateTime, na.rm = T), max(SelDateTime, na.rm = T))
-
         # HOCR L1b ----------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
@@ -106,7 +84,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
             }
             progress$set(value = value, message = message, detail = detail)
           }
-
 
           progress$set(value = 0.1, detail = "HOCR")
 
@@ -135,7 +112,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
                 RawHOCR = FiltRawHOCR,
                 CalHOCR = CalData$CalHOCR(),
                 HOCRDark = HOCRDark,
-                MainLogDate = unique(date(L1aSelect$MainLog()$DateTime)),
+                MainLogDate = unique(date(Select$DateTime)),
                 UpdateProgress
               ),
               shiny = T,
@@ -152,8 +129,8 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs) {
 
           progress$set(value = 0.3, detail = "SBE19")
 
-          Lon <- mean(L1aSelect$MainLog()$Lon)
-          Lat <- mean(L1aSelect$MainLog()$Lat)
+          Lon <- mean(Select$Lon)
+          Lat <- mean(Select$Lat)
 
           SBE19 <- L1a$SBE19() %>% filter(DateTime %within% TimeInt)
 

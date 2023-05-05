@@ -164,12 +164,15 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
           DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, BBFL2TimeIndex)
           message("BBFL2 synthesis done")
 
+          if (!is.null(PrimBioSonic$DateTime)) {
+            BioSonicTimeIndex <- ymd_hms(unique(format(PrimBioSonic$DateTime, "%Y-%m-%d %H:%M:%S")))
 
-          BioSonicTimeIndex <- ymd_hms(unique(format(PrimBioSonic$DateTime, "%Y-%m-%d %H:%M:%S")))
-
-          progress$set(value = 0.8, detail = "BioSonic synthesis")
-          DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, BioSonicTimeIndex)
-          message("BioSonic synthesis done")
+            progress$set(value = 0.8, detail = "BioSonic synthesis")
+            DataSyntBioSonic <- data_synthesis(PrimMainLog$DateTime, BioSonicTimeIndex)
+            message("BioSonic synthesis done")
+          } else {
+            DataSyntBioSonic <- NA
+          }
 
           progress$set(value = 0.9, detail = "Saving")
 

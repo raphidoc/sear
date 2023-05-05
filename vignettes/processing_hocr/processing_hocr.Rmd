@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-golem::document_and_reload()
+#golem::document_and_reload()
 
 library(sear)
 library(dplyr)
@@ -50,7 +50,7 @@ To read the binaary HOCR file we will pass by the kaitai struct parser trough py
 To code live in python use `reticulate::repl_python()`, to get object from python or r envs use `py$<name>` or `r.<name>`, `source_python()` to source function in python file.
 
 ```{r read-hocr}
-BinFile <- system.file("extdata", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
+BinFile <- system.file("data-raw", "reduced", "DATA_20220705_105732.bin", package = "sear", mustWork = T)
 
 reticulate::source_python(system.file("py", "hocr.py", package = "sear", mustWork = T))
 
@@ -119,7 +119,7 @@ This time index list still take time to create, ~ 3 min for 44826 packets (22.2 
 
 # ymd_hms("2021-11-11 18:49:16"), ymd_hms("2021-11-11 18:50:25")
 
-Station1PaP <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
+Station1PaP <- interval(ymd_hms("2022-07-05 14:15:35"), ymd_hms("2022-07-05 14:15:43"))
 
 AplaDate <- "2022-07-05"
 ```
@@ -186,22 +186,35 @@ HOCRTimeIndex <- pur_clock(RawHOCR, AplaDate)
 # test <- unlist(HOCRTimeIndex, recursive = T)
 ```
 
+To select the raw HOCR data corresponding to an observation maybe use
+greater and lower than number of second, maybe faster than `%within%` time.
 
 ```{r}
-filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
-  # Ideally the packet DateTime would be construct from the packet only ...
-  # As I don't know the Date here quick and dirty fix with AplaDate
+filter_hocr_time <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
 
   Ind <- purrr::map_lgl(.x = HOCRTimeIndex, ~ .x %within% TimeInt)
-
-  # Search for shutter dark measurment in selected point
-  # DarkInd <- purrr::map_lgl(.x = RawHOCR[Ind], ~ str_detect(as.character(.x$instrument, error = "ignore"), "HED|PLD"))
-
 
   RawHOCR[Ind]
 }
 
-FiltRawHOCR <- filter_hocr(RawHOCR, HOCRTimeIndex, TimeInt = Station1PaP)
+filter_hocr_numeric <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
+
+  Ind <- purrr::map_lgl(
+    .x = as.numeric(HOCRTimeIndex),
+    ~ .x >= as.numeric(int_start(TimeInt)) & .x <= as.numeric(int_end(TimeInt))
+    )
+
+  RawHOCR[Ind]
+}
+
+
+microbenchmark(
+  times = 10,
+  filter_hocr_time(RawHOCR, HOCRTimeIndex, TimeInt = Station1PaP),
+  filter_hocr_numeric(RawHOCR, HOCRTimeIndex, TimeInt = Station1PaP)
+)
+
+FiltRawHOCR <- filter_hocr_numeric(RawHOCR, HOCRTimeIndex, TimeInt = Station1PaP)
 ```
 
 ### Note regarding HOCR acquisition rate and boat speed

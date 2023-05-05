@@ -69,12 +69,13 @@ read_hocr <- function(BinFile) {
 #'
 #' @noRd
 filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
-  # Ideally the packet DateTime would be construct from the packet only ...
-  # As I don't know the Date here quick and dirty fix with MainLogDate
 
-  ind <- purrr::map_lgl(.x = HOCRTimeIndex, ~ .x %within% TimeInt)
+  Ind <- purrr::map_lgl(
+    .x = as.numeric(HOCRTimeIndex),
+    ~ .x >= as.numeric(int_start(TimeInt)) & .x <= as.numeric(int_end(TimeInt))
+  )
 
-  RawHOCR[ind]
+  RawHOCR[Ind]
 }
 
 #' tidy_hocr
