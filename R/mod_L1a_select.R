@@ -340,8 +340,8 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
             y = ~Lat,
             customdata = ~UUID,
             marker = list(
-              color = "rgb(127, 255, 212)",
-              size = ~ DistanceRun
+              color = "rgb(127, 255, 212)"#,
+              #size = ~ DistanceRun
               ),
             text = ~ paste0(
               "<b>ObsName</b>: ", ObsName, "<br>",
