@@ -1,3 +1,5 @@
+# sear (development version)
+
 # sear 0.2.0
 
 * Added `Rrs_loess` and `RbI` computation and storage in SQLite `HOCRL2` table with DB migration script in `sear_dev`.
