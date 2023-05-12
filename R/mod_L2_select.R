@@ -240,36 +240,36 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       Zoom(ZC[[1]])
       Center(ZC[[2]])
 
-      # SF read coords as XY not YX aka Lat Lon
-      ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
-      ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun / 2) %>% sf::st_transform(4326)
-
-      # Avoid sfheaders::sf_to_df bug if object empty
-      if (nrow(ObsMetaBuffer) == 0) {
-        ObsMetaBuffer <- tibble(
-          UUID = NA,
-          x = NA,
-          y = NA
-        )
-      } else {
-        ObsMetaBuffer <- sfheaders::sf_to_df(ObsMetaBuffer, fill = T)
-      }
+      # # SF read coords as XY not YX aka Lat Lon
+      # ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
+      # ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun / 2) %>% sf::st_transform(4326)
+      #
+      # # Avoid sfheaders::sf_to_df bug if object empty
+      # if (nrow(ObsMetaBuffer) == 0) {
+      #   ObsMetaBuffer <- tibble(
+      #     UUID = NA,
+      #     x = NA,
+      #     y = NA
+      #   )
+      # } else {
+      #   ObsMetaBuffer <- sfheaders::sf_to_df(ObsMetaBuffer, fill = T)
+      # }
 
       # plot definition
       PlotDef <- function(.) {
         (.) %>%
-          add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
-            name = "ObsBuffer",
-            data = ObsMetaBuffer,
-            x = ~x,
-            y = ~y,
-            customdata = ~UUID,
-            line = list(color = "rgb(127, 255, 212)", width = 1),
-            fillcolor = "rgba(127, 255, 212, 0.2)",
-            split = ~UUID,
-            legendgroup = "Obs",
-            showlegend = F
-          ) %>%
+          # add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
+          #   name = "ObsBuffer",
+          #   data = ObsMetaBuffer,
+          #   x = ~x,
+          #   y = ~y,
+          #   customdata = ~UUID,
+          #   line = list(color = "rgb(127, 255, 212)", width = 1),
+          #   fillcolor = "rgba(127, 255, 212, 0.2)",
+          #   split = ~UUID,
+          #   legendgroup = "Obs",
+          #   showlegend = F
+          # ) %>%
           add_markers(
             name = "Obs",
             data = DB$ObsMeta(),

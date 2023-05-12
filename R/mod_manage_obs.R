@@ -381,6 +381,9 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           # )
         } else {
 
+
+# Initial save if UUID doesn't exist --------------------------------------
+
           ObsUUID <- uuid::UUIDgenerate(
             use.time = T,
             output = "string"
@@ -467,7 +470,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       }
     )
 
-    # Delete button remove data from SQLite -----------------------------------
+# Delete button remove data from SQLite -----------------------------------
 
     modal_confirm <- modalDialog(
       "Are you sure you want to continue?",

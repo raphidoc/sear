@@ -89,7 +89,7 @@ mod_bottom_reflectance_server <- function(id, Obs){
       ply$x$source <- "BRI"
 
       # Save graph
-      save_image(ply, file=file.path(path.expand("~"), "sear_figure", "BRI.svg"), scale = 3, height = 720, width = 1280)
+      # save_image(ply, file=file.path(path.expand("~"), "sear_figure", "BRI.svg"), scale = 3, height = 720, width = 1280)
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(ply)

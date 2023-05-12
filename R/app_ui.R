@@ -26,6 +26,10 @@ app_ui <- function(request) {
       menuItem("Parsing", tabName = "Parsing", icon = icon("fa-regular fa-file-lines")),
       menuItem("Processing", tabName = "Processing", icon = icon("gears"))
     ),
+    fluidRow(
+      mod_L1b_process_ui("L1b_process"),
+      mod_automatic_processing_ui("automatic_processing")
+    ),
     # mod_filter_trim_ui("filter_trim"),
     # mod_discretize_ui("discretize"),
     sidebarMenu(
@@ -58,11 +62,7 @@ app_ui <- function(request) {
         fluidRow(
           column(
             width = 6,
-            mod_L1a_select_ui("L1a_select"),
-            fluidRow(
-              mod_L1b_process_ui("L1b_process"),
-              mod_automatic_processing_ui("automatic_processing")
-              )
+            mod_L1a_select_ui("L1a_select")
           ),
           column(
             width = 6,

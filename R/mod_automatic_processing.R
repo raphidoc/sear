@@ -40,11 +40,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
         # Create a Progress object
         progress <- shiny::Progress$new()
-        progress$set(message = "Processing L1b: ", value = 0)
         # Close the progress when this reactive exits (even if there's an error)
         on.exit(progress$close())
-
-        browser()
 
         #discretize_time(L1a$Apla()$DateTime)
 
@@ -100,6 +97,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           if (interval(x, y) < seconds(UpLimit) & interval(x, y) > seconds(LowLimit)) {
 
             TimeInt <- interval(x, y)
+
+            progress$set(message = paste("Processing obs :",n, TimeInt), value = n/(length(MainTime)/4))
 
             message(paste("Processing obs :",n, TimeInt))
 
@@ -173,10 +172,22 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                 Z1Depth <- Settings$HOCR$Z1Depth()
                 Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
 
-                Obs$HOCR$L2 <- try(L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
-                                       T, 0.1, Obs))
+                Obs$HOCR$L2 <- tryCatch({
+                  L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+                          T, 0.1, Obs)
+                },
+                error = function(e) e
+                )
 
-                if(inherits(Obs$HOCR$L2, "try-error")) next
+                if (inherits(Obs$HOCR$L2, "error")) {
+                  #message(Obs$HOCR$L2)
+                  message("Sear is trying to take the next j point")
+
+                  i = i
+                  j = j + 1
+
+                  next
+                }
 
 
               }

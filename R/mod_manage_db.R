@@ -74,6 +74,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           Altitude DOUBLE NOT NULL,
           DistanceRun DOUBLE NOT NULL,
           BoatSolAzm DOUBLE NOT NULL,
+          ScoreQWIP DOUBLE NOT NULL,
           Comment TEXT,
           UUID TEXT PRIMARY KEY,
           ProTime TEXT NOT NULL,
@@ -289,7 +290,13 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
       req(Con())
       validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
 
-      selectizeInput(ns("ObsList"), "ObsList", choices = c("", ObsMeta()$UUID), selected = NULL, multiple = F)
+      selectizeInput(ns("ObsList"), "ObsList", selected = NULL, multiple = F)
+    })
+
+    observe({
+      updateSelectizeInput(
+        session = getDefaultReactiveDomain(),
+        "ObsList", choices = c("", ObsMeta()$UUID), server = T)
     })
 
     list(

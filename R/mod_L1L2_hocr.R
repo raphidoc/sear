@@ -67,7 +67,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
               ) %>%
               add_annotations(
                 text = ~.y,
-                x = 0.5,
+                x = 0.01,
                 y = 1,
                 yref = "paper",
                 xref = "paper",
@@ -123,7 +123,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       p$x$source <- "HOCRL1b"
 
       # Save graph
-      save_image(p, file=file.path(path.expand("~"), "sear_figure", "L1b.svg"), scale = 3, height = 720, width = 1280)
+      #save_image(p, file=file.path(path.expand("~"), "sear_figure", "L1b.svg"), scale = 3, height = 720, width = 1280)
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
@@ -185,9 +185,29 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         add_lines(x = ~Wavelength, y = ~Rrs, showlegend = T) %>%
         layout(shapes = BlackSquare)
 
-      if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
+      if (any(str_detect(names(Obs$HOCR$L2), "ScoreQWIP"))) {
         Rrsplot <- Rrsplot %>%
-          add_trace(x = ~Wavelength, y = ~Rrs_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash', color = 'red'))
+          add_annotations(
+            text = ~paste("QWIP:",unique(Obs$Metadata$ScoreQWIP)),
+            x = 0.01,
+            y = 1,
+            yref = "paper",
+            xref = "paper",
+            xanchor = "middle",
+            yanchor = "top",
+            showarrow = FALSE,
+            font = list(size = 15)
+          )
+      }
+
+      if (any(str_detect(names(Obs$HOCR$L2), "Rrs_loess"))) {
+        Rrsplot <- Rrsplot %>%
+          add_trace(
+            x = ~Wavelength,
+            y = ~Rrs_loess,
+            type = 'scatter',
+            mode = 'lines',
+            line = list(dash = 'dash', color = 'red'))
       }
 
       KLuplot <- Obs$HOCR$L2 %>%
@@ -225,7 +245,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       ply$x$source <- "KLu"
 
       # Save graph
-      save_image(ply, file=file.path(path.expand("~"), "sear_figure", "AOPs.svg"), scale = 3, height = 720, width = 1280)
+      #save_image(ply, file=file.path(path.expand("~"), "sear_figure", "AOPs.svg"), scale = 3, height = 720, width = 1280)
 
       widgetframe::frameableWidget(ply)
     })

@@ -170,16 +170,15 @@ qc_shift <- function(df, Selected) {
 #' @description This function calculates the Quality Water Index Polynomial (QWIP)
 #' based on Diesrssen et al 2022 paper.
 #'
-#' @param Waves
-#' @param Rrs
+#' @param Waves wavelengths
+#' @param Rrs Remote sensing reflectance
 #'
 #' @return QWIP.score
 #'
-#' @author Simon Bélanger
+#' @author Simon Bélanger, Raphael Mabit
 #' @export
 
-
-QWIP <- function(Waves, Rrs, PLOT = TRUE, LABEL = "Station") {
+qc_qwip <- function(Waves, Rrs) {
 
 
   # Compute the Apparent Visible Wavelength (AVW)
@@ -203,9 +202,9 @@ QWIP <- function(Waves, Rrs, PLOT = TRUE, LABEL = "Station") {
   QWIP <- p1*(AVW^4) + p2*(AVW^3) + p3*(AVW^2) + p4*AVW   + p5
 
   # QWIP Score
-  QWIP.score = NDI - QWIP
+  Score = NDI - QWIP
 
-  if (abs(QWIP.score) < 0.1) QWIP.PASS <- TRUE else QWIP.PASS <- FALSE
+  if (abs(Score) < 0.1) Pass <- TRUE else Pass <- FALSE
 
   predicted.AVW <- 440:600
   predicted.NDI <- p1*(predicted.AVW^4) +
@@ -228,50 +227,49 @@ QWIP <- function(Waves, Rrs, PLOT = TRUE, LABEL = "Station") {
   }
 
   # Get FU color scale
-  FU <- Rrs2FU(Waves, Rrs)$FU
+  #FU <- Rrs2FU(Waves, Rrs)$FU
 
 
-  # Plot
-  if (PLOT) {
+  # # Plot
+  # if (T) {
+  #
+  #   df <- data.frame(AVW = predicted.AVW,
+  #                    NDI = predicted.NDI,
+  #                    NDI.minus.0.1 = predicted.NDI-0.1,
+  #                    NDI.plus.0.1 = predicted.NDI+0.1,
+  #                    NDI.minus.0.2 = predicted.NDI-0.2,
+  #                    NDI.plus.0.2 = predicted.NDI+0.2)
+  #
+  #   df.rrs <- data.frame(AVW = AVW,
+  #                        NDI = NDI,
+  #                        class.col = class.col)
+  #
+  #   dfm <- reshape2::melt(df,id.vars = "AVW")
+  #   names(dfm) <- c("AVW", "Predicted", "NDI")
+  #
+  #   p <- ggplot(dfm, aes(x=AVW, y=NDI)) + geom_line(aes(color=Predicted)) +
+  #     geom_point(data=df.rrs, aes(x=AVW, y=NDI, color=class.col),size=3) +
+  #     scale_color_manual(name="NDI",labels=c(LABEL, "Predicted", "-0.1", "+0.2", "-0.1", "+0.2"),
+  #                        values=c(class.col,"black", "orange",  "red", "orange", "red"))
+  #
+  #   if (QWIP.PASS) {
+  #     p <- p + ggtitle(expression(R[rs]~" passed Quality Control"),
+  #                      subtitle = paste("Water class:", class, "      FU color scale:", "FU")) +
+  #
+  #       labs(caption = "Method from Dierssen et al. Front. Rem. Sens. (2022)") +
+  #       theme(plot.title = element_text(size=18, face="bold"),
+  #             plot.subtitle = element_text(color = class.col, size=12, face="bold"))
+  #   } else  {
+  #     p <- p + ggtitle(expression(R[rs]~"Rrs failed Quality Control ; Check extrapolation"),
+  #                      subtitle = paste("Water class:", class, "      FU color scale:", "FU")) +
+  #       labs(caption = "Method from Dierssen et al. Front. Rem. Sens. (2022)") +
+  #       theme(plot.title = element_text(color="#c80d0d", size=18, face="bold.italic"),
+  #             plot.subtitle = element_text(color = class.col, size=12, face="bold"))
+  #   }
+  #
+  #   print(p)
+  #}
 
-    df <- data.frame(AVW = predicted.AVW,
-                     NDI = predicted.NDI,
-                     NDI.minus.0.1 = predicted.NDI-0.1,
-                     NDI.plus.0.1 = predicted.NDI+0.1,
-                     NDI.minus.0.2 = predicted.NDI-0.2,
-                     NDI.plus.0.2 = predicted.NDI+0.2)
-
-    df.rrs <- data.frame(AVW = AVW,
-                         NDI = NDI,
-                         class.col = class.col)
-
-    dfm <- melt(df,id.vars = "AVW")
-    names(dfm) <- c("AVW", "Predicted", "NDI")
-
-    p <- ggplot(dfm, aes(x=AVW, y=NDI)) + geom_line(aes(color=Predicted)) +
-      geom_point(data=df.rrs, aes(x=AVW, y=NDI, color=class.col),size=3) +
-      scale_color_manual(name="NDI",labels=c(LABEL, "Predicted", "-0.1", "+0.2", "-0.1", "+0.2"),
-                         values=c(class.col,"black", "orange",  "red", "orange", "red"))
-
-    if (QWIP.PASS) {
-      p <- p + ggtitle(expression(R[rs]~" passed Quality Control"),
-                       subtitle = paste("Water class:", class, "      FU color scale:", FU)) +
-
-        labs(caption = "Method from Dierssen et al. Front. Rem. Sens. (2022)") +
-        theme(plot.title = element_text(size=18, face="bold"),
-              plot.subtitle = element_text(color = class.col, size=12, face="bold"))
-    } else  {
-      p <- p + ggtitle(expression(R[rs]~"Rrs failed Quality Control ; Check extrapolation"),
-                       subtitle = paste("Water class:", class, "      FU color scale:", FU)) +
-        labs(caption = "Method from Dierssen et al. Front. Rem. Sens. (2022)") +
-        theme(plot.title = element_text(color="#c80d0d", size=18, face="bold.italic"),
-              plot.subtitle = element_text(color = class.col, size=12, face="bold"))
-    }
-
-    print(p)
-
-
-
-  }
+  return(list("Score" = Score, "Pass" = Pass))
 
 }

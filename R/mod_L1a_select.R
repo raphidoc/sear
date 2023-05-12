@@ -290,19 +290,19 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       }
 
       # SF read coords as XY not YX aka Lat Lon
-      ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
-      ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun / 2) %>% sf::st_transform(4326)
+      # ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
+      # ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun / 2) %>% sf::st_transform(4326)
 
       # Avoid sfheaders::sf_to_df bug if object empty
-      if (nrow(ObsMetaBuffer) == 0) {
-        ObsMetaBuffer <- tibble(
-          UUID = NA,
-          x = NA,
-          y = NA
-        )
-      } else {
-        ObsMetaBuffer <- sfheaders::sf_to_df(ObsMetaBuffer, fill = T)
-      }
+      # if (nrow(ObsMetaBuffer) == 0) {
+      #   ObsMetaBuffer <- tibble(
+      #     UUID = NA,
+      #     x = NA,
+      #     y = NA
+      #   )
+      # } else {
+      #   ObsMetaBuffer <- sfheaders::sf_to_df(ObsMetaBuffer, fill = T)
+      # }
 
       # plot definition
       PlotDef <- function(.) {
@@ -322,25 +322,27 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
               "<b>BoatSolAzm (degree)</b>: ", BoatSolAzm, "<br>"
             )
           ) %>%
-          add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
-            name = "ObsBuffer",
-            data = ObsMetaBuffer,
-            x = ~x,
-            y = ~y,
-            customdata = ~UUID,
-            line = list(color = "rgb(127, 255, 212)", width = 1),
-            fillcolor = "rgba(127, 255, 212, 0.2)",
-            split = ~UUID,
-            legendgroup = "Obs",
-            showlegend = F
-          ) %>%
+          # add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
+          #   name = "ObsBuffer",
+          #   data = ObsMetaBuffer,
+          #   x = ~x,
+          #   y = ~y,
+          #   customdata = ~UUID,
+          #   line = list(color = "rgb(127, 255, 212)", width = 1),
+          #   fillcolor = "rgba(127, 255, 212, 0.2)",
+          #   split = ~UUID,
+          #   legendgroup = "Obs",
+          #   showlegend = F) %>%
           add_markers(
             name = "Obs",
             data = DB$ObsMeta(),
             x = ~Lon,
             y = ~Lat,
             customdata = ~UUID,
-            marker = list(color = "rgb(127, 255, 212)"),
+            marker = list(
+              color = "rgb(127, 255, 212)",
+              size = ~ DistanceRun
+              ),
             text = ~ paste0(
               "<b>ObsName</b>: ", ObsName, "<br>",
               "<b>DateTime</b>: ", DateTime, "<br>",
@@ -408,7 +410,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       }
 
       # Save graph
-      save_image(p, file=file.path(path.expand("~"), "sear_figure", "map.png"), scale = 3, height = 720, width = 1280)
+      # save_image(p, file=file.path(path.expand("~"), "sear_figure", "map.png"), scale = 3, height = 720, width = 1280)
 
       p
     })
