@@ -1,6 +1,6 @@
 Package: sear
 Title: Data Management and Processing for Ocean Optics
-Version: 0.2.0.9000
+Version: 0.3.0
 Authors@R: 
     person("Raphael", "Mabit", , "raphael.mabit@gmail.com", role = c("aut", "cre"))
 Description: A modular shiny software to manage and process ocean optics

@@ -1,4 +1,4 @@
-# sear (development version)
+# sear 0.3.0
 
 # sear 0.2.0
 
