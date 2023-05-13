@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 This vignette intend to document the development and the functionality of the
-`sear_app()` function. This function is the top level function that call the
+`run_app()` function. This function is the top level function that call the
 shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
 
 ```{r setup}
@@ -74,7 +74,7 @@ The idea behind this application software originated from a conversation with my
 
 > A consistent theory is one that does not lead to a logical contradiction.
 
-Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. When we think about managing and processing different data type of various format coming from different instruments, this mix between the rigidity of a consistent architecture and the flexibility required to solve various problems is best solved today by web-based application. That's why *sear* is such an application.
+Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. Managing and processing different data type of various format coming from different instruments require a trade off between the rigidity of a consistent architecture and the flexibility required to solve various problems. This trade off is best achieved today by web-based application. That's why *sear* is such an application.
 
 This software is originally developed and tailored for the Sea-Doo/MTE data logger, but it could provide a common ground in ocean optics science data management and processing. If your willing for us (Ocean Optic Researcher) to meet halfway somewhere, it could be here. Future issues, necessary decision and trade of could bring this community closer and help us move toward a more collaborative future (e.g. [https://science.nasa.gov/open-science/transform-to-open-science](NASA TOPS program)). We may be able to leave behind the need to reinvent the wheel at each new generation of young scientist.
 (Also it's often by reinventing the wheel that you understand how it work and that you can appropriate some principle to develop new idea)
@@ -83,6 +83,20 @@ The name *sear* come from a play of word with "sea R" and "seer", meaning having
 
 * To burn something with sudden intense heat
 * An image, emotion, or feeling having a sudden and strong effect on someone
+
+# Writing the sear documentation
+
+The sear documentation is written following the principles of [https://diataxis.fr/](diataxis).
+It revolves around four kind of documentation:
+
+1. Tutorial
+  Story that take a beginner by the hand to reach a meaningful goal to create engagement and provide a learning experience. Like a cooking lesson.
+2. How-to
+  Step-by-step guide that assume a minimal knowledge of the reader and give him instruction to go from A to B. Like a recipe.
+3. Reference
+  Concise description of the software. In this case it is generated with `roxygen2`.
+4. Explanation
+  Discussion about the software, the architecture and the choices made. Mainly this document.
 
 # Dev Test and Demo dataset
 
@@ -96,8 +110,8 @@ To reduce the raw .bin and .txt data we start by identifying with the help of th
 We also identifies the position of the corresponding HOCR binary packets on the time index.
 
 ```{r}
-full <- "/D/Data/sear_test_data/full/"
-reduced <- "/D/Data/sear_test_data/reduced/"
+#full <- "/D/Data/sear_test_data/full/"
+#reduced <- "/D/Data/sear_test_data/reduced/"
 ```
 
 TODO: Describe the selected data and explain it's utility (the logic of the selection)

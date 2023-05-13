@@ -188,6 +188,9 @@ sudo systemctl status shiny-server
 
 The UQAR network doesn't allow connection to a server service based on port number. The solution is to use a reverse proxy, so that nginx will listen on port 80 (default HTTP port) at the URL /shiny and will internally redirect that to port 3838. Same for RStudio - we can have nginx listen at /rstudio and redirect it to port 8787.
 
+With this setup, when hosting a shiny `user_dirs;` model, the apps will be available at the URL: ip/shiny/user/app
+Example: http://10.7.48.7/shiny/raphael/sear/
+
 ```
 sudo nano /etc/nginx/sites-enabled/default
 ```

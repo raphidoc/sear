@@ -114,6 +114,7 @@ discretize_time <- function(MainTime) {
 #' @noRd
 
 gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
+
   tibble(
     ObsName = "NA",
     ObsType = "NA",
@@ -122,6 +123,7 @@ gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     DateTimeMin = as.character(min(Select$DateTime, na.rm = T)),
     DateTimeMax = as.character(max(Select$DateTime, na.rm = T)),
     TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
+    Speed = as.numeric(mean(Select$Speed_kmh, na.rm = T)), # speed in kmh
     Lon = mean(Select$Lon, na.rm = T),
     Lat = mean(Select$Lat, na.rm = T),
     LonMin = min_geo(Select$Lon, na.rm = T),
@@ -135,8 +137,6 @@ gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     UUID = NA
   )
 }
-
-
 
 #' qc_shift
 #'

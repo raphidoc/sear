@@ -79,7 +79,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           step = 1
         ),
         sliderInput(ns("SolAzmLimit"), "BoatSolAzm [degree]", value = c(90, 180), min = 0, max = 360),
-        numericInput(ns("SpeedLimit"), "Speed [kn]", 6, step = 0.1)
+        numericInput(ns("SpeedLimit"), "Speed [km/h]", 11, step = 0.1)
       )
     })
 
@@ -143,7 +143,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         filter(
           DateTime %within% TimeInterval(),
           BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
-          Speed_N <= input$SpeedLimit
+          Speed_kmh <= input$SpeedLimit
         )
 
       SubMainLog(PrimMainLog)
@@ -317,7 +317,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
             text = ~ paste0(
               "<b>Date</b>: ", format(DateTime, "%Y-%m-%d"), "<br>",
               "<b>Time</b>: ", format(DateTime, "%H:%M:%S"), "<br>",
-              "<b>Speed (Knt)</b>: ", Speed_N, "<br>",
+              "<b>Speed (km/h)</b>: ", Speed_kmh, "<br>",
               "<b>Course (TN)</b>: ", Course_TN, "<br>",
               "<b>BoatSolAzm (degree)</b>: ", BoatSolAzm, "<br>"
             )

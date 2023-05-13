@@ -10,7 +10,8 @@
 mod_manage_db_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    uiOutput(outputId = ns("ObsList"))
+    uiOutput(outputId = ns("ObsList")),
+    uiOutput(outputId = ns("ExportDB"))
   )
 }
 
@@ -64,7 +65,8 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           DateTime TEXT NOT NULL,
           DateTimeMin TEXT NOT NULL,
           DateTimeMax TEXT NOT NULL,
-          TimeElapsed INTEGER NOT NULL,
+          TimeElapsed DOUBLE NOT NULL,
+          Speed DOUBLE NOT NULL,
           Lon DOUBLE NOT NULL,
           Lat DOUBLE NOT NULL,
           LonMin DOUBLE NOT NULL,
@@ -290,7 +292,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
       req(Con())
       validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
 
-      selectizeInput(ns("ObsList"), "ObsList", selected = NULL, multiple = F)
+      selectizeInput(ns("ObsList"), "ObsList", choices = NULL, selected = NULL, multiple = F)
     })
 
     observe({
@@ -298,6 +300,28 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
         session = getDefaultReactiveDomain(),
         "ObsList", choices = c("", ObsMeta()$UUID), server = T)
     })
+
+    output$ExportDB <- renderUI({
+      req(Con())
+      validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
+
+      actionButton(ns("ExportDB"), "Export DB")
+    })
+
+    observeEvent(
+      input$ExportDB,
+      {
+
+        browser()
+
+        "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
+          LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
+
+
+
+
+      }
+    )
 
     list(
       ObsMeta = ObsMeta,
