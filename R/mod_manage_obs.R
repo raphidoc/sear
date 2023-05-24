@@ -173,8 +173,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       req(input$Save),
       {
 
-        #browser()
-
         # Sanitize tables ---------------------------------------------------------
         # Remove variables used for dev of Rb retrieval that don't belong in tables
 

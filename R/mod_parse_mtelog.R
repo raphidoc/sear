@@ -126,7 +126,7 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
         PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_",DateTime,".rds"))
         PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_",DateTime,".rds"))
 
-        if (any(str_detect(InstList, "OCR")) & !file.exists(PotHOCR)) {
+        if (any(str_detect(InstList, "OCR"), na.rm = T) & !file.exists(PotHOCR)) {
 
           PrimHOCR <- read_hocr(str_subset(Files$rawpath, "\\.bin"))
 

@@ -14,12 +14,17 @@
 # Read log ----------------------------------------------------------------
 
 read_mtelog <- function(LogFile) {
-  MTELog <- tibble(Raw = readr::read_lines(LogFile))
+  MTELog <- tibble(
+    Raw = readr::read_lines(LogFile)
+    )
 
   # Exctract date on line 3 of datalogger header
   Date <- str_extract(MTELog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
 
+  MTELog <- MTELog[7:length(rownames(MTELog)),]
+
   MTELog %>%
+    # separate have been superseded
     separate(Raw, into = c("Time", "Instrument", "Data"), sep = c(12, 19)) %>%
     mutate(
       DateTime = lubridate::ymd_hms(paste(Date, Time)),

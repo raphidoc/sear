@@ -577,8 +577,6 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
       names_transform = list(Wavelength = as.numeric)
     )
 
-  #browser()
-
   if (Loess) {
 
     KLuloess <- loess(

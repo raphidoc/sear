@@ -132,17 +132,19 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           progress$set(value = 0, message = "Updating MainLog: ")
 
-          #browser()
-
           PrimBioSonic <- BioSonic$BioSonic()
 
-          # Keep only one record by second (minimum necessary to compare against)
-          HOCRTimeIndex <- unique(MTELog$HOCRTimeIndex())
+          if (!is.null(MTELog$HOCRTimeIndex())) {
+            # Keep only one record by second (minimum necessary to compare against)
+            HOCRTimeIndex <- unique(MTELog$HOCRTimeIndex())
 
-          progress$set(value = 0.1, detail = "HOCR synthesis")
-          DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, HOCRTimeIndex)
-          message("HOCR synthesis done")
+            progress$set(value = 0.1, detail = "HOCR synthesis")
+            DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, HOCRTimeIndex)
+            message("HOCR synthesis done")
 
+          } else {
+            DataSyntHOCR <- NA
+          }
 
           SBE19TimeIndex <- ymd_hms(unique(format(MTELog$SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
 

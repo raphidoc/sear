@@ -20,14 +20,14 @@ Also add some information here about it so others (and your future self ;) ) can
 Install `nginx`
 
 ```
-sudo apt-get update
+sudo apt update
 sudo apt -y install nginx
 ```
 
 The default file that is served is located at `/var/www/html/index.nginx-debian.html`
 The configuration file is located at `/etc/nginx/nginx.conf`
 
-The default nginx settings only allow file uploads of 1MB, to be able to upload larger files, you’ll need to set the client_max_body_size nginx parameter in nginx.conf file in `http{}` section.
+The default nginx settings only allow file uploads of 1MB, to be able to upload larger files, you’ll need to set the `client_max_body_size` nginx parameter in nginx.conf file in `http{}` section.
 
 ```
 sudo nano /etc/nginx/nginx.conf
@@ -61,8 +61,8 @@ gpg -a --export E298A3A825C0D65DFD57CBB651716619E084DAB9 | sudo apt-key add -
 Install R
 
 ```
-sudo apt-get update
-sudo apt-get install r-base
+sudo apt update
+sudo apt install r-base
 ```
 
 ### Dependencies
@@ -125,13 +125,13 @@ stringr::str_subset(RstudioDown, paste0(SystemRelease,".*","rstudio-server.*\\.d
 ```
 
 ```
-wget https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2023.03.0-386-amd64.deb
+wget https://download2.rstudio.org/server/jammy/amd64/rstudio-server-2023.03.1-446-amd64.deb
 ```
 
 Install it
 
 ```
-sudo gdebi rstudio-server-2023.03.0-386-amd64.deb
+sudo gdebi rstudio-server-2023.03.1-446-amd64.deb
 ```
 
 ## Shiny server
