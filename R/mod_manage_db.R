@@ -323,8 +323,14 @@ LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
 LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID
 LEFT JOIN SeaOWLL2 ON Metadata.UUID = SeaOWLL2.UUID;"
 
-
-
+        Long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
+        Wide <- Long %>%
+          pivot_wider(
+            names_prefix = "Rrs_",
+            names_from = Wavelength,
+            values_from = Rrs
+          )
+        write_csv(Wide, "/D/Documents/Algae-WISE_jet-ski_Rrs_wide.csv")
 
       }
     )

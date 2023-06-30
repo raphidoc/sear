@@ -48,14 +48,14 @@ read_apla <- function(MTELog) {
       Time = str_remove(Time, ".{4}$") # Take Time to second
     )
 
-  RawGPGGA <- Apla %>%
-    filter(Trame %in% c("GPGGA")) %>%
+  RawGGA <- Apla %>%
+    filter(str_detect(Trame, "[:alpha:]{2}GGA")) %>%
     pivot_wider(
       names_from = Trame,
       values_from = Data
     ) %>%
     separate(
-      col = GPGGA,
+      col = contains("GGA"),
       sep = ",",
       into = c(
         "UTC",
@@ -81,7 +81,7 @@ read_apla <- function(MTELog) {
 
   # Could add a filter based on the pattern [:digit:]{4}\.[:digit:]{5} for Lat and [:digit:]{5}\.[:digit:]{5} for Lon
 
-  GPGGA <- RawGPGGA %>%
+  GGA <- RawGGA %>%
     mutate(
       Lat_D = as.numeric(str_sub(Lat, 1, 2)),
       Lat_DM = as.numeric(str_sub(Lat, 3, 10)),
@@ -97,19 +97,19 @@ read_apla <- function(MTELog) {
     )
 
   # Add default NA value to ObsType for initial map plot
-  GPGGA <- GPGGA %>%
+  GGA <- GGA %>%
     select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution, Altitude, AltitudeUnit)
 
-  # Extract GPVTG info, course and speed
+  # Extract VTG info, course and speed
 
-  RawGPVTG <- Apla %>%
-    filter(Trame %in% c("GPVTG")) %>%
+  RawVTG <- Apla %>%
+    filter(str_detect(Trame, "[:alpha:]{2}VTG")) %>%
     pivot_wider(
       names_from = Trame,
       values_from = Data
     ) %>%
     separate(
-      col = GPVTG,
+      col = contains("VTG"),
       sep = ",",
       convert = T,
       into = c(
@@ -126,7 +126,7 @@ read_apla <- function(MTELog) {
     ) %>%
     select(!DateTime) # Avoid duplication in join
 
-  GPVTG <- RawGPVTG %>%
+  VTG <- RawVTG %>%
     mutate(
       Course_TN = as.numeric(Course_TN),
       Course_MN = as.numeric(Course_MN),
@@ -135,7 +135,7 @@ read_apla <- function(MTELog) {
     )
 
   # Join with Time at the second
-  Apla <- left_join(GPGGA, GPVTG, by = c("Time"))
+  Apla <- left_join(GGA, VTG, by = c("Time"))
 
   Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
 

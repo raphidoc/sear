@@ -218,7 +218,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
             text = ~UUID,
             customdata = ~UUID
           ) %>%
-          add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F)%>%
+          add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F, split = ~UUID)%>%
           event_register("plotly_hover")
 
       }

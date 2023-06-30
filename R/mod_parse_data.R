@@ -134,6 +134,8 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           PrimBioSonic <- BioSonic$BioSonic()
 
+          browser()
+
           if (!is.null(MTELog$HOCRTimeIndex())) {
             # Keep only one record by second (minimum necessary to compare against)
             HOCRTimeIndex <- unique(MTELog$HOCRTimeIndex())
@@ -146,25 +148,41 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
             DataSyntHOCR <- NA
           }
 
-          SBE19TimeIndex <- ymd_hms(unique(format(MTELog$SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
+          if (!is.null(MTELog$SBE19())) {
 
-          progress$set(value = 0.5, detail = "SBE19 synthesis")
-          DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, SBE19TimeIndex)
-          message("SBE19 synthesis done")
+            SBE19TimeIndex <- ymd_hms(unique(format(MTELog$SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
 
+            progress$set(value = 0.5, detail = "SBE19 synthesis")
+            DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, SBE19TimeIndex)
+            message("SBE19 synthesis done")
 
-          SeaOWLTimeIndex <- ymd_hms(unique(format(MTELog$SeaOWL()$DateTime, "%Y-%m-%d %H:%M:%S")))
+          } else {
+            DataSyntSBE19 <- NA
+          }
 
-          progress$set(value = 0.6, detail = "SeaOWL synthesis")
-          DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, SeaOWLTimeIndex)
-          message("SeaOWL synthesis done")
+          if (!is.null(MTELog$SeaOWL())) {
 
+            SeaOWLTimeIndex <- ymd_hms(unique(format(MTELog$SeaOWL()$DateTime, "%Y-%m-%d %H:%M:%S")))
 
-          BBFL2TimeIndex <- ymd_hms(unique(format(MTELog$BBFL2()$DateTime, "%Y-%m-%d %H:%M:%S")))
+            progress$set(value = 0.6, detail = "SeaOWL synthesis")
+            DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, SeaOWLTimeIndex)
+            message("SeaOWL synthesis done")
 
-          progress$set(value = 0.7, detail = "BBFL2 synthesis")
-          DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, BBFL2TimeIndex)
-          message("BBFL2 synthesis done")
+          } else {
+            DataSyntSeaOWL <- NA
+          }
+
+          if (!is.null(MTELog$BBFL2())) {
+
+            BBFL2TimeIndex <- ymd_hms(unique(format(MTELog$BBFL2()$DateTime, "%Y-%m-%d %H:%M:%S")))
+
+            progress$set(value = 0.7, detail = "BBFL2 synthesis")
+            DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, BBFL2TimeIndex)
+            message("BBFL2 synthesis done")
+
+          } else {
+            DataSyntBBFL2 <- NA
+          }
 
           if (!is.null(PrimBioSonic$DateTime)) {
             BioSonicTimeIndex <- ymd_hms(unique(format(PrimBioSonic$DateTime, "%Y-%m-%d %H:%M:%S")))

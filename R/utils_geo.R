@@ -11,8 +11,8 @@
 # Get Zoom level and map center from lat lon, adapted from:
 # https://community.plotly.com/t/dynamic-zoom-for-mapbox/32658/11
 
-# lat <- GPGGA$Lat_DD
-# lon <- GPGGA$Lon_DD
+# lat <- GGA$Lat_DD
+# lon <- GGA$Lon_DD
 
 zoom_center <- function(lat = NULL, lon = NULL) {
   # Return default

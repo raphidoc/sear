@@ -183,12 +183,40 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   #message(Obs$HOCR$L2)
                   message("Sear is trying to take the next j point")
 
+                  # Delete the outdated metadata initially created
+                  #  Necessarry to respect UUID foreign key rule (present in main table)
+                  #DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM Metadata WHERE UUID = ",ObsUUID,";"))
+
                   i = i
                   j = j + 1
 
                   next
                 }
 
+                ObsUUID <- uuid::UUIDgenerate(
+                  use.time = T,
+                  output = "string"
+                )
+
+                Metadata <- Obs$Metadata %>%
+                  mutate(
+                    UUID = ObsUUID,
+                    ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
+                    Analyst = "Raphael Mabit",
+                    Mail = "raphael.mabit@gmail.com"
+                  )
+
+                DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
+
+                HOCRL1b <- Obs$HOCR$L1b %>%
+                  unnest(cols = c(AproxData)) %>%
+                  mutate(UUID = ObsUUID)
+
+                HOCRL2 <- Obs$HOCR$L2 %>%
+                  mutate(UUID = ObsUUID)
+
+                DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
 
               }
             }
@@ -263,6 +291,18 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 Obs$SBE19$L2 <- L2_param_val(Obs$SBE19$L1b)
 
+                # Save to DB
+
+                SBE19L1b <- Obs$SBE19$L1b %>%
+                  unnest(c(Data)) %>%
+                  mutate(UUID = ObsUUID)
+
+                SBE19L2 <- Obs$SBE19$L2  %>%
+                  mutate(UUID = ObsUUID)
+
+                DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
+
               }
             }
 
@@ -302,6 +342,16 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 Obs$SeaOWL$L2 <- L2_param_val(Obs$SeaOWL$L1b)
 
+                SeaOWLL1b <- Obs$SeaOWL$L1b %>%
+                  unnest(c(Data)) %>%
+                  mutate(UUID = ObsUUID)
+
+                SeaOWLL2 <- Obs$SeaOWL$L2  %>%
+                  mutate(UUID = ObsUUID)
+
+                DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
+
               }
             }
 
@@ -339,6 +389,16 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   nest(Data = !matches("Parameter"))
 
                 Obs$BBFL2$L2 <- L2_param_val(Obs$BBFL2$L1b)
+
+                BBFL2L1b <- Obs$BBFL2$L1b %>%
+                  unnest(c(Data)) %>%
+                  mutate(UUID = ObsUUID)
+
+                BBFL2L2 <- Obs$BBFL2$L2  %>%
+                  mutate(UUID = ObsUUID)
+
+                DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
 
               }
             }
@@ -385,74 +445,17 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 Obs$BioSonic$L2 <- test
 
+                BioSonicL1b <- Obs$BioSonic$L1b  %>%
+                  mutate(UUID = ObsUUID)
+
+                BioSonicL2 <- Obs$BioSonic$L2  %>%
+                  mutate(UUID = ObsUUID)
+
+                DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
+
               }
             }
-
-            ObsUUID <- uuid::UUIDgenerate(
-              use.time = T,
-              output = "string"
-            )
-
-            # Good explanation of the difference between UUID and hash,
-            # This way could create collision as it does not guarantee uniqueness
-            # openssl::md5(paste0(as.character(ObsMeta),
-            #                     as.character(HOCRL1b),
-            #                     as.character(AOPs),
-            #                     collapse = ""))
-
-            Metadata <- Obs$Metadata %>%
-              mutate(
-                UUID = ObsUUID,
-                ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-                Analyst = "Raphael Mabit",
-                Mail = "raphael.mabit@gmail.com"
-              )
-
-            HOCRL1b <- Obs$HOCR$L1b %>%
-              unnest(cols = c(AproxData)) %>%
-              mutate(UUID = ObsUUID)
-
-            HOCRL2 <- Obs$HOCR$L2 %>%
-              mutate(UUID = ObsUUID)
-
-            SBE19L1b <- Obs$SBE19$L1b %>%
-              unnest(c(Data)) %>%
-              mutate(UUID = ObsUUID)
-
-            SBE19L2 <- Obs$SBE19$L2  %>%
-              mutate(UUID = ObsUUID)
-
-            SeaOWLL1b <- Obs$SeaOWL$L1b %>%
-              unnest(c(Data)) %>%
-              mutate(UUID = ObsUUID)
-
-            SeaOWLL2 <- Obs$SeaOWL$L2  %>%
-              mutate(UUID = ObsUUID)
-
-            BBFL2L1b <- Obs$BBFL2$L1b %>%
-              unnest(c(Data)) %>%
-              mutate(UUID = ObsUUID)
-
-            BBFL2L2 <- Obs$BBFL2$L2  %>%
-              mutate(UUID = ObsUUID)
-
-            BioSonicL1b <- Obs$BioSonic$L1b  %>%
-              mutate(UUID = ObsUUID)
-
-            BioSonicL2 <- Obs$BioSonic$L2  %>%
-              mutate(UUID = ObsUUID)
-
-            DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
 
             # Feedback to the user
             # session$sendCustomMessage(
