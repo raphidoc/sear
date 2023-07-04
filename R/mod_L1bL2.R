@@ -79,7 +79,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
     # Obs tab -------------------------------------------------------------
 
     # DataTable used to display Obs information
-    output$DataTable <- DT::renderDataTable(
+    output$DataTable <- DT::renderDT(
       DT::datatable(Obs$Metadata,
         extensions = c("Buttons", "Scroller", "Select"),
         # filter = "top",

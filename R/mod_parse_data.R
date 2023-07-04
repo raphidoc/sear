@@ -134,8 +134,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           PrimBioSonic <- BioSonic$BioSonic()
 
-          browser()
-
           if (!is.null(MTELog$HOCRTimeIndex())) {
             # Keep only one record by second (minimum necessary to compare against)
             HOCRTimeIndex <- unique(MTELog$HOCRTimeIndex())

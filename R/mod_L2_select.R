@@ -21,7 +21,10 @@ mod_L2_select_ui <- function(id){
       ),
       column(
         width = 6,
-        plotlyOutput(ns("Plot"))
+        plotlyOutput(ns("Plot")),
+        DT::DTOutput(ns("DataTable")),
+        uiOutput(ns("Delete")),
+        uiOutput(ns("EmptyList"))
       )
     )
 
@@ -174,6 +177,9 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     #   }
     # )
 
+
+# Plot selected variables -------------------------------------------------
+
     output$Plot <- renderPlotly({
       req(nrow(L2Obs$Metadata != 0))
       req(input$VarY)
@@ -219,7 +225,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
             customdata = ~UUID
           ) %>%
           add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F, split = ~UUID)%>%
-          event_register("plotly_hover")
+          event_register("plotly_click")
 
       }
 
@@ -227,6 +233,109 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
 
     })
 
+# Add variable to deletion list -------------------------------------------
+
+    DelList <- reactiveVal(list())
+
+    observeEvent(
+      event_data("plotly_click", source = "plot"),
+      label = "QC HOCR",
+      ignoreInit = TRUE,
+      {
+        Selected <- event_data("plotly_click", source = "plot")$customdata
+
+        DelList(append(DelList(), Selected))
+      }
+    )
+
+    output$DataTable <- DT::renderDT(
+      DT::datatable(tibble(DelList()),
+                    extensions = c("Buttons", "Scroller", "Select"),
+                    # filter = "top",
+                    escape = TRUE, rownames = FALSE,
+                    style = "bootstrap",
+                    class = "compact",
+                    options = list(
+                      dom = "Brtip",
+                      select = list(style = "os", items = "row"),
+                      buttons = list(I("colvis"), "selectNone", "csv"),
+                      #columnDefs = list(
+                      #  list(
+                      #    visible = FALSE,
+                      #    targets = c(0, 1, 2, 4, 5, 8, 9, 10, 11, 12,13,14,17,18)
+                      #  )
+                      #),
+                      deferRender = TRUE,
+                      scrollY = 100,
+                      pageLength = 10,
+                      scroller = TRUE
+                    ),
+                    selection = "none",
+                    editable = T
+      ),
+      server = FALSE,
+      editable = F
+    )
+
+    output$EmptyList <- renderUI({
+
+      actionButton(ns("EmptyList"), "Empty List", class = "btn btn-success", icon = icon("glyphicon glyphicon-fast-backward", lib = "glyphicon"))
+
+    })
+
+    observeEvent(req(input$EmptyList), {
+      DelList(list())
+    })
+
+    output$Delete <- renderUI({
+
+      actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon"))
+
+    })
+
+    observeEvent(req(input$Delete), {
+      showModal(modal_confirm)
+    })
+
+    modal_confirm <- modalDialog(
+      "Are you sure you want to continue?",
+      title = "Deleting Observation",
+      footer = tagList(
+        actionButton(ns("cancel"), "Cancel"),
+        actionButton(ns("ok"), "Delete", class = "btn btn-danger")
+      )
+    )
+
+    # If user confirm delete
+    observeEvent(input$ok, {
+      removeModal()
+
+      qry <- glue::glue_sql('DELETE FROM Metadata WHERE UUID IN ("', paste(DelList(), collapse = '","'), '");')
+
+      LineDel <- DBI::dbExecute(DB$Con(), qry)
+
+      # Feedback to the user
+      session$sendCustomMessage(
+        type = "testmessage",
+        message =
+          glue::glue(
+            LineDel, " line deleted\n"
+          )
+      )
+
+      # Update the list of observation
+      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
+
+      # Empty DelList
+      DelList(list())
+    })
+
+    # If user cancel
+    observeEvent(input$cancel, {
+      removeModal()
+    })
+
+# Map for data selection --------------------------------------------------
 
     output$Map <- renderPlotly({
       req(DB$ObsMeta())
