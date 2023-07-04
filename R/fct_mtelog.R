@@ -151,7 +151,9 @@ read_apla <- function(MTELog) {
       BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm)
     )
 
-  Apla <- Apla %>% filter(Speed_N <= 10)
+  browser()
+
+  Apla <- Apla %>% filter(Speed_kmh <= 15)
 }
 
 # BBFL2 extractor -----------------------------------------------------------

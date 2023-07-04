@@ -432,7 +432,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           width = 250,
           height = 250,
           type = "scatterpolar",
-          r = ~Speed_N,
+          r = ~Speed_kmh,
           theta = ~BoatSolAzm,
           mode = "markers"
         ) %>%
