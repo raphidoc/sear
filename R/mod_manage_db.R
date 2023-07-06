@@ -11,6 +11,7 @@ mod_manage_db_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("ObsList")),
+    downloadButton(ns("DownloadDB"), "Download DB"),
     uiOutput(outputId = ns("ExportDB"))
   )
 }
@@ -308,29 +309,44 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
       actionButton(ns("ExportDB"), "Export DB")
     })
 
+
+# Download SQLite DB ------------------------------------------------------
+
+    output$DownloadDB <- downloadHandler(
+      filename = function() {
+        basename(Con()@dbname)
+      },
+      content = function(file) {
+        file.copy(Con()@dbname, file)
+      }
+    )
+
     observeEvent(
       input$ExportDB,
       {
 
         browser()
 
-        "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
-          LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
 
-        "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, Bb_700, Chl, FDOM FROM Metadata
-LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID
-LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
-LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID
-LEFT JOIN SeaOWLL2 ON Metadata.UUID = SeaOWLL2.UUID;"
 
-        Long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
-        Wide <- Long %>%
-          pivot_wider(
-            names_prefix = "Rrs_",
-            names_from = Wavelength,
-            values_from = Rrs
-          )
-        write_csv(Wide, "/D/Documents/Algae-WISE_jet-ski_Rrs_wide.csv")
+
+#         "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
+#           LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
+#
+#         "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, Bb_700, Chl, FDOM FROM Metadata
+# LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID
+# LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
+# LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID
+# LEFT JOIN SeaOWLL2 ON Metadata.UUID = SeaOWLL2.UUID;"
+#
+#         Long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
+#         Wide <- Long %>%
+#           pivot_wider(
+#             names_prefix = "Rrs_",
+#             names_from = Wavelength,
+#             values_from = Rrs
+#           )
+#         write_csv(Wide, "/D/Documents/Algae-WISE_jet-ski_Rrs_wide.csv")
 
       }
     )
