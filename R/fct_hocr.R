@@ -277,6 +277,8 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
 #' @noRd
 cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 
+  browser()
+
   # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
     text <- "HOCR: "
@@ -355,6 +357,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
   # If not 3 instrument HSE|HPL record raise an error
 
   if (nrow(HOCRLong) != 3) {
+    warning("if no HOCR data have been recorded for a long time, there is not even dark and therfore no missing light SN to find ...")
     MissSn <- unique(GlobCal$SN)[which(!unique(GlobCal$SN) %in% HOCRLong$SN)]
     stop(glue::glue("No light record for instrument: ", MissSn))
   }

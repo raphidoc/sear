@@ -162,8 +162,9 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         validate(need(!identical(event_data("plotly_selected", source = "map"), list()), message = "No data selected"))
 
         # curvenumber 0 is the Applanix trace
+        #warning("To Raph, curvenumber must equal 0 or 1")
         ID <- event_data("plotly_selected", source = "map") %>%
-          filter(curveNumber == 0)
+          filter(curveNumber == 1 | curveNumber == 0)
 
         # When Obs trace is selected, UUID make custom data as character
         ID <- as.numeric(ID$customdata)
@@ -407,6 +408,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         ) %>%
           add_sf(data = CoastCrop) %>%
           PlotDef(.)
+
       }
 
       # Save graph

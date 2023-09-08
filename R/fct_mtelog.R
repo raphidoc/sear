@@ -151,8 +151,6 @@ read_apla <- function(MTELog) {
       BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm)
     )
 
-  browser()
-
   Apla <- Apla %>% filter(Speed_kmh <= 15)
 }
 

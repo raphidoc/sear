@@ -327,9 +327,6 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
 
         browser()
 
-
-
-
 #         "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
 #           LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
 #

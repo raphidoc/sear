@@ -67,7 +67,9 @@ mod_parse_biosonic_server <- function(id, SearTbl, ParsedFiles){
       SearTbl(),
       {
 
-        NameBioSonic <- c("biosonic_[:digit:]{8}_[:digit:]{8}\\.csv")
+        #NameBioSonic <- c("biosonic_[:digit:]{8}_[:digit:]{8}\\.csv")
+
+        NameBioSonic <- c("biosonic.*\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameBioSonic))) {
 
