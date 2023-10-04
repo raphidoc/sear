@@ -100,9 +100,6 @@ discretize_time <- function(MainTime) {
 #'
 #' @return A tibble with one row and cols:
 #' \itemize{
-#'  \item{"ObsName"}{}
-#'  \item{"ObsType"}{}
-#'  \item{"ObsFlag"}{}
 #'  \item{"DateTime"}{}
 #'  \item{"DateTimeMin"}{}
 #'  \item{"DateTimeMax"}{}
@@ -116,9 +113,6 @@ discretize_time <- function(MainTime) {
 gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
 
   tibble(
-    ObsName = "NA",
-    ObsType = "NA",
-    ObsFlag = "NA",
     DateTime = as.character(mean(Select$DateTime, na.rm = T)),
     DateTimeMin = as.character(min(Select$DateTime, na.rm = T)),
     DateTimeMax = as.character(max(Select$DateTime, na.rm = T)),
@@ -133,7 +127,42 @@ gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     Altitude = mean(as.numeric(Select$Altitude), na.rm = T),
     DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
     BoatSolAzm = mean(Select$BoatSolAzm, na.rm = T),
+    Roll = mean(Select$Roll, na.rm = T),
+    Pitch = mean(Select$Pitch, na.rm = T),
+    Heave = mean(Select$Heave, na.rm = T),
     Comment = "NA",
+    UUID = NA
+  )
+}
+
+#' gen_metadataL1b
+#'
+#' @description generate metadata for a discrete obs from MainLog
+#'
+#' @return A tibble with one row and cols:
+#' \itemize{
+#'  \item{"DateTime"}{}
+#'  \item{"DateTimeMin"}{}
+#'  \item{"DateTimeMax"}{}
+#'  \item{"TimeElapsed"}{}
+#'  \item{"Lon"}{}
+#'  \item{"Lat"}{}
+#' }
+#'
+#' @noRd
+
+gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
+
+  tibble(
+    DateTime = as.character(Select$DateTime),
+    Speed = as.numeric(Select$Speed_kmh), # speed in kmh
+    Lon = Select$Lon,
+    Lat = Select$Lat,
+    Altitude = as.numeric(Select$Altitude),
+    BoatSolAzm = Select$BoatSolAzm,
+    Roll = Select$Roll,
+    Pitch = Select$Pitch,
+    Heave = Select$Heave,
     UUID = NA
   )
 }

@@ -387,7 +387,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
             customdata = ~UUID,
             marker = list(color = "rgb(127, 255, 212)"),
             text = ~ paste0(
-              "<b>ObsName</b>: ", ObsName, "<br>",
               "<b>DateTime</b>: ", DateTime, "<br>",
               "<b>UUID</b>: ", UUID, "<br>"
             ),

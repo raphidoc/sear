@@ -25,8 +25,6 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
 
     ObsMeta <- reactiveVal({
       tibble(
-        ObsType = character(),
-        ObsName = character(),
         UUID = character(),
         Lat = numeric(),
         Lon = numeric(),
@@ -60,9 +58,6 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS Metadata (
-          ObsName TEXT NOT NULL,
-          ObsType TEXT NOT NULL,
-          ObsFlag TEXT NOT NULL,
           DateTime TEXT NOT NULL,
           DateTimeMin TEXT NOT NULL,
           DateTimeMax TEXT NOT NULL,
@@ -77,12 +72,35 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           Altitude DOUBLE NOT NULL,
           DistanceRun DOUBLE NOT NULL,
           BoatSolAzm DOUBLE NOT NULL,
+          Roll DOUBLE NOT NULL,
+          Pitch DOUBLE NOT NULL,
+          Heave DOUBLE NOT NULL,
           ScoreQWIP DOUBLE NOT NULL,
           Comment TEXT,
           UUID TEXT PRIMARY KEY,
           ProTime TEXT NOT NULL,
           Analyst TEXT NOT NULL,
           Mail TEXT NOT NULL
+          );"
+        )
+
+        # MetadataL1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS MetadataL1b (
+          DateTime TEXT NOT NULL,
+          Speed DOUBLE NOT NULL,
+          Lon DOUBLE NOT NULL,
+          Lat DOUBLE NOT NULL,
+          Altitude DOUBLE NOT NULL,
+          BoatSolAzm DOUBLE NOT NULL,
+          Roll DOUBLE NOT NULL,
+          Pitch DOUBLE NOT NULL,
+          Heave DOUBLE NOT NULL,
+          UUID TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES Metadata (UUID)
+            ON DELETE CASCADE
           );"
         )
 
@@ -278,8 +296,6 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
     #
     #         } else {
     #           tibble(
-    #             ObsType = character(),
-    #             ObsName = character(),
     #             UUID = character(),
     #             Lat = numeric(),
     #             Lon = numeric(),

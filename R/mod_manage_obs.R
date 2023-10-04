@@ -402,6 +402,11 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
               Mail = "raphael.mabit@gmail.com"
             )
 
+          MetadataL1b <- Obs$MetadataL1b %>%
+            mutate(
+              UUID = ObsUUID
+            )
+
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData)) %>%
             mutate(UUID = ObsUUID)
@@ -437,6 +442,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             mutate(UUID = ObsUUID)
 
           DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)

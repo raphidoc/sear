@@ -277,8 +277,6 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
 #' @noRd
 cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 
-  browser()
-
   # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
     text <- "HOCR: "

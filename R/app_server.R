@@ -56,9 +56,6 @@ app_server <- function(input, output, session) {
   # Active discrete observation
   Obs <- reactiveValues(
     Metadata = tibble(
-      ObsName = character(),
-      ObsType = character(),
-      ObsFlag = character(),
       DateTime = character(),
       DateTimeMin = character(),
       DateTimeMax = character(),
@@ -71,6 +68,15 @@ app_server <- function(input, output, session) {
       LonMax = numeric(),
       Altitude = numeric(),
       DistanceRun = numeric(),
+      BoatSolAzm = numeric(),
+      Comment = character(),
+      UUID = character()
+    ),
+    MetadataL1b = tibble(
+      DateTime = character(),
+      Lat = numeric(),
+      Lon = numeric(),
+      Altitude = numeric(),
       BoatSolAzm = numeric(),
       Comment = character(),
       UUID = character()

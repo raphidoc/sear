@@ -345,7 +345,6 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
               #size = ~ DistanceRun
               ),
             text = ~ paste0(
-              "<b>ObsName</b>: ", ObsName, "<br>",
               "<b>DateTime</b>: ", DateTime, "<br>",
               "<b>UUID</b>: ", UUID, "<br>"
             ),

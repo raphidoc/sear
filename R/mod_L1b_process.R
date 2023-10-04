@@ -45,6 +45,9 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
         Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
 
         # Create metadata for the selected L1a point
+
+        Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
+
         Obs$Metadata <- gen_metadata(Select = Select)
 
         if (is.null(L1a$InstrumentList())) {

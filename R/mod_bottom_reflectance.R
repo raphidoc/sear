@@ -53,7 +53,7 @@ mod_bottom_reflectance_server <- function(id, Obs){
 
       Obs$HOCR$L2 <- isolate(Obs$HOCR$L2) %>%
         mutate(
-          RbI = pi*Rrs_loess/exp(-KZ)
+          BRI = pi*Rrs_loess/exp(-KZ)
         )
 
       pal <- c("Rw"="turquoise", "BRI"="orange")
@@ -63,7 +63,7 @@ mod_bottom_reflectance_server <- function(id, Obs){
       ) %>%
         add_lines(
           x = ~Wavelength,
-          y = ~RbI,
+          y = ~BRI,
           showlegend = T,
           color = "BRI"
         ) %>% #add_lines(

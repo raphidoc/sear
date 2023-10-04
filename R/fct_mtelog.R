@@ -14,6 +14,7 @@
 # Read log ----------------------------------------------------------------
 
 read_mtelog <- function(LogFile) {
+
   MTELog <- tibble(
     Raw = readr::read_lines(LogFile)
     )
@@ -22,6 +23,13 @@ read_mtelog <- function(LogFile) {
   Date <- str_extract(MTELog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
 
   MTELog <- MTELog[7:length(rownames(MTELog)),]
+
+  # With file DATA_20230720_164631.txt the following error occur:
+  # Error in nchar: invalid multibyte string, element 336
+  # MTELog[336,]
+
+  # The error also occur in files: DATA_20230921_202037.txt, DATA_20230921_202053.txt
+  # It occur at the precise same time which indicate that it originate from the custom GNSS
 
   MTELog %>%
     # separate have been superseded
@@ -35,13 +43,16 @@ read_mtelog <- function(LogFile) {
 # Apla extractor ----------------------------------------------------------
 
 read_apla <- function(MTELog) {
+
   Apla <- MTELog %>%
     filter(Instrument == "APLA") %>%
-    separate(
+    separate_wider_regex(
       col = Data,
-      sep = ",",
-      into = c("Trame", "Data"),
-      extra = "merge"
+      pattern = c("\\s[$]", Trame = "[[:alpha:]]+", ",", Data = ".*"),
+      too_few = "align_start",
+      cols_remove = T
+      #into = c("Trame", "Data"),
+      #extra = "merge"
     ) %>%
     mutate(
       Trame = str_extract(Trame, "[[:alpha:]]+"),
@@ -96,46 +107,123 @@ read_apla <- function(MTELog) {
       Lon_DD = ifelse(EW == "W", -Lon_DD, Lon_DD)
     )
 
-  # Add default NA value to ObsType for initial map plot
   GGA <- GGA %>%
     select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution, Altitude, AltitudeUnit)
 
   # Extract VTG info, course and speed
 
-  RawVTG <- Apla %>%
-    filter(str_detect(Trame, "[:alpha:]{2}VTG")) %>%
-    pivot_wider(
-      names_from = Trame,
-      values_from = Data
-    ) %>%
-    separate(
-      col = contains("VTG"),
-      sep = ",",
-      convert = T,
-      into = c(
-        "Course_TN", # Degrees
-        "Reference_TN", # True north
-        "Course_MN", # Degrees
-        "Reference_MN", # Magnetic
-        "Speed_N", # Measured horizontal speed (in knots)
-        "Unit_N", # Knots (N)
-        "Speed_kmh", # Measured horizontal speed (in km/h)
-        "Unit_kmh", # km/h
-        "Mode_Checksum" # A = Autonomous, D = DGPS, E = DR
-      )
-    ) %>%
-    select(!DateTime) # Avoid duplication in join
+  if (any(str_detect(Apla$Trame, "[:alpha:]{2}VTG"))) {
 
-  VTG <- RawVTG %>%
-    mutate(
-      Course_TN = as.numeric(Course_TN),
-      Course_MN = as.numeric(Course_MN),
-      Speed_N = as.numeric(Speed_N),
-      Speed_kmh = as.numeric(Speed_kmh)
+    RawVTG <- Apla %>%
+      filter(str_detect(Trame, "[:alpha:]{2}VTG")) %>%
+      pivot_wider(
+        names_from = Trame,
+        values_from = Data
+      ) %>%
+      separate(
+        col = contains("VTG"),
+        sep = ",",
+        convert = T,
+        into = c(
+          "Course_TN", # Degrees
+          "Reference_TN", # True north
+          "Course_MN", # Degrees
+          "Reference_MN", # Magnetic
+          "Speed_N", # Measured horizontal speed (in knots)
+          "Unit_N", # Knots (N)
+          "Speed_kmh", # Measured horizontal speed (in km/h)
+          "Unit_kmh", # km/h
+          "Mode_Checksum" # A = Autonomous, D = DGPS, E = DR
+        )
+      ) %>%
+      select(!DateTime) # Avoid duplication in join
+
+    VTG <- RawVTG %>%
+      mutate(
+        Course_TN = as.numeric(Course_TN),
+        Course_MN = as.numeric(Course_MN),
+        Speed_N = as.numeric(Speed_N),
+        Speed_kmh = as.numeric(Speed_kmh)
+      )
+
+  } else {
+    VTG <- tibble(
+      Time = NA,
+      Course_TN = NA,
+      Reference_TN = NA,
+      Course_MN = NA,
+      Reference_MN = NA,
+      Speed_N = NA,
+      Unit_N = NA,
+      Speed_kmh = NA,
+      Unit_kmh = NA,
+      Mode_Checksum = NA
     )
+  }
+
+  # Extract pitch and roll from Applanix PASHR data
+
+  if (any(str_detect(Apla$Trame, "PASHR"))) {
+
+    RawPASHR <- Apla %>%
+      filter(str_detect(Trame, "PASHR")) %>%
+      pivot_wider(
+        names_from = Trame,
+        values_from = Data
+      ) %>%
+      separate(
+        col = contains("PASHR"),
+        sep = ",",
+        convert = T,
+        into = c(
+          "UTC", # UTC time: hhmmss.sss
+          "Heading", # True vessel heading 0 to 359.99: xxx.xx [degrees]
+          "T", # True
+          "Roll", # Roll -90.00 to +90.00: RRR.RR [degrees]
+          "Pitch", # Pitch -90.00 to +90.00: PPP.PP [degrees]
+          "Heave", # Heave -99.00 to +99.00: HHH.HH [meters]
+          "Roll_Accuracy", # 0 to 9.999: a.aaa [degrees]
+          "Pitch_Accuracy", # 0 to 9.999: b.bbb [degrees]
+          "Heading_Accuracy", # 0 to 9.999: c.ccc [degrees]
+          "Heading_Flag", # 0 = no aiding, 1 = GNSS aiding, 2 = GNSS & GAMS aiding
+          #"IMU_Flag", # 0 = IMU out, 1 = satisfactory *DOSENT SEEM TO BE IN DATA*
+          "Checksum" # NA: *hh
+        )
+      ) %>%
+      select(!DateTime) # Avoid duplication in join
+
+    PASHR <- RawPASHR %>%
+      mutate(
+        Heading = as.numeric(Heading),
+        Roll = as.numeric(Roll),
+        Pitch = as.numeric(Pitch),
+        Heave = as.numeric(Heave),
+        Roll_Accuracy = as.numeric(Roll_Accuracy),
+        Pitch_Accuracy = as.numeric(Pitch_Accuracy),
+        Heading_Accuracy = as.numeric(Heading_Accuracy),
+        Heading_Flag = as.numeric(Heading_Flag)
+      )
+
+  } else {
+    PASHR <- tibble(
+      Time = NA,
+      UTC = NA,
+      Heading = NA,
+      T = NA,
+      Roll = NA,
+      Pitch = NA,
+      Heave = NA,
+      Roll_Accuracy = NA,
+      Pitch_Accuracy = NA,
+      Heading_Accuracy = NA,
+      Heading_Flag = NA,
+      Checksum = NA
+    )
+  }
 
   # Join with Time at the second
   Apla <- left_join(GGA, VTG, by = c("Time"))
+  Apla <- left_join(Apla, PASHR, by = c("Time"))
 
   Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
 
