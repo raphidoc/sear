@@ -30,8 +30,10 @@ oxy_sol <- function(Temperature, SP) {
 #' @noRd
 
 cal_sbe19 <- function(Data, Lon, Lat) {
+
   Data %>%
     mutate(
+      DateTime = as.character(DateTime),
       SP = gsw::gsw_SP_from_C( # Salinity Practical in PSU
         C = Conductivity*10,
         t = Temperature,

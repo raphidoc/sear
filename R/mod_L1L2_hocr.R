@@ -48,7 +48,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       #TODO make this code clearer ... possibly with purrr::map ?
       Enhanced <- Obs$HOCR$L1b %>%
         unnest(cols = c(AproxData)) %>%
-        mutate(DateTime = as.numeric(DateTime)) %>%
+        mutate(DateTime = as.numeric(ymd_hms(DateTime))) %>%
         fuzzyjoin::difference_left_join(
           Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime))),
           by = c("DateTime"),
@@ -73,6 +73,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
               .x  %>% group_by(ID),
               text = ~ paste0(
                 "<b>ID</b>: ", ID, "<br>",
+                "<b>BoatSolAzm</b>: ", BoatSolAzm, "&deg;<br>",
                 "<b>Pitch</b>: ", Pitch, "&deg;<br>",
                 "<b>Roll</b>: ", Roll, "&deg;<br>",
                 "<b>Speed</b>: ", Speed, " kmh<sup>-1</sup><br>"

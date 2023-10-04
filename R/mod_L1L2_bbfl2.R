@@ -50,7 +50,7 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
               customdata = ~paste0(.y,"_",ID)
             ) %>%
               add_markers(
-                x = ~DateTime,
+                x = ~ymd_hms(DateTime),
                 y = ~Value,
                 showlegend = F,
                 color = ~QC,

@@ -51,6 +51,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         L2Obs$Metadata <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
+        # Have to query data based on UUID
+        qry <- paste0("SELECT * FROM MetadataL1b WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        L2Obs$MetadataL1b <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
         # HOCR
         qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
@@ -97,6 +103,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         qry <- paste0("SELECT * FROM Metadata WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$Metadata <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        # MetadataL1b
+        qry <- paste0("SELECT * FROM MetadataL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$MetadataL1b <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # HOCR
@@ -394,6 +406,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           #                     as.character(AOPs),
           #                     collapse = ""))
 
+
           Metadata <- Obs$Metadata %>%
             mutate(
               UUID = ObsUUID,
@@ -410,7 +423,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData)) %>%
             mutate(
-              DateTime = as.character(DateTime),
               UUID = ObsUUID
               )
 
@@ -420,7 +432,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           SBE19L1b <- Obs$SBE19$L1b %>%
             unnest(c(Data)) %>%
             mutate(
-              DateTime = as.character(DateTime),
               UUID = ObsUUID
               )
 
@@ -430,7 +441,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           SeaOWLL1b <- Obs$SeaOWL$L1b %>%
             unnest(c(Data)) %>%
             mutate(
-              DateTime = as.character(DateTime),
               UUID = ObsUUID
               )
 
@@ -440,7 +450,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           BBFL2L1b <- Obs$BBFL2$L1b %>%
             unnest(c(Data)) %>%
             mutate(
-              DateTime = as.character(DateTime),
               UUID = ObsUUID
               )
 
@@ -449,7 +458,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
 
           BioSonicL1b <- Obs$BioSonic$L1b  %>%
             mutate(
-              DateTime = as.character(DateTime),
               UUID = ObsUUID
               )
 

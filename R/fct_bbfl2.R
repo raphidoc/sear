@@ -9,6 +9,7 @@ cal_bbfl2 <- function(BBFL2Data, BBFL2Cal) {
 
   BBFL2Data %>%
     mutate(
+      DateTime = as.character(DateTime),
       NTU = BBFL2Cal$NTUScaleFactor * (NTUSig - BBFL2Cal$NTUDarkCounts),
       PE = BBFL2Cal$PEScaleFactor * (PESig - BBFL2Cal$PEDarkCounts),
       PC = BBFL2Cal$PCScaleFactor * (PCSig - BBFL2Cal$PCDarkCounts)

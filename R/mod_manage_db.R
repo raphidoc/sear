@@ -88,15 +88,15 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS MetadataL1b (
-          DateTime TEXT NOT NULL,
-          Speed DOUBLE NOT NULL,
-          Lon DOUBLE NOT NULL,
-          Lat DOUBLE NOT NULL,
-          Altitude DOUBLE NOT NULL,
-          BoatSolAzm DOUBLE NOT NULL,
-          Roll DOUBLE NOT NULL,
-          Pitch DOUBLE NOT NULL,
-          Heave DOUBLE NOT NULL,
+          DateTime TEXT,
+          Speed DOUBLE,
+          Lon DOUBLE,
+          Lat DOUBLE,
+          Altitude DOUBLE,
+          BoatSolAzm DOUBLE,
+          Roll DOUBLE,
+          Pitch DOUBLE,
+          Heave DOUBLE,
           UUID TEXT,
           FOREIGN KEY (UUID)
             REFERENCES Metadata (UUID)
@@ -309,10 +309,33 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
       req(Con())
       validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
 
-      selectizeInput(ns("ObsList"), "ObsList", choices = NULL, selected = NULL, multiple = F)
+      # selectizeInput(
+      #   ns("ObsList"),
+      #   "ObsList",
+      #   choices = NULL,
+      #   selected = NULL,
+      #   multiple = F)
+
+      selectizeInput(
+        ns("ObsList"),
+        "ObsList",
+        multiple = FALSE,
+        choices = NULL,
+        selected = NULL,
+        options = list(
+          create = FALSE,
+          placeholder = "Search My UUID",
+          maxItems = '1',
+          onDropdownOpen = I("function($dropdown) {if (!this.lastQuery.length) {this.close(); this.settings.openOnFocus = false;}}"),
+          onType = I("function (str) {if (str === \"\") {this.close();}}")
+        )
+      )
+
     })
 
-    observe({
+    observeEvent(
+      ObsMeta()$UUID,
+      {
       updateSelectizeInput(
         session = getDefaultReactiveDomain(),
         "ObsList", choices = c("", ObsMeta()$UUID), server = T)

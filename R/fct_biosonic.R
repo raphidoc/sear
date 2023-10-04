@@ -12,6 +12,6 @@ read_biosonic <- function(CSVFile) {
     delim = ","
     ) %>%
     rename(DateTime = Time) %>%
-    mutate(DateTime = ymd_hms(DateTime))
+    mutate(DateTime = as.character(ymd_hms(DateTime)))
 
 }

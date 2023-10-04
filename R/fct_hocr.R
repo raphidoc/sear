@@ -160,7 +160,10 @@ approx_tbl <- function(., TimeSeq) {
     ID = seq_along(TimeSeq),
     QC = "1",
     .before = DateTime
-  )
+  ) %>%
+    mutate(
+      DateTime = as.character(DateTime)
+    )
 }
 
 #' cal_dark
@@ -491,7 +494,7 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
     mutate(AproxData = purrr::map(AproxData, ~ filter(., QC == "1")))
 
   L1bDataWide <- L1bDataWide %>%
-    mutate(AproxData = purrr::map(AproxData, ~ summarise(.x, across(.cols = !matches("ID|QC"), ~ mean(.x, na.rm = T)))))
+    mutate(AproxData = purrr::map(AproxData, ~ summarise(.x, across(.cols = !matches("ID|QC|DateTime"), ~ mean(.x, na.rm = T)))))
 
   ### Approx wavelength
   L1bAverageLong <- L1bDataWide %>%
@@ -512,14 +515,14 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
   #WaveSeq <- seq(353, 800, 3)
 
   approx_wave <- function(., WaveSeq) {
+
     tbl <- tibble(
-      DateTime = unique(.$DateTime),
       Type = unique(.$Type),
       Wavelength = WaveSeq
     )
 
-    for (i in seq_along(colnames(.))[-1:-3]) {
-      coord <- approx(x = .[[3]], y = .[[i]], xout = WaveSeq, method = "linear")
+    for (i in seq_along(colnames(.))[-1:-2]) {
+      coord <- approx(x = .[[2]], y = .[[i]], xout = WaveSeq, method = "linear")
 
       tbl <- bind_cols(tbl, x = coord[[2]])
       colnames(tbl)[i] <- colnames(.)[i]
