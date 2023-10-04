@@ -211,6 +211,15 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
 
+                MetadataL1b <- Obs$MetadataL1b %>%
+                  mutate(
+                    UUID = ObsUUID
+                  )
+
+                DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
+
+                # HOCR
+
                 HOCRL1b <- Obs$HOCR$L1b %>%
                   unnest(cols = c(AproxData)) %>%
                   mutate(UUID = ObsUUID)
