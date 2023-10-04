@@ -1,6 +1,6 @@
 
 # sear <a href=''><img src='inst/app/www/hex_sear.png' align="right" height="139" /></a>
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7459254.svg)](https://doi.org/10.5281/zenodo.7459254)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7459253.svg)](https://doi.org/10.5281/zenodo.7459253)
   <!-- badges: start -->
   [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
   <!-- badges: end -->
