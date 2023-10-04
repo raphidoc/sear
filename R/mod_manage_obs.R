@@ -409,34 +409,49 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
 
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData)) %>%
-            mutate(UUID = ObsUUID)
+            mutate(
+              DateTime = as.character(DateTime),
+              UUID = ObsUUID
+              )
 
           HOCRL2 <- Obs$HOCR$L2 %>%
             mutate(UUID = ObsUUID)
 
           SBE19L1b <- Obs$SBE19$L1b %>%
             unnest(c(Data)) %>%
-            mutate(UUID = ObsUUID)
+            mutate(
+              DateTime = as.character(DateTime),
+              UUID = ObsUUID
+              )
 
           SBE19L2 <- Obs$SBE19$L2  %>%
             mutate(UUID = ObsUUID)
 
           SeaOWLL1b <- Obs$SeaOWL$L1b %>%
             unnest(c(Data)) %>%
-            mutate(UUID = ObsUUID)
+            mutate(
+              DateTime = as.character(DateTime),
+              UUID = ObsUUID
+              )
 
           SeaOWLL2 <- Obs$SeaOWL$L2  %>%
             mutate(UUID = ObsUUID)
 
           BBFL2L1b <- Obs$BBFL2$L1b %>%
             unnest(c(Data)) %>%
-            mutate(UUID = ObsUUID)
+            mutate(
+              DateTime = as.character(DateTime),
+              UUID = ObsUUID
+              )
 
           BBFL2L2 <- Obs$BBFL2$L2  %>%
             mutate(UUID = ObsUUID)
 
           BioSonicL1b <- Obs$BioSonic$L1b  %>%
-            mutate(UUID = ObsUUID)
+            mutate(
+              DateTime = as.character(DateTime),
+              UUID = ObsUUID
+              )
 
           BioSonicL2 <- Obs$BioSonic$L2  %>%
             mutate(UUID = ObsUUID)

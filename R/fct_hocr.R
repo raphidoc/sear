@@ -146,6 +146,7 @@ cal_optic3 <- function(.x, Instrument) {
 #'
 #' @noRd
 approx_tbl <- function(., TimeSeq) {
+
   tbl <- tibble(DateTime = TimeSeq)
 
   for (i in seq_along(colnames(.))[-1]) {
@@ -423,11 +424,12 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
   cor_dark <- function(x, y) {
 
     ID <- x[, 1]
-    DateTime <- x[, 2]
+    QC <- x[, 2]
+    DateTime <- x[, 3]
 
-    Data <- x[, -1:-2] - row_rep(y[, -1:-2], nrow(x[, -1:-2]))
+    Data <- x[, -1:-3] - row_rep(y[, -1:-3], nrow(x[, -1:-3]))
 
-    bind_cols(ID, DateTime, Data)
+    bind_cols(ID, QC, DateTime, Data)
   }
 
   HOCRWide <- HOCRWide %>%

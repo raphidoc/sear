@@ -105,6 +105,9 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
 
             # Create metadata for the selected L1a point
+
+            Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
+
             Obs$Metadata <- gen_metadata(Select = Select)
 
             # Empty L1b and L2 on new processing to avoid confusion

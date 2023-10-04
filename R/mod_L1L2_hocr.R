@@ -44,17 +44,39 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
     output$HOCRL1b <- renderPlotly({
       validate(need(nrow(Obs$HOCR$L1b) != 0, "No L1b data"))
 
+      # Add Pitch and Roll metadata
+      #TODO make this code clearer ... possibly with purrr::map ?
+      Enhanced <- Obs$HOCR$L1b %>%
+        unnest(cols = c(AproxData)) %>%
+        mutate(DateTime = as.numeric(DateTime)) %>%
+        fuzzyjoin::difference_left_join(
+          Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime))),
+          by = c("DateTime"),
+          max_dist = 1,
+          distance_col = "Distance"
+        ) %>%
+        group_by(ID,Distance) %>% nest() %>%
+        group_by(ID) %>%
+        slice(which.min(Distance)) %>%
+        unnest(cols = c(data)) %>%
+        group_by(Instrument, SN) %>%
+        nest(.key = "AproxData")
 
-
-      ply <- Obs$HOCR$L1b %>%
+      ply <- Enhanced %>%
+        arrange(SN) %>%
         # filter(str_detect(Instrument, "HPL")) %>%
         mutate(
           Plot = purrr::map2(
             .x = AproxData,
             .y = SN,
             ~ plot_ly(
-              .x,
-              text = ~ID,
+              .x  %>% group_by(ID),
+              text = ~ paste0(
+                "<b>ID</b>: ", ID, "<br>",
+                "<b>Pitch</b>: ", Pitch, "&deg;<br>",
+                "<b>Roll</b>: ", Roll, "&deg;<br>",
+                "<b>Speed</b>: ", Speed, " kmh<sup>-1</sup><br>"
+              ),
               customdata = ~ID
             ) %>%
               add_lines(
@@ -67,7 +89,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
               ) %>%
               add_annotations(
                 text = ~.y,
-                x = 0.01,
+                x = 0.08,
                 y = 1,
                 yref = "paper",
                 xref = "paper",
