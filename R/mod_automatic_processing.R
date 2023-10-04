@@ -48,7 +48,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
         MainTime <- L1aSelect$SubMainLog()$DateTime
 
         UpLimit <- 10
-        LowLimit <- 4
+        LowLimit <- 3
 
         i = 1
         j = 1
@@ -148,7 +148,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                 ObsTime <- int_end(TimeInt / 2)
 
                 HOCRDark <- L1a$HOCRDark() %>%
-                  mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
+                  mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(ymd_hms(.x$DateTime) - ObsTime)), ])) %>%
                   ungroup() %>%
                   select(SN, DarkAproxData)
 

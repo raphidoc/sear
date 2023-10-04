@@ -80,7 +80,9 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
 
     # DataTable used to display Obs information
     output$DataTable <- DT::renderDT(
-      DT::datatable(Obs$Metadata,
+
+      DT::datatable(
+        Obs$Metadata,
         extensions = c("Buttons", "Scroller", "Select"),
         # filter = "top",
         escape = TRUE, rownames = FALSE,
@@ -93,7 +95,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           columnDefs = list(
             list(
               visible = FALSE,
-              targets = c(0, 1, 2, 4, 5, 8, 9, 10, 11, 12,13,14,17,18)
+              targets = str_which(colnames(Obs$Metadata), "\\b(?!Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch)\\b\\S+")-1
             )
           ),
           deferRender = TRUE,
@@ -103,7 +105,10 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
         ),
         selection = "none",
         editable = F
-      ),
+      ) %>%
+        DT::formatRound(
+          columns = as.character(na.omit(str_extract(colnames(Obs$Metadata), "Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch"))),
+          digits=2),
       server = FALSE,
       editable = F
     )

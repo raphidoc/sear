@@ -106,7 +106,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
             ObsTime <- int_end(TimeInt / 2)
 
             HOCRDark <- L1a$HOCRDark() %>%
-              mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(.x$DateTime - ObsTime)), ])) %>%
+              mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(ymd_hms(.x$DateTime) - ObsTime)), ])) %>%
               ungroup() %>%
               select(SN, DarkAproxData)
 

@@ -231,10 +231,10 @@ read_apla <- function(MTELog) {
   PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
 
   Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
-    rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
+    rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolZen = altitude) %>%
     mutate(
       SolAzm = SolAzm * 180 / pi + 180, # convert rad to degree and shift to north reference
-      SolAlt = SolAlt * 180 / pi,
+      SolZen = SolZen * 180 / pi,
       BoatSolAzm = SolAzm - Course_TN,
       BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm)
     )
