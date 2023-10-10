@@ -125,7 +125,7 @@ read_apla <- function(MTELog) {
         sep = ",",
         convert = T,
         into = c(
-          "Course_TN", # Degrees
+          "Course_TN", # Degrees Applanix doc state: True vessel track in the vessel frame (Actual course and speed relative to the ground).
           "Reference_TN", # True north
           "Course_MN", # Degrees
           "Reference_MN", # Magnetic

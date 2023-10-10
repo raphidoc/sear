@@ -76,6 +76,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           BoatSolAzm DOUBLE NOT NULL,
           Roll DOUBLE NOT NULL,
           Pitch DOUBLE NOT NULL,
+          Heading DOUBLE NOT NULL,
           Heave DOUBLE NOT NULL,
           ScoreQWIP DOUBLE NOT NULL,
           Comment TEXT,
@@ -100,6 +101,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           BoatSolAzm DOUBLE,
           Roll DOUBLE,
           Pitch DOUBLE,
+          Heading DOUBLE,
           Heave DOUBLE,
           UUID TEXT,
           FOREIGN KEY (UUID)

@@ -131,6 +131,7 @@ gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     BoatSolAzm = mean(Select$BoatSolAzm, na.rm = T),
     Roll = mean(Select$Roll, na.rm = T),
     Pitch = mean(Select$Pitch, na.rm = T),
+    Heading = mean(Select$Course_TN, na.rm = T),
     Heave = mean(Select$Heave, na.rm = T),
     Comment = "NA",
     UUID = NA
@@ -166,6 +167,7 @@ gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     BoatSolAzm = Select$BoatSolAzm,
     Roll = Select$Roll,
     Pitch = Select$Pitch,
+    Heading = Select$Course_TN,
     Heave = Select$Heave,
     UUID = NA
   )
