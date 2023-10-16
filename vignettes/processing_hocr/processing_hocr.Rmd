@@ -344,7 +344,7 @@ THERM1 <- bind_rows(FlatCal[names(FlatCal) == "THERM1"])
 POLYU <- bind_rows(FlatCal[names(FlatCal) == "POLYU"])
 ```
 
-## Associate HOCR with calibration data
+## Join HOCR with calibration data
 
 ```{r}
 tidy_hocr <- function(Packets) {
@@ -504,7 +504,7 @@ HOCRLong <- GlobCal %>% # OPTIC3
 ```
 
 
-During L1b to L2 conversion, data is interpolated onto a master time coordinate calculated from the $\text{E}_\text{s}$ (HSE) sensor. The min and max time value of the $\text{E}_\text{s}$ sensor serve as boundary between which the time increased by a fixed step value. The optical data is then linearly interpolated onto this common co-ordinates vector.
+During L1b to L2 conversion, data is interpolated onto a master time coordinate calculated from the $\text{E}_\text{s}$ (HSE) sensor. The min and max time value of the $\text{E}_\text{s}$ sensor serve as boundary between which the time increased by a fixed step value. The optical data is then linearly interpolated onto this common coordinates vector.
 
 In ProSoft, the data is interpolated on the highest acquisition rate instrument (HSE). This imply that data with lower acquisition rate (HED in water sensors) is "replicated" by the interpolation and this seem to me an unecessary computation that will not change the averaged or median value retained after discretization.
 POINT TO DISCUSS.
@@ -547,7 +547,7 @@ TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = min(ShortNobs$IntTime))
 # format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
 ```
 
-Once We obtain the `TimeSeq` we go further by interpolating the instruments data on this common time co-ordinates. We can now remove the `IntTime` variable. This workflow does not seem optimum ... Could rethink it. 
+Once We obtain the `TimeSeq` we go further by interpolating the instruments data on this common time co-ordinates. We can now remove the `IntTime` variable. This workflow does not seem optimal ... Could rethink it. 
 
 ```{r}
 HOCRWide <- HOCRWide %>%
@@ -625,6 +625,8 @@ DarkGlobCal <- DarkGlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = I
 
 ### Time coordinate
 
+The dark value are interpolated every minute along time.
+
 ```{r}
 DarkHOCRLong <- DarkGlobCal %>% # OPTIC3
   mutate(CalData = purrr::map(
@@ -663,7 +665,7 @@ MinTime <- min(ShortNobs$GPSTime)
 MaxTime <- max(ShortNobs$GPSTime)
 # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
 
-TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60)
+TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60) # one dark value per minute
 # format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
 ```
 
@@ -690,7 +692,7 @@ DarkHOCRWide <- DarkHOCRWide %>%
 
 ### Apply dark correction
 
-Find the center time of obs interval and select nearest dark values.
+Find the center time of obs interval and select nearest dark values (one dark per minute).
 ```{r}
 ObsTime <- int_end(Station1PaP / 2)
 
@@ -718,7 +720,7 @@ HOCRWide <- HOCRWide %>%
 
 ### QC for HOCR L1b -> L2
 
-Now that we have the data interpolated to common time co-ordinate and corrected for dark offset we can tranform it back to long format. For convenience and as we can trace back the physical variable (ES or LU) back to the instrument `SN`, we use the term `Channels` (as in HOCR packets) to name the variables
+Now that we have the data interpolated to common time co-ordinate and corrected for dark offset we can transform it back to long format. For convenience and as we can trace back the physical variable (ES or LU) back to the instrument `SN`, we use the term `Channels` (as in HOCR packets) to name the variables
 
 ```{r}
 HOCRLong <- HOCRWide %>%
@@ -853,6 +855,9 @@ L1bAverageLong <- L1bDataWide %>%
   ))
 
 WaveSeq <- seq(353, 800, 3)
+
+# Function That takes as input a long spectral dataset with columns:
+# c("DateTime", "Type", "Wavelength", "Channels")
 
 approx_wave <- function(., WaveSeq) {
   tbl <- tibble(

@@ -47,8 +47,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
         MainTime <- L1aSelect$SubMainLog()$DateTime
 
-        UpLimit <- 10
-        LowLimit <- 3
+        UpLimit <- 10 # Seconds
+        LowLimit <- 4
 
         i = 1
         j = 1
@@ -65,15 +65,16 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           # Set upper limit for time difference
           if (interval(x, y) > seconds(UpLimit)) {
             i = j + 1
-            message("next next")
+            message(paste0("Reached time discretization upper limit: ", UpLimit,"S"))
             next
           }
 
           # Step 1, iter until time diff reach lower boundary
           # If already the case no need to iter
 
-          if (interval(x, y) <= seconds(LowLimit)) {
-            while (interval(x, y) <= seconds(LowLimit)) {
+          if (interval(x, y) < seconds(LowLimit)) {
+            while (interval(x, y) < seconds(LowLimit)) {
+
               if (length(MainTime) < j + 1) {
                 message("This is the end")
                 break
@@ -94,13 +95,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
           # At this point. this should always be true
           # Step 3 and 4, processing should happen at this stage
-          if (interval(x, y) < seconds(UpLimit) & interval(x, y) > seconds(LowLimit)) {
+          if (interval(x, y) < seconds(UpLimit) & interval(x, y) >= seconds(LowLimit)) {
 
             TimeInt <- interval(x, y)
 
             progress$set(message = paste("Processing obs :",n, TimeInt), value = n/(length(MainTime)/4))
 
-            message(paste("Processing obs :",n, TimeInt))
+            message(paste("Processing obs:",n, TimeInt))
 
             Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
 
@@ -486,7 +487,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             n = n+1
           }
 
-          i = j
+          # Exclude endpoints from %within%
+          i = j + 1
         }
 
         # Update the list of observation

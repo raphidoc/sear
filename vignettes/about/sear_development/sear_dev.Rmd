@@ -877,8 +877,6 @@ test <- test %>%
 ```
 
 ```{r}
-
-
 fig <- test %>%
   plot_ly(type = "scatter3d", mode = "markers") %>% 
   add_markers(
