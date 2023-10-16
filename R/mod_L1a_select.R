@@ -365,7 +365,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           event_register("plotly_selected")
       }
 
-      if (curl::has_internet() # & curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
+      if (F #curl::has_internet() # & curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
       ) {
         p <- plot_mapbox(
           mode = "scattermapbox",
