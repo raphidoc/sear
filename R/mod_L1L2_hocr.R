@@ -211,7 +211,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       if (any(str_detect(names(Obs$HOCR$L2), "ScoreQWIP"))) {
         Rrsplot <- Rrsplot %>%
           add_annotations(
-            text = ~paste("QWIP:",unique(Obs$Metadata$ScoreQWIP)),
+            text = ~paste("QWIP:",unique(Obs$MetadataL2$ScoreQWIP)),
             x = 0.01,
             y = 1,
             yref = "paper",

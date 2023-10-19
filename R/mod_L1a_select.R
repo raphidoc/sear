@@ -232,10 +232,10 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     observeEvent(
       ManObs$Save(),
       {
-        UUID <- Obs$Metadata$UUID
+        UUID <- Obs$MetadataL2$UUID
 
         SelUUID(UUID)
-        Center(Obs$Metadata %>% select(Lat, Lon))
+        Center(Obs$MetadataL2 %>% select(Lat, Lon))
         Zoom(20)
       }
     )
@@ -365,7 +365,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           event_register("plotly_selected")
       }
 
-      if (F #curl::has_internet() # & curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
+      if (curl::has_internet() # & curl::curl_fetch_memory("https://www.mapbox.com/")$status_code == 200
       ) {
         p <- plot_mapbox(
           mode = "scattermapbox",

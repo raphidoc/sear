@@ -43,7 +43,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
           `DateTime` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )

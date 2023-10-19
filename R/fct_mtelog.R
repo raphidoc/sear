@@ -38,9 +38,10 @@ read_mtelog <- function(LogFile) {
       DateTime = lubridate::ymd_hms(paste(Date, Time)),
       Instrument = str_extract(Instrument, "[:alnum:]+")
     )
+
 }
 
-# Apla extractor ----------------------------------------------------------
+# NMEA parsing ------------------------------------------------------------
 
 read_apla <- function(MTELog) {
 
@@ -56,7 +57,8 @@ read_apla <- function(MTELog) {
     ) %>%
     mutate(
       Trame = str_extract(Trame, "[[:alpha:]]+"),
-      Time = str_remove(Time, ".{4}$") # Take Time to second
+      #Time = str_remove(Time, ".{4}$"),
+      DateTime = round_date(DateTime, unit = "second")#format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
     )
 
   RawGGA <- Apla %>%
@@ -88,9 +90,8 @@ read_apla <- function(MTELog) {
     filter(str_detect(Lat, "[:digit:]{4}\\.[:digit:]{5}") & str_detect(Lon, "[:digit:]{5}\\.[:digit:]{5}")) %>% # Filter incorect N S W E field
     filter(NS %in% c("N", "S") & EW %in% c("E", "W"))
 
-  # There is some wrong data from time to time (missing field, incomplete or other format Lat Lon), Will have to elucidate that (Applanix or DataLogger issue ?)
-
-  # Could add a filter based on the pattern [:digit:]{4}\.[:digit:]{5} for Lat and [:digit:]{5}\.[:digit:]{5} for Lon
+  # There is some wrong data from time to time (missing field, incomplete or other format Lat Lon),
+  # Will have to elucidate that (Applanix or DataLogger issue ?)
 
   GGA <- RawGGA %>%
     mutate(
@@ -109,6 +110,8 @@ read_apla <- function(MTELog) {
 
   GGA <- GGA %>%
     select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution, Altitude, AltitudeUnit)
+
+  GGA <- unique_datetime_second(GGA)
 
   # Extract VTG info, course and speed
 
@@ -136,7 +139,7 @@ read_apla <- function(MTELog) {
           "Mode_Checksum" # A = Autonomous, D = DGPS, E = DR
         )
       ) %>%
-      select(!DateTime) # Avoid duplication in join
+      select(!Time) # Avoid duplication in join
 
     VTG <- RawVTG %>%
       mutate(
@@ -145,6 +148,8 @@ read_apla <- function(MTELog) {
         Speed_N = as.numeric(Speed_N),
         Speed_kmh = as.numeric(Speed_kmh)
       )
+
+    VTG <- unique_datetime_second(VTG)
 
   } else {
     VTG <- tibble(
@@ -190,7 +195,7 @@ read_apla <- function(MTELog) {
           "Checksum" # NA: *hh
         )
       ) %>%
-      select(!DateTime) # Avoid duplication in join
+      select(!Time) # Avoid duplication in join
 
     PASHR <- RawPASHR %>%
       mutate(
@@ -203,6 +208,8 @@ read_apla <- function(MTELog) {
         Heading_Accuracy = as.numeric(Heading_Accuracy),
         Heading_Flag = as.numeric(Heading_Flag)
       )
+
+    PASHR <- unique_datetime_second(PASHR)
 
   } else {
     PASHR <- tibble(
@@ -221,9 +228,9 @@ read_apla <- function(MTELog) {
     )
   }
 
-  # Join with Time at the second
-  Apla <- left_join(GGA, VTG, by = c("Time"))
-  Apla <- left_join(Apla, PASHR, by = c("Time"))
+  # Join with DateTime at the second
+  Apla <- left_join(GGA, VTG, by = c("DateTime"))
+  Apla <- left_join(Apla, PASHR, by = c("DateTime"))
 
   Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
 

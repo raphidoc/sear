@@ -73,7 +73,7 @@ skip_if_no_kaitaistruct <- function() {
   # reticulate::source_python(system.file("py","hocr.py", package = "sear", mustWork = T))
 
   # Set token for mapbox (GL rendering)
-  Sys.setenv("MAPBOX_TOKEN" = "pk.eyJ1IjoicmFwaGlkb2MiLCJhIjoiY2wwaTg3b3B2MDA1ODNibXJ2NHpvOWxweiJ9.WPYL0Tww3y7djCY4D3jlnA")
+  Sys.setenv("MAPBOX_TOKEN" = "pk.eyJ1IjoicmFwaGlkb2MiLCJhIjoiY2xudXd6cm5zMGY4ODJxbXUzZzh1MnAzOSJ9.L7OyTtYAoE5fyL_1m4b4NQ")
 
   # Set MathJax path sor TeX rendering
   Sys.setenv("PLOTLY_MATHJAX_PATH" = "/home/raphael/MathJax")

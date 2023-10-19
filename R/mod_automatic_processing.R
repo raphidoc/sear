@@ -109,7 +109,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
 
-            Obs$Metadata <- gen_metadata(Select = Select)
+            Obs$MetadataL2 <- gen_metadataL2(Select = Select)
 
             # Empty L1b and L2 on new processing to avoid confusion
             Obs$HOCR$L1b <- tibble()
@@ -123,6 +123,9 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             Obs$SeaOWL$L2 <- tibble()
             Obs$BBFL2$L2 <- tibble()
             Obs$BioSonic$L2 <- tibble()
+
+
+# HOCR --------------------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
 
@@ -153,25 +156,26 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   ungroup() %>%
                   select(SN, DarkAproxData)
 
+                WaveSeq <- seq(
+                  Settings$HOCR$WaveMin(),
+                  Settings$HOCR$WaveMax(),
+                  Settings$HOCR$WaveStep()
+                )
+
                 Obs$HOCR$L1b <- spsComps::shinyCatch(
                   cal_hocr(
                     RawHOCR = FiltRawHOCR,
                     CalHOCR = CalData$CalHOCR(),
                     HOCRDark = HOCRDark,
-                    MainLogDate = unique(date(Select$DateTime)),
-                    UpdateProgress
+                    MetadataL1b = Obs$MetadataL1b,
+                    UpdateProgress,
+                    WaveSeq
                   ),
                   shiny = T,
                   trace_back = TRUE
                 )
 
                 # L2
-
-                WaveSeq <- seq(
-                  Settings$HOCR$WaveMin(),
-                  Settings$HOCR$WaveMax(),
-                  Settings$HOCR$WaveStep()
-                )
 
                 Z1Depth <- Settings$HOCR$Z1Depth()
                 Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
@@ -202,7 +206,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   output = "string"
                 )
 
-                Metadata <- Obs$Metadata %>%
+                MetadataL2 <- Obs$MetadataL2 %>%
                   mutate(
                     UUID = ObsUUID,
                     ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
@@ -210,7 +214,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                     Mail = "raphael.mabit@gmail.com"
                   )
 
-                DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
 
                 MetadataL1b <- Obs$MetadataL1b %>%
                   mutate(
@@ -492,7 +496,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
         }
 
         # Update the list of observation
-        DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
+        DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
 
       })
 

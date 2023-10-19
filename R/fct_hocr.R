@@ -72,7 +72,7 @@ filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
 
   Ind <- purrr::map_lgl(
     .x = as.numeric(HOCRTimeIndex),
-    ~ .x >= as.numeric(int_start(TimeInt)) & .x <= as.numeric(int_end(TimeInt))
+    ~ .x >= as.numeric(int_start(TimeInt))-1 & .x <= as.numeric(int_end(TimeInt))
   )
 
   RawHOCR[Ind]
@@ -162,7 +162,7 @@ approx_tbl <- function(., TimeSeq) {
     .before = DateTime
   ) %>%
     mutate(
-      DateTime = as.character(DateTime)
+      DateTime = as.character(format(DateTime, "%Y-%m-%d %H:%M:%S"))
     )
 }
 
@@ -264,6 +264,11 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
   HOCRWide <- HOCRWide %>%
     mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq))) %>%
     select(!CalData)
+
+  HOCRWide <- HOCRWide %>%
+    mutate(AproxData = purrr::map(AproxData, na.omit))
+
+  return(HOCRWide)
 }
 
 #' cal_hocr
@@ -279,7 +284,7 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
 #' @return Return L1b HOCR data in a tidy long format
 #'
 #' @noRd
-cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
+cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, WaveSeq) {
 
   # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
@@ -287,7 +292,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
     UpdateProgress(message = text)
   }
 
-  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., MainLogDate))
+  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., unique(date(MetadataL1b$DateTime))))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
 
@@ -337,6 +342,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
 
   GlobCal <- GlobCal %>% mutate(CalData = purrr::map2(.x = CalData, .y = Instrument, ~ cal_optic3(.x, .y)))
 
+  # Data is at level ProSoft L1b
+
   # Interpolate time coordinate ---------------------------------------------
 
   if (is.function(UpdateProgress)) {
@@ -378,23 +385,25 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
     )) %>%
     mutate(CalData = purrr::map(CalData, ~ select(., where(function(x) all(!is.na(x))))))
 
-  # Compute the Time Sequence for interpolation
-  # to the lowest number of observation, usally the deepest HOCR
+  # Compute the Time Sequence for interpolation with start and end taken from the DataLogger time
+  # The interval is fixed at 1 second as this is the rate of data output by the Applanix
+  # TODO: a more dynamic interval would be nice,
+  # also keep in mind that at a certain level all data must be recorded to common coordinates
 
-  ShortNobs <- HOCRWide %>%
-    mutate(Nobs = purrr::map_dbl(CalData, ~ length(rownames(.))))
+  # ShortNobs <- HOCRWide %>%
+  #   mutate(Nobs = purrr::map_dbl(CalData, ~ length(rownames(.))))
+  #
+  # ShortNobs <- ShortNobs %>%
+  #   filter(Nobs == min(ShortNobs$Nobs)) %>%
+  #   unnest(cols = c(CalData))
+  #
+  # MinTime <- min(ShortNobs$GPSTime)
+  # # format(MinTime, "%Y-%m-%d %H:%M:%OS3")
+  #
+  # MaxTime <- max(ShortNobs$GPSTime)
+  # # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
 
-  ShortNobs <- ShortNobs %>%
-    filter(Nobs == min(ShortNobs$Nobs)) %>%
-    unnest(cols = c(CalData))
-
-  MinTime <- min(ShortNobs$GPSTime)
-  # format(MinTime, "%Y-%m-%d %H:%M:%OS3")
-
-  MaxTime <- max(ShortNobs$GPSTime)
-  # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
-
-  TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = min(ShortNobs$IntTime))
+  TimeSeq <- seq.POSIXt(min(ymd_hms(MetadataL1b$DateTime)), max(ymd_hms(MetadataL1b$DateTime)), by = 1)
   # format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
 
   # Interpolate to commom time coordinates
@@ -412,8 +421,16 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
   # Need to test if two non-NA values are available to interpolate
   # This is handled by wrapping cal_hocr in spsComps::shinyCatch
 
+  # TODO: Structural NA beginning time coordinate interpolation
+  # There is structural NA at the first second of the interpolation
+  # data is never recorded exactly at the first second (30S) but some millisecond after (30.235S)
+  # Not Sure how to deal with that
+
   HOCRWide <- HOCRWide %>%
     mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
+
+
+# Data is at level L2s -------------------------------------------------------
 
   # Apply dark correction
 
@@ -461,8 +478,58 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MainLogDate, UpdateProgress) {
     ))
 
   # CalData is not needed further
-  HOCRLong %>%
+  HOCRLong <- HOCRLong %>%
     select(!CalData & !DarkAproxData)
+
+  ### Approx wavelength
+  # L1bAverageLong <- L1bDataWide %>%
+  #   mutate(AproxData = purrr::map(
+  #     AproxData,
+  #     ~ pivot_longer(
+  #       .,
+  #       cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+  #       values_to = "Channels",
+  #       names_to = c("Type", "Wavelength"),
+  #       names_sep = "_",
+  #       # names_prefix = "[[:alpha:]]{2}_",
+  #       names_transform = list(Wavelength = as.numeric)
+  #     )
+  #   ))
+
+  # This parameter should be an user input
+  #WaveSeq <- seq(353, 800, 3)
+
+  approx_wave <- function(., WaveSeq) {
+
+    tbl <- tibble(
+      QC = unique(.$QC),
+      DateTime = unique(.$DateTime),
+      Type = unique(.$Type),
+      Wavelength = WaveSeq
+    )
+
+    coord <- approx(x = .$Wavelength, y = .$Channels, xout = WaveSeq, method = "linear")
+    tbl <- bind_cols(tbl, Channels = coord[[2]])
+
+    return(tbl)
+
+  }
+
+  L1bAproxLong <- HOCRLong %>%
+    mutate(
+      AproxData = purrr::map(.x = AproxData, ~ .x %>% na.omit() %>% group_by(ID) %>% nest(.key = "Nest"))
+    )
+
+  L1bAproxLong <- L1bAproxLong %>%
+    mutate(
+      AproxData = purrr::map(
+          AproxData, ~  purrr::map2_df(
+            .x = .$ID, .y = .$Nest,
+            .f = ~ bind_cols(ID = .x, approx_wave(.y, WaveSeq)))
+        )
+      )
+
+  return(L1bAproxLong)
 }
 
 #' L2_hocr
@@ -496,75 +563,72 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
   L1bDataWide <- L1bDataWide %>%
     mutate(AproxData = purrr::map(AproxData, ~ summarise(.x, across(.cols = !matches("ID|QC|DateTime"), ~ mean(.x, na.rm = T)))))
 
-  ### Approx wavelength
-  L1bAverageLong <- L1bDataWide %>%
-    mutate(AproxData = purrr::map(
-      AproxData,
-      ~ pivot_longer(
-        .,
-        cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-        values_to = "Channels",
-        names_to = c("Type", "Wavelength"),
-        names_sep = "_",
-        # names_prefix = "[[:alpha:]]{2}_",
-        names_transform = list(Wavelength = as.numeric)
-      )
-    ))
+  # ### Approx wavelength
+  # L1bAverageLong <- L1bDataWide %>%
+  #   mutate(AproxData = purrr::map(
+  #     AproxData,
+  #     ~ pivot_longer(
+  #       .,
+  #       cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+  #       values_to = "Channels",
+  #       names_to = c("Type", "Wavelength"),
+  #       names_sep = "_",
+  #       # names_prefix = "[[:alpha:]]{2}_",
+  #       names_transform = list(Wavelength = as.numeric)
+  #     )
+  #   ))
+  #
+  # # This parameter should be an user input
+  # #WaveSeq <- seq(353, 800, 3)
+  #
+  # approx_wave <- function(., WaveSeq) {
+  #
+  #   tbl <- tibble(
+  #     Type = unique(.$Type),
+  #     Wavelength = WaveSeq
+  #   )
+  #
+  #   for (i in seq_along(colnames(.))[-1:-2]) {
+  #     coord <- approx(x = .[[2]], y = .[[i]], xout = WaveSeq, method = "linear")
+  #
+  #     tbl <- bind_cols(tbl, x = coord[[2]])
+  #     colnames(tbl)[i] <- colnames(.)[i]
+  #   }
+  #
+  #   tbl
+  #
+  #   # tbl %>% mutate(ID = seq_along(TimeSeq))
+  # }
+  #
+  # L1bAproxLong <- L1bAverageLong %>%
+  #   mutate(IntData = purrr::map(AproxData, ~ approx_wave(., WaveSeq)))
+#
+#   L1bAproxWide <- L1bAproxLong %>%
+#     mutate(IntData = purrr::map(
+#       IntData,
+#       ~ pivot_wider(
+#         .,
+#         names_from = all_of(c("Type", "Wavelength")),
+#         names_sep = "_",
+#         values_from = Channels
+#       )
+#     )) %>%
+#     ungroup()
 
-  # This parameter should be an user input
-  #WaveSeq <- seq(353, 800, 3)
-
-  approx_wave <- function(., WaveSeq) {
-
-    tbl <- tibble(
-      Type = unique(.$Type),
-      Wavelength = WaveSeq
-    )
-
-    for (i in seq_along(colnames(.))[-1:-2]) {
-      coord <- approx(x = .[[2]], y = .[[i]], xout = WaveSeq, method = "linear")
-
-      tbl <- bind_cols(tbl, x = coord[[2]])
-      colnames(tbl)[i] <- colnames(.)[i]
-    }
-
-    tbl
-
-    # tbl %>% mutate(ID = seq_along(TimeSeq))
-  }
-
-  L1bAproxLong <- L1bAverageLong %>%
-    mutate(IntData = purrr::map(AproxData, ~ approx_wave(., WaveSeq)))
-
-  L1bAproxWide <- L1bAproxLong %>%
-    mutate(IntData = purrr::map(
-      IntData,
-      ~ pivot_wider(
-        .,
-        names_from = all_of(c("Type", "Wavelength")),
-        names_sep = "_",
-        values_from = Channels
-      )
-    )) %>%
-    ungroup()
-
-  Es <- L1bAproxWide %>%
-    select(!AproxData) %>%
+  Es <- L1bDataWide %>%
     filter(SN == "1397" | SN == "1396") %>%
-    unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
+    unnest(cols = c(AproxData)) %>%
+    select(!matches("Instrument|SN|DateTime|UUID"))
 
-  LuZ1 <- L1bAproxWide %>%
-    select(!AproxData) %>%
+  LuZ1 <- L1bDataWide %>%
     filter(SN == "1415" | SN == "1413") %>%
-    unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
+    unnest(cols = c(AproxData)) %>%
+    select(!matches("Instrument|SN|DateTime|UUID"))
 
-  LuZ2 <- L1bAproxWide %>%
-    select(!AproxData) %>%
+  LuZ2 <- L1bDataWide %>%
     filter(SN == "1416" | SN == "1414") %>%
-    unnest(cols = c(IntData)) %>%
-    select(!matches("Instrument|SN|DateTime|CalData|UUID"))
+    unnest(cols = c(AproxData)) %>%
+    select(!matches("Instrument|SN|DateTime|UUID"))
 
   #Z1Z2Depth <- 0.15 # Algae Wise 2022
 
@@ -631,7 +695,7 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
   #     ScoreQWIP = QWIP$Score
   #   )
 
-  Obs$Metadata <- Obs$Metadata %>%
+  Obs$MetadataL2 <- Obs$MetadataL2 %>%
     mutate(
       ScoreQWIP = QWIP$Score
     )

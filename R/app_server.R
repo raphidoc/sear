@@ -55,7 +55,7 @@ app_server <- function(input, output, session) {
 
   # Active discrete observation
   Obs <- reactiveValues(
-    Metadata = tibble(
+    MetadataL2 = tibble(
       DateTime = character(),
       DateTimeMin = character(),
       DateTimeMax = character(),
@@ -126,7 +126,7 @@ app_server <- function(input, output, session) {
     "automatic_processing",
     L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB)
 
-  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs, MainLog)
+  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs, MainLog, Settings)
 
   L2 <- mod_L1bL2_server("L1bL2", Obs, Settings)
 

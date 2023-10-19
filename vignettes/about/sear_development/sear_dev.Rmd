@@ -415,6 +415,16 @@ The app will also look for folder and data files to re-initiate the app state as
 If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw MTE files (.bin and .txt) are saved in `.sear/data/raw`. On load, the app will parse and save the resulting applanix data, HOCR packet, HOCR dark packet, HOCR Time index, SBE19, SeaOwl and BBFL2 in `.sear/data/parsed`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time (~2/3 min for .bin = 46 MB).
 If parsed data is already present, it will be read at the project selection.
 
+When starting the MTE DataLogger wait to recieve the NMEA \$UTC string to synchronize itself with that time before starting logging. The time difference between the DataLogger time and \$xxGGA is about ~10 milliseconds.
+There appear to be no time difference between the DataLogger and $UTC at the millisecond precision.
+
+The DataLogger record the NMEA strings at 1Hz (probably output rate of the Appalnix).
+the time stamp of the DataLogger is given with millisecond precision.
+We can create a MainLog whose time will be use as coordinate for every measurments.
+Considering the output rate of the NMEA strings, rounding the time at the second seem appropriate.
+
+Rounding might be enough, but strict checking seems a good idea. The function `unique_datetime_second` does that.
+
 #### HOCR specific files
 
 The HOCR time index optimize processing time for the selection of HOCR packet within a time interval.
@@ -506,6 +516,8 @@ TODO: List the required and optional NMEA string that sear will use.
 
 DateTime classe is huge to store as is. As number of second since origin it is up to 100 times smaller.
 
+
+
 **MANDATORY**
 
 ### Speed
@@ -572,7 +584,8 @@ temp %>%
 
 *Mandatory*
 
-Pitch and Roll are taken from the PASHR NMEA string of the Aplanix. 
+Pitch and Roll are taken from the PASHR NMEA string of the Aplanix.
+The PASHR string appear to be recorded at 1 Hz, therfore fixing the time limit for any further analysis.
 
 ```{r}
 SQLDemo <- DBI::dbConnect(

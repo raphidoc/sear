@@ -17,7 +17,7 @@ mod_L1b_process_ui <- function(id) {
 #' process_L1L2 Server Functions
 #'
 #' @noRd
-mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
+mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Settings) {
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -29,6 +29,14 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
       label = "processL1b",
       ignoreInit = T,
       {
+
+        if (is.null(L1a$InstrumentList())) {
+          showModal(modalDialog(
+            title = "No instrument selected",
+            "Please select at least one instrument to process"
+          ))
+          invalidateLater(1)
+        }
 
         # Create a Progress object
         progress <- shiny::Progress$new()
@@ -48,15 +56,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
 
         Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
 
-        Obs$Metadata <- gen_metadata(Select = Select)
-
-        if (is.null(L1a$InstrumentList())) {
-          showModal(modalDialog(
-            title = "No instrument selected",
-            "Please select at least one instrument to process"
-          ))
-          invalidateLater(1)
-        }
+        Obs$MetadataL2 <- gen_metadataL2(Select = Select)
 
         # Empty L1b and L2 on new processing to avoid confusion
         Obs$HOCR$L1b <- tibble()
@@ -110,13 +110,20 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog) {
               ungroup() %>%
               select(SN, DarkAproxData)
 
+            WaveSeq <- seq(
+              Settings$HOCR$WaveMin(),
+              Settings$HOCR$WaveMax(),
+              Settings$HOCR$WaveStep()
+            )
+
             Obs$HOCR$L1b <- spsComps::shinyCatch(
               cal_hocr(
                 RawHOCR = FiltRawHOCR,
                 CalHOCR = CalData$CalHOCR(),
                 HOCRDark = HOCRDark,
-                MainLogDate = unique(date(Select$DateTime)),
-                UpdateProgress
+                MetadataL1b = Obs$MetadataL1b,
+                UpdateProgress,
+                WaveSeq = WaveSeq
               ),
               shiny = T,
               trace_back = TRUE

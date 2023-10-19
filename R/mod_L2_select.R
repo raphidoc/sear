@@ -66,8 +66,11 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     InstList <- reactiveVal()
 
     observeEvent(
-      nrow(L2Obs$Metadata != 0),
+      nrow(L2Obs$MetadataL2 != 0),
       {
+
+        browser()
+
         Instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
 
         InstList(c("",Instruments))
@@ -181,7 +184,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
 # Plot selected variables -------------------------------------------------
 
     output$Plot <- renderPlotly({
-      req(nrow(L2Obs$Metadata != 0))
+      req(nrow(L2Obs$MetadataL2 != 0))
       req(input$VarY)
       validate(need(input$VarY != "", message = "Need x and y variables"))
 
@@ -190,7 +193,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       VarX <- input$VarX
       VarY <- input$VarY
 
-      L2 <- L2Obs$Metadata
+      L2 <- L2Obs$MetadataL2
 
       for (i in names(L2Obs)[-1]) {
         L2 <- left_join(L2, L2Obs[[i]], by = c("UUID"))
@@ -310,7 +313,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     observeEvent(input$ok, {
       removeModal()
 
-      qry <- glue::glue_sql('DELETE FROM Metadata WHERE UUID IN ("', paste(DelList(), collapse = '","'), '");')
+      qry <- glue::glue_sql('DELETE FROM MetadataL2 WHERE UUID IN ("', paste(DelList(), collapse = '","'), '");')
 
       LineDel <- DBI::dbExecute(DB$Con(), qry)
 
@@ -324,7 +327,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       )
 
       # Update the list of observation
-      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
+      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
 
       # Empty DelList
       DelList(list())

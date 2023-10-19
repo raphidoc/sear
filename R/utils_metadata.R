@@ -110,10 +110,10 @@ discretize_time <- function(MainTime) {
 #'
 #' @noRd
 
-gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
+gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
 
-  tibble(
-    DateTime = as.character(mean(Select$DateTime, na.rm = T)),
+  MetadataL2 <- tibble(
+    DateTime = as.character(format(mean(Select$DateTime, na.rm = T) , "%Y-%m-%d %H:%M:%S")),
     DateTimeMin = as.character(min(Select$DateTime, na.rm = T)),
     DateTimeMax = as.character(max(Select$DateTime, na.rm = T)),
     TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
@@ -136,6 +136,14 @@ gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     Comment = "NA",
     UUID = NA
   )
+
+  MetadataL2 <- MetadataL2 %>%
+    mutate(
+      RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_vessel_frame),
+      .before = Comment
+    ) %>% unnest(cols = c(RotatedBody))
+
+  return(MetadataL2)
 }
 
 #' gen_metadataL1b
@@ -156,8 +164,8 @@ gen_metadata <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
 
 gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
 
-  tibble(
-    DateTime = as.character(Select$DateTime),
+  MetadataL1b <- tibble(
+    DateTime = as.character(format(Select$DateTime, "%Y-%m-%d %H:%M:%S")),
     Speed = as.numeric(Select$Speed_kmh), # speed in kmh
     Lon = Select$Lon,
     Lat = Select$Lat,
@@ -171,6 +179,15 @@ gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     Heave = Select$Heave,
     UUID = NA
   )
+
+
+  MetadataL1b <- MetadataL1b %>%
+    mutate(
+      RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_vessel_frame),
+      .before = UUID
+    ) %>% unnest(cols = c(RotatedBody))
+
+  return(MetadataL1b)
 }
 
 #' qc_shift
@@ -307,4 +324,89 @@ qc_qwip <- function(Waves, Rrs) {
 
   return(list("Score" = Score, "Pass" = Pass))
 
+}
+
+#' unique_datetime_second
+#'
+#' @description remove duplicate time at the second in a data frame
+#'
+#' @param data a data frame
+#'
+#' @return a data frame with unique time
+#'
+#' @noRd
+
+unique_datetime_second <- function(data) {
+
+  nm <- deparse(substitute(data))
+
+  if (length(unique(as.numeric(data$DateTime))) == length(as.numeric(data$DateTime))) {
+
+    message(paste0("No duplicated second in ", nm))
+
+  } else {
+
+    data$DateTime[duplicated(data$DateTime)]
+
+    warning(
+      paste("Removing duplicated second", nm, "at:",
+            paste(data$DateTime[duplicated(data$DateTime)], collapse = ", ")
+      )
+    )
+
+    data <- data[!duplicated(data$DateTime), ]
+
+  }
+
+  return(data)
+}
+
+#' rotate_vessel_frame
+#'
+#' @description Uses the Tait-Bryan angles (Heading, Pitch, Roll) to rotate the vessel frame
+#'
+#' @param Heading rotation in degree about the Z axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you, 0 = North, 90 = East)
+#'
+#' @param Pitch rotation in degree about the Y axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you)
+#'
+#' @param Roll rotation about the X axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you)
+#'
+#' @return a data frame with columns
+#'  VesselXx, VesselXy, VesselXz, VesselYx, VesselYy, VesselYz, VesselZx, VesselZy, VesselZz
+#'  giving the cartesian coordinates of the vessel frame unit vector X, Y, Z.
+#'
+#' @noRd
+
+rotate_vessel_frame <- function(Heading, Pitch, Roll) {
+  # Convert angles from degrees to radians
+  Heading <- Heading * pi / 180
+  Pitch <- -Pitch * pi / 180 # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
+  Roll <- -Roll * pi / 180
+
+  # Create the rotation matrices
+  RotationZ <- matrix(c(cos(Heading), sin(Heading), 0, -sin(Heading), cos(Heading), 0, 0, 0, 1), nrow = 3)
+  RotationY <- matrix(c(cos(Pitch), 0, -sin(Pitch), 0, 1, 0, sin(Pitch), 0, cos(Pitch)), nrow = 3)
+  RotationX <- matrix(c(1, 0, 0, 0, cos(Roll), sin(Roll), 0, -sin(Roll), cos(Roll)), nrow = 3)
+
+  # Rotate the body frame in the correct order: Z (Heading) -> Y (Pitch) -> X (Roll)
+  RotationMatrix <- RotationZ %*% RotationY %*% RotationX
+
+  # Original body frame vectors (X, Y, Z)
+  BodyVectors <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3)  # Unit vectors
+
+  # Rotate the body frame vectors
+  RotatedVectors <- RotationMatrix %*% BodyVectors
+
+  RotatedVectors <- as_tibble(RotatedVectors) %>%
+    mutate(
+      Coord = c("x", "y", "z")
+    ) %>%
+    rename(VesselX = V1, VesselY = V2, VesselZ = V3) %>%
+    pivot_wider(
+      names_from = Coord,
+      values_from = c(VesselX,VesselY,VesselZ),
+      names_sep = ""
+    )
+
+  return(RotatedVectors)
 }

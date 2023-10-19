@@ -54,10 +54,10 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
         DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
 
         # Create DB schema
-        # Metadata
+        # MetadataL2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS Metadata (
+          "CREATE TABLE IF NOT EXISTS MetadataL2 (
           DateTime TEXT NOT NULL,
           DateTimeMin TEXT NOT NULL,
           DateTimeMax TEXT NOT NULL,
@@ -73,12 +73,21 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           Altitude DOUBLE NOT NULL,
           SolZen DOUBLE,
           SolAzm DOUBLE,
-          BoatSolAzm DOUBLE NOT NULL,
-          Roll DOUBLE NOT NULL,
-          Pitch DOUBLE NOT NULL,
-          Heading DOUBLE NOT NULL,
-          Heave DOUBLE NOT NULL,
-          ScoreQWIP DOUBLE NOT NULL,
+          BoatSolAzm DOUBLE,
+          Roll DOUBLE,
+          Pitch DOUBLE,
+          Heading DOUBLE,
+          Heave DOUBLE,
+          ScoreQWIP DOUBLE,
+          VesselXx DOUBLE,
+          VesselXy DOUBLE,
+          VesselXz DOUBLE,
+          VesselYx DOUBLE,
+          VesselYy DOUBLE,
+          VesselYz DOUBLE,
+          VesselZx DOUBLE,
+          VesselZy DOUBLE,
+          VesselZz DOUBLE,
           Comment TEXT,
           UUID TEXT PRIMARY KEY,
           ProTime TEXT NOT NULL,
@@ -103,9 +112,18 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           Pitch DOUBLE,
           Heading DOUBLE,
           Heave DOUBLE,
+          VesselXx DOUBLE,
+          VesselXy DOUBLE,
+          VesselXz DOUBLE,
+          VesselYx DOUBLE,
+          VesselYy DOUBLE,
+          VesselYz DOUBLE,
+          VesselZx DOUBLE,
+          VesselZy DOUBLE,
+          VesselZz DOUBLE,
           UUID TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           );"
         )
@@ -124,7 +142,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `Channels` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -141,7 +159,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `RbI` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -157,7 +175,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `Value` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -175,7 +193,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `Temperature` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -191,7 +209,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `Value` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -205,7 +223,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `FDOM` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -221,7 +239,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `Value` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -235,7 +253,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `PE` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -253,7 +271,7 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `PercentCoverage` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
@@ -271,13 +289,13 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           `PercentCoverage` REAL,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
-            REFERENCES Metadata (UUID)
+            REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
 
 
-        ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM Metadata")))
+        ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM MetadataL2")))
 
         # Return Con
         Con

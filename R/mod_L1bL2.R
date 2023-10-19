@@ -25,7 +25,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
 
     # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
-      req(nrow(Obs$Metadata) != 0)
+      req(nrow(Obs$MetadataL2) != 0)
 
       tabsetPanel(
         id = ns("Tabset"),
@@ -82,7 +82,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
     output$DataTable <- DT::renderDT(
 
       DT::datatable(
-        Obs$Metadata,
+        Obs$MetadataL2,
         extensions = c("Buttons", "Scroller", "Select"),
         # filter = "top",
         escape = TRUE, rownames = FALSE,
@@ -95,7 +95,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           columnDefs = list(
             list(
               visible = FALSE,
-              targets = str_which(colnames(Obs$Metadata), "\\b(?!Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch)\\b\\S+")-1
+              targets = str_which(colnames(Obs$MetadataL2), "\\b(?!Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch)\\b\\S+")-1
             )
           ),
           deferRender = TRUE,
@@ -107,7 +107,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
         editable = F
       ) %>%
         DT::formatRound(
-          columns = as.character(na.omit(str_extract(colnames(Obs$Metadata), "Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch"))),
+          columns = as.character(na.omit(str_extract(colnames(Obs$MetadataL2), "Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch"))),
           digits=2),
       server = FALSE,
       editable = F
@@ -134,7 +134,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
     observeEvent(
       input$Save,
       {
-        Obs$Metadata <- Obs$Metadata %>% mutate(Comment = input$Comment)
+        Obs$MetadataL2 <- Obs$MetadataL2 %>% mutate(Comment = input$Comment)
       }
     )
 

@@ -145,9 +145,9 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           # Computation time arround 2/3 minutes
           TimeIndex <- purrr::map(
             .x = PrimHOCR,
-            ~ clock::date_time_parse(
+            ~ as.numeric(clock::date_time_parse(
               paste0(AplaDate, " ", hms::as_hms(.x$gpstime / 1000)),
-              zone = "UTC")
+              zone = "UTC"))
           )
 
           if (length(TimeIndex) != length(PrimHOCR)) {
@@ -327,11 +327,15 @@ mod_parse_mtelog_server <- function(id, SearTbl, CalData, ParsedFiles) {
           PotHOCRTimeIndex <- str_subset(ParsedFiles(), NameHOCRTimeIndex)
 
           # unlist convert posixct DateTime representation back to number of seconds
-          temp <- as.POSIXct(
-            unlist(
-              purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
-              recursive = T),
-            tz = "UTC")
+          # temp <- as.POSIXct(
+          #   unlist(
+          #     purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
+          #     recursive = T),
+          #   tz = "UTC")
+
+          temp <- unlist(
+            purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
+            recursive = T)
 
           HOCRTimeIndex(temp)
 

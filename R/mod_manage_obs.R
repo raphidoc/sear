@@ -33,7 +33,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     })
 
     output$Delete <- renderUI({
-      req(!is.na(Obs$Metadata$UUID))
+      req(!is.na(Obs$MetadataL2$UUID))
 
       actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon"))
 
@@ -44,11 +44,11 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         L2Select$SelUUID()
       ),
       {
-        # Metadata
+        # MetadataL2
         # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM Metadata WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        qry <- paste0("SELECT * FROM MetadataL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        L2Obs$Metadata <- tibble(DBI::dbFetch(res))
+        L2Obs$MetadataL2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # Have to query data based on UUID
@@ -98,11 +98,11 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         L1aSelect$SelUUID()
       ),
       {
-        # Metadata
+        # MetadataL2
         # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM Metadata WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM MetadataL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$Metadata <- tibble(DBI::dbFetch(res))
+        Obs$MetadataL2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # MetadataL1b
@@ -191,13 +191,13 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         Obs$HOCR$L2 <- Obs$HOCR$L2 %>%
           select(matches("Wavelength|Rrs|Rrs_loess|KLu|KLu_loess|RbI|UUID"))
 
-        # Does UUID is present in Metadata colnames ?
+        # Does UUID is present in MetadataL2 colnames ?
         # Now it is initiated on start so always TRUE
-        UUIDPresent <- any(str_detect(names(Obs$Metadata), "UUID"))
+        UUIDPresent <- any(str_detect(names(Obs$MetadataL2), "UUID"))
 
         # Does UUID exist in database, check ObsMeta
         if (UUIDPresent) {
-          UUIDExist <- any(Obs$Metadata$UUID %in% DB$ObsMeta()$UUID)
+          UUIDExist <- any(Obs$MetadataL2$UUID %in% DB$ObsMeta()$UUID)
         } else {
           UUIDExist <- F
         }
@@ -205,9 +205,9 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         # If UUID already exist, update record in SQLite
         if (UUIDPresent & UUIDExist) {
 
-# Update Metadata ---------------------------------------------------------
+# Update MetadataL2 ---------------------------------------------------------
 
-          Metadata <- Obs$Metadata %>%
+          MetadataL2 <- Obs$MetadataL2 %>%
             mutate(
               ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
               Analyst = "Raphael Mabit",
@@ -215,12 +215,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             )
 
           qry <- glue::glue(
-            "UPDATE Metadata
-            SET Comment = '", Metadata$Comment, "',
-                ProTime = '", Metadata$ProTime, "',
-                Analyst = '", Metadata$Analyst, "',
-                Mail = '", Metadata$Mail, "'
-            WHERE UUID = '", Obs$Metadata$UUID, "';"
+            "UPDATE MetadataL2
+            SET Comment = '", MetadataL2$Comment, "',
+                ProTime = '", MetadataL2$ProTime, "',
+                Analyst = '", MetadataL2$Analyst, "',
+                Mail = '", MetadataL2$Mail, "'
+            WHERE UUID = '", Obs$MetadataL2$UUID, "';"
           )
 
           # Execute the statement and return the number of line affected
@@ -326,7 +326,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                   ", qryRbI, "
                   ELSE RbI
                   END
-            WHERE UUID = '", Obs$Metadata$UUID, "';"
+            WHERE UUID = '", Obs$MetadataL2$UUID, "';"
           )
 
           # NA value in R are equal to NULL in SQL
@@ -374,7 +374,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             type = "testmessage",
             message =
               glue::glue(
-                "Metadata: ", MetaUp, " entry updated\n",
+                "MetadataL2: ", MetaUp, " entry updated\n",
                 "HOCRL1b: ", sum(HOCRL1bUp), " entry updated\n",
                 "HOCRL2: ", HOCRL2Up, " entry updated\n"
               )
@@ -407,7 +407,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           #                     collapse = ""))
 
 
-          Metadata <- Obs$Metadata %>%
+          MetadataL2 <- Obs$MetadataL2 %>%
             mutate(
               UUID = ObsUUID,
               ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
@@ -464,7 +464,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           BioSonicL2 <- Obs$BioSonic$L2  %>%
             mutate(UUID = ObsUUID)
 
-          DBI::dbWriteTable(DB$Con(), "Metadata", Metadata, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
@@ -482,17 +482,17 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             type = "testmessage",
             message = "Saved"
             # glue::glue(
-            #   "Metadata: ",MetaUp," entry updated\n",
+            #   "MetadataL2: ",MetaUp," entry updated\n",
             #   "HOCRL1b: ", sum(L1bUp)," entry updated\n",
             #   "HOCRL2: ",L2Up," entry updated\n")
           )
 
           # Update the list of observation
-          DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
+          DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
 
-          qry <- glue::glue_sql("SELECT * FROM Metadata WHERE UUID = '", ObsUUID, "';")
+          qry <- glue::glue_sql("SELECT * FROM MetadataL2 WHERE UUID = '", ObsUUID, "';")
 
-          Obs$Metadata <- tibble(DBI::dbGetQuery(DB$Con(), qry))
+          Obs$MetadataL2 <- tibble(DBI::dbGetQuery(DB$Con(), qry))
         }
       }
     )
@@ -516,7 +516,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     observeEvent(input$ok, {
       removeModal()
 
-      qry <- glue::glue("DELETE FROM Metadata WHERE UUID='", Obs$Metadata$UUID, "';")
+      qry <- glue::glue("DELETE FROM MetadataL2 WHERE UUID='", Obs$MetadataL2$UUID, "';")
 
       LineDel <- DBI::dbExecute(DB$Con(), qry)
 
@@ -530,7 +530,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       )
 
       # Update the list of observation
-      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM Metadata")))
+      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
     })
 
     # If user cancel

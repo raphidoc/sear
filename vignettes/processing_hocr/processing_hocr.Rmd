@@ -363,7 +363,7 @@ tidy_hocr <- function(Packets) {
     DarkAverage = Packets$darkaverage,
     SpecTemp = as.character(Packets$spectemp, errors = "ignore"),
     Frame = Packets$frame,
-    Timer = as.character(Packets$timer, errors = "ignore"),
+    Timer = as.character(Packets$timer, errors = "ignore"), # How many seconds since initialization sequence
     CheckSum = Packets$checksum,
     Channels = Packets$channel
   )
