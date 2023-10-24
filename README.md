@@ -13,7 +13,7 @@ Web-based reactive program for ocean optic data management and processing.
 ## Overview
 
 The sear software is written in [shiny](https://github.com/rstudio/shiny) and was primarily designed to manage and process data for the [FORSCE SeaDoo project](https://ldgizc.uqar.ca/Web/infrastructures-et-equipements/forsce#forsce-english).
-It allow to load, parse, display, process and save the data. Permanent data storage is done with an SQLite database for each project.
+It allow to load, parse, display, process and save the data in an SQLite database.
 
 Along it's development the idea come that it could be more, something like a platform to manage and process ocean optic data coming from any numbers of instruments and platform. This could be achieve by defining the architecture common to all ocean optic projects, the specifics of each instrument and platform and the method to be applied upon them. It would improve the efficiency of the analysts and give a solution to common problems faced with data management, processing and quality control.
 
@@ -26,11 +26,15 @@ Along it's development the idea come that it could be more, something like a pla
 * Choose spectral resolution for HOCR output.
 * Enter custom values for HOCR positions in water, distance from the surface and distance between the instruments.
 
+*TODO* user input instruments position with serial number (sn) and instrument type (`"SAT(HPE|PED|HSE|HED|HPL|PLD|HSL|HLD)"`)
+
 ### Load and parse
 * Files `.txt` and `.bin` from MTE data logger.
+* Files `.txt` from HydroBall devices: NMEA log of GNSS (\$GPGGA), transducer (\$DBT), and gyrocompas (\$PTNTHPR).
+* Files `.raw` from SatView.
 * BioSonic csv exported by VisualAquatic.
 * Calibration files for HOCR, SBE19. SBE18, SBE43, SeaOWL, BBFL2.
-* Use longitude (`Lon`), latitude (`Lat`) and `DateTime` from GPS device (Applanix for the SeaDoo) to create a `MainLog`.
+* Use longitude (`Lon`), latitude (`Lat`) and `DateTime` from GNSS device (Applanix for the SeaDoo) to create a `MainLog`.
 * Create a data synthesis, presence or absence of said instrument at a specific time in the `MainLog`.
 
 ### Filters
@@ -53,6 +57,7 @@ Along it's development the idea come that it could be more, something like a pla
 * Human QC of L1b data, analyst can click on the data to shift it between green (1 = good) and red (0 = bad). Data that have the flag QC flag 0 is removed from further analysis.
 * Process L2 to summarize (mean) non spectral data. For the HOCRs, AOPs are computed.
 * Loess interpolation and smoothing for AOPs.
+* Metadata include rotation of the vessel frame (X, Y, Z vectors in cartesian coordinates) from Tait-Bryan angles (heading, pitch, roll)
 
 ### Save
 
@@ -72,5 +77,7 @@ To simplify the installation process, a python virtual env is created to use the
 ## Contributors
 
 Raphaël Mabit: Author and maintainer
+
 Daniela Walch: Help with logo design, point to relevant resources (wallace 2)
+
 Bruno Dionne: Help with binary parsing
