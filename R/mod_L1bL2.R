@@ -55,6 +55,10 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           mod_L1L2_biosonic_ui(ns("L1L2_biosonic"))
         ),
         tabPanel(
+          "HydroBall",
+          mod_L1L2_hydroball_ui(ns("L1L2_hydroball"))
+        ),
+        tabPanel(
           "Rb",
           mod_bottom_reflectance_ui(ns("bottom_reflectance"))
         )
@@ -138,28 +142,32 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
       }
     )
 
-    # HOCR tab ----------------------------------------------------------------
+# HOCR tab ----------------------------------------------------------------
 
     mod_L1L2_hocr_server("L1L2_hocr", Obs, Settings)
 
-    # SBE19 tab ---------------------------------------------------------------
+# SBE19 tab ---------------------------------------------------------------
 
     mod_L1L2_sbe19_server("L1L2_sbe19", Obs)
 
-    # SeaOWL tab --------------------------------------------------------------
+# SeaOWL tab --------------------------------------------------------------
 
     mod_L1L2_seaowl_server("L1L2_seaowl", Obs)
 
-    # BBFL2 tab ---------------------------------------------------------------
+# BBFL2 tab ---------------------------------------------------------------
 
     mod_L1L2_bbfl2_server("L1L2_bbfl2", Obs)
 
-    # BioSonic ----------------------------------------------------------------
+# BioSonic ----------------------------------------------------------------
 
     mod_L1L2_biosonic_server("L1L2_biosonic", Obs)
 
 
-    # Bottom Reflectance ------------------------------------------------------
+# HydroBall ---------------------------------------------------------------
+
+    mod_L1L2_hydroball_server("L1L2_hydroball", Obs)
+
+# Bottom Reflectance ------------------------------------------------------
 
     mod_bottom_reflectance_server("bottom_reflectance", Obs)
 

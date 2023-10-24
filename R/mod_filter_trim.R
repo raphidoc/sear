@@ -18,7 +18,7 @@ mod_filter_trim_ui <- function(id) {
 #' filter_trim Server Functions
 #'
 #' @noRd
-mod_filter_trim_server <- function(id, SearTbl, DataFiles, SelData, Apla) {
+mod_filter_trim_server <- function(id, SearProj, DataFiles, SelData, Apla) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -26,22 +26,22 @@ mod_filter_trim_server <- function(id, SearTbl, DataFiles, SelData, Apla) {
       input$trim,
       {
         PotApla <- file.path(
-          SearTbl()$ProjPath, ".sear",
+          SearProj()$ProjPath, ".sear",
           paste0("filtered_apla_", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv")
         )
 
         PotAplaTrim <- file.path(
-          SearTbl()$ProjPath, ".sear",
+          SearProj()$ProjPath, ".sear",
           paste0("filtered_apla_trim", str_extract(DataFiles()$txt, "[[:digit:]]{8}_[[:digit:]]{6}"), ".csv")
         )
 
         PotHocr <- file.path(
-          SearTbl()$ProjPath, ".sear",
+          SearProj()$ProjPath, ".sear",
           paste0("filtered_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
         )
 
         PotTimeIndexHocr <- file.path(
-          SearTbl()$ProjPath, ".sear",
+          SearProj()$ProjPath, ".sear",
           paste0("filtered_time_index_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
         )
 

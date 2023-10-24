@@ -1,5 +1,5 @@
 meta:
-  id: HOCR
+  id: hocr_mte
   title: HOCR datalogger binary parser
   application: parse .bin file produced by the datalogger containing binary data from the seadoo HOCR
   file-extension: bin
@@ -36,10 +36,10 @@ seq:
 types:
   hocr_packet:
     seq:
-      - id: gpstime
+      - id: time
         type: u4
         doc: |
-          timestamp in millisecond, likely synchro with the applanix
+          timestamp in millisecond, synchro with the applanix
 
       - id: void1
         size: 2

@@ -1,8 +1,8 @@
 #' hocr_cal
 #'
-#' @description A fct function
+#' @description parse the calibration files of satlantic HOCR
 #'
-#' @return The return value, if any, from executing the function.
+#' @return a list with one tidy data frame per fit type
 #'
 #' Read HOCR calibration file
 #'
@@ -17,6 +17,7 @@
 #' @noRd
 
 read_hocr_cal <- function(CalFiles) {
+
   # CalFiles is a list of calibration files
 
   # Fit type specific coefficients
@@ -63,7 +64,7 @@ read_hocr_cal <- function(CalFiles) {
     rename(Instrument = .data$INSTRUMENT)
 
   OPTIC3 <- CalFile %>%
-    filter(.data$Type == "ES" | .data$Type == "LU") %>%
+    filter(.data$Type %in% c("ES","LU","Lu")) %>%
     separate(
       col = .data$Cal,
       into = c("a0", "a1", "im", "cint"),
@@ -74,6 +75,10 @@ read_hocr_cal <- function(CalFiles) {
     bind_cols(CalID) %>%
     rename(Wavelength = "ID") %>%
     mutate(Wavelength = as.numeric(.data$Wavelength))
+
+  if (nrow(OPTIC3) == 0) {
+    stop("OPTIC3 calibration is empty")
+  }
 
   THERM1 <- CalFile %>%
     filter(.data$FitType == "THERM1") %>%
@@ -86,6 +91,10 @@ read_hocr_cal <- function(CalFiles) {
     ) %>%
     bind_cols(CalID)
 
+  if (nrow(THERM1) == 0) {
+    warning("THERM1 calibration is empty")
+  }
+
   # POLYU span from a0 to an, should write code to take that into account
   # Sep in cal file appear to be two spaces ... cloud manage all those with "[[:blank:]]"
   POLYU <- CalFile %>%
@@ -93,11 +102,15 @@ read_hocr_cal <- function(CalFiles) {
     separate(
       col = .data$Cal,
       into = c("a0", "a1"),
-      sep = "[[:blank:]]{2}",
+      sep = "(?<!^)[[:blank:]]{2}|(?<=[0-9])[[:blank:]](?=[0-9])",
       remove = TRUE,
       convert = TRUE
     ) %>%
     bind_cols(CalID)
+
+  if (nrow(POLYU) == 0) {
+    stop("POLYU calibration is empty")
+  }
 
   return(list(OPTIC3 = OPTIC3, THERM1 = THERM1, POLYU = POLYU))
 }
@@ -116,7 +129,13 @@ tidy_cal_hocr <- function(CalFiles) {
 
   POLYU <- bind_rows(FlatCal[names(FlatCal) == "POLYU"])
 
+  # Normlize Type for the app
   OPTIC3 <- OPTIC3 %>%
+    mutate(Type = case_when(
+      Type == "Lu" ~ "LU",
+      Type == "Es" ~ "ES",
+      .default = Type
+    )) %>%
     group_by(.data$Instrument, .data$SN) %>%
     nest(OPTIC3 = !matches("Instrument|SN"))
 

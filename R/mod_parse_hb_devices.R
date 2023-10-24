@@ -1,4 +1,4 @@
-#' parse_biosonic UI Function
+#' hb_devices UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,24 +7,24 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_parse_biosonic_ui <- function(id){
+mod_parse_hb_devices_ui <- function(id){
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("Load"))
   )
 }
 
-#' parse_biosonic Server Functions
+#' hb_devices Server Functions
 #'
 #' @noRd
-mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
+mod_parse_hb_devices_server <- function(id, SearProj, ParsedFiles){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
-      fileInput(ns("Files"), "Choose BioSonic .csv Files", accept = c(".csv"), multiple = T)
+      fileInput(ns("Files"), "Choose HydroBall Devices .txt Files", accept = c(".txt", ".TXT"), multiple = T)
 
     })
 
@@ -43,22 +43,26 @@ mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
 
         file.copy(Files$datapath, Files$rawpath)
 
-        DateRange <- str_extract(Files$name, "[:digit:]{8}_[:digit:]{8}")
+        TimeTag <- str_extract(Files$name, "[:digit:]{2}_[:digit:]{2}_[:digit:]{2}-[:digit:]{4}_[:digit:]{2}_[:digit:]{2}")
+
+        Time <- str_split(TimeTag, "-")[[1]][1]
+        Date <- str_split(TimeTag, "-")[[1]][2]
+
+        DateTime <- ymd_hms(paste(Date,Time))
 
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
         dir.create(ParsedDir, recursive = TRUE)
 
-        BioSonic <- read_biosonic(Files$rawpath)
+        # No date is available in the devices files, take it from the file name
+        HBDevices <- read_hb_devices(Files$rawpath, date(DateTime))
 
-        PotBioSonic <- file.path(ParsedDir, paste0("biosonic_",DateRange,".csv"))
+        PotHBDevices <- file.path(ParsedDir, paste0("hb_devices_",format(DateTime, "%Y%m%d_%H%M%S"),".csv"))
 
-        write_csv(BioSonic, PotBioSonic)
+        write_csv(HBDevices, PotHBDevices)
 
       }
     )
-
-# Module output -----------------------------------------------------------
 
     return(reactive(input$Files))
 
@@ -66,7 +70,7 @@ mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
 }
 
 ## To be copied in the UI
-# mod_parse_biosonic_ui("parse_biosonic")
+# mod_parse_hb_devices_ui("parse_hb_devices")
 
 ## To be copied in the server
-# mod_parse_biosonic_server("parse_biosonic")
+# mod_parse_hb_devices_server("parse_hb_devices")

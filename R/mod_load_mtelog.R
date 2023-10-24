@@ -19,13 +19,13 @@ mod_load_mtelog_ui <- function(id) {
 #' load_mtelog Server Functions
 #'
 #' @noRd
-mod_load_mtelog_server <- function(id, SearTbl) {
+mod_load_mtelog_server <- function(id, SearProj) {
 
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
-      req(SearTbl())
+      req(SearProj())
 
       fileInput("Files", "Choose MTE txt and bin Files", accept = c(".txt",".bin"), multiple = T)
 
@@ -49,9 +49,9 @@ mod_load_mtelog_server <- function(id, SearTbl) {
 
 
     # reactive({
-    #   req(SearTbl())
+    #   req(SearProj())
     #
-    #   MTEbulkLoc <- file.path(SearTbl()$ProjPath, "L1")
+    #   MTEbulkLoc <- file.path(SearProj()$ProjPath, "L1")
     #
     #   if (dir.exists(MTEbulkLoc) && length(list.files(MTEbulkLoc)) >= 2) {
     #     MTEbulkFiles <- list.files(MTEbulkLoc, full.names = T)

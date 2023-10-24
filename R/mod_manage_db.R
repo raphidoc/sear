@@ -19,7 +19,7 @@ mod_manage_db_ui <- function(id) {
 #' manage_db Server Functions
 #'
 #' @noRd
-mod_manage_db_server <- function(id, SearTbl, Obs) {
+mod_manage_db_server <- function(id, SearProj, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -36,13 +36,13 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
 
     # Connect project SQLite DB -----------------------------------------------
     Con <- eventReactive(
-      req(SearTbl()$ProjPath),
+      req(SearProj()$ProjPath),
       {
         message("Doing L1bL2 SQLite stuff ... you know")
 
-        L2Dir <- file.path(SearTbl()$ProjPath, "L2")
+        L2Dir <- file.path(SearProj()$ProjPath, "L2")
 
-        PotSQLite <- file.path(L2Dir, paste0(SearTbl()$ProjName, "_sear.sqlite"))
+        PotSQLite <- file.path(L2Dir, paste0(SearProj()$ProjName, "_sear.sqlite"))
 
         if (!dir.exists(L2Dir)) {
           dir.create(L2Dir)
@@ -77,7 +77,6 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           Roll DOUBLE,
           Pitch DOUBLE,
           Heading DOUBLE,
-          Heave DOUBLE,
           ScoreQWIP DOUBLE,
           VesselXx DOUBLE,
           VesselXy DOUBLE,
@@ -111,7 +110,6 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           Roll DOUBLE,
           Pitch DOUBLE,
           Heading DOUBLE,
-          Heave DOUBLE,
           VesselXx DOUBLE,
           VesselXy DOUBLE,
           VesselXz DOUBLE,
@@ -294,6 +292,37 @@ mod_manage_db_server <- function(id, SearTbl, Obs) {
           )"
         )
 
+        # BioSonic L1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `HydroBallL1b` (
+          `Lon` REAL,
+          `Lat` REAL,
+          `DateTime` REAL,
+          `Altitude` REAL,
+          `H` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES MetadataL2 (UUID)
+            ON DELETE CASCADE
+          )"
+        )
+
+        # BioSonic L2
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `HydroBallL2` (
+          `Lon` REAL,
+          `Lat` REAL,
+          `DateTime` REAL,
+          `Altitude` REAL,
+          `H` REAL,
+          `UUID` TEXT,
+          FOREIGN KEY (UUID)
+            REFERENCES MetadataL2 (UUID)
+            ON DELETE CASCADE
+          )"
+        )
 
         ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM MetadataL2")))
 

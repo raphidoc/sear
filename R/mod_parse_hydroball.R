@@ -1,4 +1,4 @@
-#' parse_biosonic UI Function
+#' parse_hydroball UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,24 +7,24 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_parse_biosonic_ui <- function(id){
+mod_parse_hydroball_ui <- function(id){
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("Load"))
   )
 }
 
-#' parse_biosonic Server Functions
+#' parse_hydroball Server Functions
 #'
 #' @noRd
-mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
+mod_parse_hydroball_server <- function(id, SearProj, ParsedFiles){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
-      fileInput(ns("Files"), "Choose BioSonic .csv Files", accept = c(".csv"), multiple = T)
+      fileInput(ns("Files"), "Choose HydroBall .csv Files", accept = c(".csv"), multiple = T)
 
     })
 
@@ -49,14 +49,15 @@ mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
 
         dir.create(ParsedDir, recursive = TRUE)
 
-        BioSonic <- read_biosonic(Files$rawpath)
+        HydroBall <- read_hydroball(Files$rawpath)
 
-        PotBioSonic <- file.path(ParsedDir, paste0("biosonic_",DateRange,".csv"))
+        PotHydroBall <- file.path(ParsedDir, paste0("hydroball_",DateRange,".csv"))
 
-        write_csv(BioSonic, PotBioSonic)
+        write_csv(HydroBall, PotHydroBall)
 
       }
     )
+
 
 # Module output -----------------------------------------------------------
 
@@ -66,7 +67,7 @@ mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
 }
 
 ## To be copied in the UI
-# mod_parse_biosonic_ui("parse_biosonic")
+# mod_parse_hydroball_ui("parse_hydroball")
 
 ## To be copied in the server
-# mod_parse_biosonic_server("parse_biosonic")
+# mod_parse_hydroball_server("parse_hydroball")

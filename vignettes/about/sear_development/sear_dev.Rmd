@@ -47,9 +47,13 @@ MainLog <- Apla %>%
 
 SBE19 <- sear:::read_sbe19(MTELog)
 
-BinFile <- system.file("data-raw", "reduced", "DATA_20220706_153838.bin", package = "sear", mustWork = T)
+BinFile <- system.file("data-raw", "MTE", "DATA_20220706_153838.bin", package = "sear", mustWork = T)
 
-HOCR <- sear:::read_hocr(BinFile)
+MTEHOCR <- sear:::read_mte_hocr(BinFile)
+
+RawFile <- system.file("data-raw", "SatView", "2019-236-130913.raw", package = "sear", mustWork = T)
+
+SatViewHOCR <- sear:::read_satview_hocr(RawFile)
 
 AplaDate <- unique(date(Apla$DateTime))
 

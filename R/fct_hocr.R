@@ -1,6 +1,6 @@
-#' read_hocr
+#' read_mte_hocr
 #'
-#' @description Reader for HOCR binary file saved by datalogger.
+#' @description Reader for HOCR binary file logged by MTE datalogger.
 #' Leverage \href{https://kaitai.io/}{kaitaistruct} with python, the python custom class is lost between
 #' session so the object return a null pointer. This make it impossible (?) to save
 #' to file so a quick fix was to extract the values and put them in an r list.
@@ -10,59 +10,186 @@
 #' @return Return a r list containing all HOCR packet value as character or numeric
 #'
 #' @noRd
-read_hocr <- function(BinFile) {
+read_mte_hocr <- function(BinFile) {
 
   # now source python onload
-  reticulate::source_python(system.file("py", "hocr.py", package = "sear", mustWork = T))
+  reticulate::source_python(system.file("py", "hocr_mte.py", package = "sear", mustWork = T))
 
-  RawHOCR <- purrr::map(BinFile, Hocr$from_file)
+  message(paste("Reading MTE",basename(BinFile)))
+
+  RawHOCR <- purrr::map(BinFile, HocrMte$from_file)
 
   RawHOCR <- unlist(purrr::map(RawHOCR, ~ .x$packets))
 
   # Unefficent way of removing custom class python object dependencies resulting in null pointer
   # How to avoid: Error in py_ref_to_r(x) : Embedded NUL in string ? (packet 27281 of AlgaeValidation (2022/07/05))
 
-  RawHOCR <- purrr::imap(RawHOCR, ~ tryCatch(
-    list(
-      "channel" = .$channel,
-      "checksum" = .$checksum,
-      "darkaverage" = .$darkaverage,
-      "darksample" = .$darksample,
-      "frame" = .$frame,
-      "gpstime" = .$gpstime,
-      "instrument" = as.character(.$instrument, errors = "ignore"),
-      "inttime" = .$inttime,
-      "loggerport" = .$loggerport,
-      "mysterydate" = .$mysterydate,
-      "sampledelay" = .$sampledelay,
-      "sn" = as.character(.$sn, errors = "ignore"),
-      "spectemp" = as.character(.$spectemp, errors = "ignore"),
-      "timer" = as.character(.$timer, errors = "ignore")
-    ),
-    error = function(...) NA
-  ))
+  RawHOCR <- purrr::imap(RawHOCR, ~ {
 
-  NaPackets <- 0
+    tryCatch(
+      {
+        i = .y
+        list(
+          "channel" = .$channel,
+          "checksum" = .$checksum,
+          "darkaverage" = .$darkaverage,
+          "darksample" = .$darksample,
+          "frame" = .$frame,
+          "time" = .$time,
+          "instrument" = tryCatch(
+            as.character(.$instrument), error = function(e) {
+              message(paste("Packet",i,"instrument",e))
+              return(NA)
+            }),
+          "inttime" = .$inttime,
+          "loggerport" = .$loggerport,
+          "mysterydate" = .$mysterydate,
+          "sampledelay" = .$sampledelay,
+          "sn" = tryCatch(
+            as.character(.$sn), error = function(e) {
+              message(paste("Packet",i,"SN",e))
+              return(NA)
+            }),
+          "spectemp" = tryCatch(
+            as.character(.$spectemp), error = function(e) {
+              message(paste("Packet",i,"spectemp",e))
+              return(NA)
+            }),
+          "timer" = tryCatch(
+            as.character(.$timer), error = function(e) {
+              message(paste("Packet",i,"timer",e))
+              return(NA)
+            })
+        )
+      },
+      error = function(e) {
+        message(paste("Packet",i,e))
+        return(NA)
+      }
+    )
+  })
+
   if (any(is.na(RawHOCR))) {
-    RawHOCR <- RawHOCR[-which(is.na(RawHOCR))]
     NaPackets <- which(is.na(RawHOCR))
+    RawHOCR <- RawHOCR[-which(is.na(RawHOCR))]
+  } else {
+    NaPackets <- 0
   }
 
   # check for invalid packet
-  ValidInd <- purrr::map_lgl(RawHOCR, ~ str_detect(as.character(.x$instrument, errors = "ignore"), "SAT(HPL|HSE|HED|PLD)"))
+  ValidInd <- purrr::map_lgl(
+    RawHOCR,
+    ~ ifelse(
+        is.na(.x$instrument),
+        F,
+        str_detect(.x$instrument, "SAT(HPE|PED|HSE|HED|HPL|PLD|HSL|HLD)")
+        )
+    )
 
   if (any(!ValidInd)) {
     message("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)) + NaPackets)
 
-    RawHOCR[ValidInd]
-  } else {
-    RawHOCR
+    RawHOCR <- RawHOCR[ValidInd]
   }
+
+  return(RawHOCR)
+}
+
+#' read_satview_hocr
+#'
+#' @description Reader for HOCR binary file logged by SatView.
+#' Leverage \href{https://kaitai.io/}{kaitaistruct} with python, the python custom class is lost between
+#' session so the object return a null pointer. This make it impossible (?) to save
+#' to file so a quick fix was to extract the values and put them in an r list.
+#' Check for packet integrity by detecting valid instruments name, this may leave
+#' some corrupted packets.
+#'
+#' @return Return a r list containing all HOCR packet value as character or numeric
+#'
+#' @noRd
+read_satview_hocr <- function(RawFile) {
+
+  reticulate::source_python(system.file("py", "hocr_satview.py", package = "sear", mustWork = T))
+
+  RawHOCR <- purrr::map(RawFile, HocrSatview$from_file)
+
+  RawHOCR <- unlist(purrr::map(RawHOCR, ~ .x$packets))
+
+  # Unefficent way of removing custom class python object dependencies resulting in null pointer
+  # How to avoid: Error in py_ref_to_r(x) : Embedded NUL in string ? (packet 27281 of AlgaeValidation (2022/07/05))
+
+  RawHOCR <- purrr::imap(.x = RawHOCR, ~ {
+    tryCatch(
+      {
+        i = .y
+        list(
+          "channel" = .x$channel,
+          "checksum" = .x$checksum,
+          "darkaverage" = .x$darkaverage,
+          "darksample" = .x$darksample,
+          "frame" = .x$frame,
+          "time" = .x$time,
+          "instrument" = tryCatch(
+            as.character(.x$instrument), error = function(e) {
+              message(paste("Packet",i,"instrument",e))
+              return(NA)
+            }),
+          "inttime" = .x$inttime,
+          "date" = .x$date,
+          "sampledelay" = .x$sampledelay,
+          "sn" = tryCatch(
+            as.character(.x$sn), error = function(e) {
+              message(paste("Packet",i,"sn",e))
+              return(NA)
+            }),
+          "spectemp" = tryCatch(
+            as.character(.x$spectemp), error = function(e) {
+              message(paste("Packet",i,"spectemp",e))
+              return(NA)
+            }),
+          "timer" = tryCatch(
+            as.character(.x$timer), error = function(e) {
+              message(paste("Packet",i,"timer",e))
+              return(NA)
+            })
+        )
+      },
+      error = function(e) {
+        message(paste("Packet",i,"instrument",e))
+        return(NA)
+      }
+    )
+  })
+
+  if (any(is.na(RawHOCR))) {
+    NaPackets <- which(is.na(RawHOCR))
+    RawHOCR <- RawHOCR[-which(is.na(RawHOCR))]
+  } else {
+    NaPackets <- 0
+  }
+
+  # check for invalid packet
+  ValidInd <- purrr::map_lgl(
+    RawHOCR,
+    ~ ifelse(
+      is.na(.x$instrument),
+      F,
+      str_detect(.x$instrument, "SAT(HPE|PED|HSE|HED|HPL|PLD|HSL|HLD)")
+    )
+  )
+
+  if (any(!ValidInd)) {
+    message("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)) + NaPackets)
+
+    RawHOCR <- RawHOCR[ValidInd]
+  }
+
+  return(RawHOCR)
 }
 
 #' filter_hocr
 #'
-#' @description Time filter of the \code{RawHOCR} list (from  \code{\link{read_hocr}}) based on time interval.
+#' @description Time filter of the \code{RawHOCR} list (from  \code{\link{read_mte_hocr}}) based on time interval.
 #' HOCRTimeIndex is precomputed as it takes time.
 #'
 #' @return Return a subset of \code{RawHOCR}
@@ -82,33 +209,74 @@ filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
 #'
 #' @description tidyer for HOCR packets.
 #'
-#' @param Packets list of HOCR packets generated by \code{\link{read_hocr}}
-#' @param MainLogDate The binary date format added by the MTE datalogger is unknown.
+#' @param Packets list of HOCR packets generated by \code{\link{read_mte_hocr}}
+#' @param Date The binary date format added by the MTE datalogger is unknown.
 #' Quick Fix
 #'
 #' @return Return a long format tidy tibble of the HOCR packets
 #'
 #' @noRd
-tidy_hocr <- function(Packets, MainLogDate) {
-  tibble::tibble(
-    # Applanix time added by the DataLogger in millisecond
-    # Unkown Date format in the binary file, so take the one in the txt file
-    GPSTime = as.POSIXct(paste0(MainLogDate, hms::as_hms(Packets$gpstime / 1000)), format = "%Y-%m-%d %H:%M:%OS", tz = "UTC"),
+tidy_hocr <- function(Packets, Date) {
 
-    # HOCR Packets
-    # Fix missing byte bug by ignoring decoding error
-    Instrument = as.character(Packets$instrument, errors = "ignore"),
-    SN = as.character(Packets$sn, errors = "ignore"),
-    IntTime = Packets$inttime,
-    SampleDelay = Packets$sampledelay,
-    DarkSample = Packets$darksample,
-    DarkAverage = Packets$darkaverage,
-    SpecTemp = as.character(Packets$spectemp, errors = "ignore"),
-    Frame = Packets$frame,
-    Timer = as.character(Packets$timer, errors = "ignore"),
-    CheckSum = Packets$checksum,
-    Channels = Packets$channel
-  )
+  # If HOCR log with SatView, use there date time format
+  #if (!inherits(Date, "Date") && Date == "data") {
+  if (any(str_detect(names(Packets), "^date$"))) {
+
+    Year <- str_extract(Packets$date, "^[:digit:]{4}")
+
+    DOY <- str_extract(Packets$date, "[:digit:]{3}$")
+
+    Date <-  as.Date(as.numeric(DOY)-1, origin = as.Date(paste0(Year,"-01-01")))
+
+    Time <- substring(Packets$time, c(1,3,5,7), c(2,4,6,9))
+
+    HMS <- str_c(Time[1:3], collapse = ":")
+    HMSmmm <- str_c(HMS, Time[4], sep = ".")
+
+    tibble::tibble(
+      # Applanix time added by the DataLogger in millisecond
+      # Unkown Date format in the binary file, so take the one in the txt file
+      Time = ymd_hms(paste(Date, HMSmmm)),
+
+      # HOCR Packets
+      # Fix missing byte bug by ignoring decoding error
+      Instrument = as.character(Packets$instrument, errors = "ignore"),
+      SN = as.character(Packets$sn, errors = "ignore"),
+      IntTime = Packets$inttime,
+      SampleDelay = Packets$sampledelay,
+      DarkSample = Packets$darksample,
+      DarkAverage = Packets$darkaverage,
+      SpecTemp = as.character(Packets$spectemp, errors = "ignore"),
+      Frame = Packets$frame,
+      Timer = as.character(Packets$timer, errors = "ignore"),
+      CheckSum = Packets$checksum,
+      Channels = Packets$channel
+    )
+  } else { # If HOCR loged with MTE Data Logger
+
+    tibble::tibble(
+      # Applanix time added by the DataLogger in millisecond
+      # Unkown Date format in the binary file, so take the one in the txt file
+      Time = as.POSIXct(paste0(Date, hms::as_hms(Packets$time / 1000)), format = "%Y-%m-%d %H:%M:%OS", tz = "UTC"),
+
+      # HOCR Packets
+      # Fix missing byte bug by ignoring decoding error
+      Instrument = as.character(Packets$instrument, errors = "ignore"),
+      SN = as.character(Packets$sn, errors = "ignore"),
+      IntTime = Packets$inttime,
+      SampleDelay = Packets$sampledelay,
+      DarkSample = Packets$darksample,
+      DarkAverage = Packets$darkaverage,
+      SpecTemp = as.character(Packets$spectemp, errors = "ignore"),
+      Frame = Packets$frame,
+      Timer = as.character(Packets$timer, errors = "ignore"),
+      CheckSum = Packets$checksum,
+      Channels = Packets$channel
+    )
+  }
+
+
+
 }
 
 #' cal_inttime
@@ -129,12 +297,21 @@ cal_inttime <- function(RawData, INTTIME) {
 #'
 #' @noRd
 cal_optic3 <- function(.x, Instrument) {
+
+  # In WISEMan 2019, in air calibration file HSL and HLD where used to calibrate the 0237
+  # and 0238 HOCR in water.
+  # This lead to a situation here where the wrong equation (immersion factor) would be applied
+  # I don't know how to deal with such peculiarities and I don't need too
+  #(maybe with the "Type" column) Future self or others, have fun !
+
   if (str_detect(Instrument, "HSE|HED")) { # In air
 
     dplyr::mutate(.data = .x, Channels = 1.0 * a1 * (Channels - a0) * (cint / IntTime))
-  } else if (str_detect(Instrument, "HPL|PLD")) { # In water
+
+  } else if (str_detect(Instrument, "HPE|PED|HPL|PLD|HSL|HLD")) { # In water (HSL and HLD are normaly in water)
 
     dplyr::mutate(.data = .x, Channels = im * a1 * (Channels - a0) * (cint / IntTime))
+
   } else {
     warning(paste0("Instrument name not valid: ", Instrument))
   }
@@ -174,8 +351,9 @@ approx_tbl <- function(., TimeSeq) {
 #' @return Return a wide data frame for HOCR dark offset
 #'
 #' @noRd
-cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
-  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., MainLogDate))
+cal_dark <- function(RawHOCR, CalHOCR, Date) {
+
+  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., Date))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
 
@@ -247,10 +425,10 @@ cal_dark <- function(RawHOCR, CalHOCR, MainLogDate) {
     filter(Nobs == min(ShortNobs$Nobs)) %>%
     unnest(cols = c(CalData))
 
-  MinTime <- min(ShortNobs$GPSTime)
+  MinTime <- min(ShortNobs$Time)
   # format(MinTime, "%Y-%m-%d %H:%M:%OS3")
 
-  MaxTime <- max(ShortNobs$GPSTime)
+  MaxTime <- max(ShortNobs$Time)
   # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
 
   TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60)
@@ -361,7 +539,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
       ~ select(.x, !all_of(c("SampleDelay", "DarkSample", "DarkAverage", "SpecTemp", "Frame", "Timer", "CheckSum")))
     )) %>%
     select(Instrument, SN, CalData) %>%
-    filter(str_detect(Instrument, "HSE|HPL"))
+    filter(str_detect(Instrument, "HPE|HSE|HPL|HSL"))
 
   # If not 3 instrument HSE|HPL record raise an error
 
@@ -616,23 +794,25 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
 #     ungroup()
 
   Es <- L1bDataWide %>%
-    filter(SN == "1397" | SN == "1396") %>%
+    filter(SN %in% "1397" | SN == "1396" | SN == "0341") %>%
     unnest(cols = c(AproxData)) %>%
     select(!matches("Instrument|SN|DateTime|UUID"))
 
   LuZ1 <- L1bDataWide %>%
-    filter(SN == "1415" | SN == "1413") %>%
+    filter(SN == "1415" | SN == "1413" | SN == "0237") %>%
     unnest(cols = c(AproxData)) %>%
     select(!matches("Instrument|SN|DateTime|UUID"))
 
   LuZ2 <- L1bDataWide %>%
-    filter(SN == "1416" | SN == "1414") %>%
+    filter(SN == "1416" | SN == "1414" | SN == "0238") %>%
     unnest(cols = c(AproxData)) %>%
     select(!matches("Instrument|SN|DateTime|UUID"))
 
   #Z1Z2Depth <- 0.15 # Algae Wise 2022
 
-  KLuWide <- (log(LuZ1) - log(LuZ2)) / Z1Z2Depth
+  # Consider suppressWarnings(expr)
+
+  KLuWide <- suppressWarnings((log(LuZ1) - log(LuZ2)) / Z1Z2Depth)
 
   KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu"))
 

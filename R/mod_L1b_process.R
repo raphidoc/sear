@@ -307,6 +307,38 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
           }
         }
 
+
+# HydroBall L1b -----------------------------------------------------------
+
+        if (any(str_detect(L1a$InstrumentList(), "HydroBall"))) {
+
+          progress$set(value = 0.6, detail = "HydroBall")
+
+          HydroBallL1b <- L1a$HBDevices() %>% filter(DateTime %within% TimeInt)
+
+          if (nrow(HydroBallL1b) == 0) {
+            warning(
+              paste0("HydroBall data not found at time interval: ",TimeInt)
+            )
+          } else {
+
+            Obs$HydroBall$L1b <- HydroBallL1b %>%
+              rename(H = DBT_meter) %>%
+              mutate(
+                H = if_else(H == 0, NA, H),
+                H = -H
+                ) %>%
+              select(
+                Lon,
+                Lat,
+                DateTime,
+                Altitude,
+                H
+              )
+
+          }
+        }
+
         progress$set(value = 1, detail = "Done")
 
       }

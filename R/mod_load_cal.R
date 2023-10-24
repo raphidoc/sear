@@ -19,7 +19,7 @@ mod_load_cal_ui <- function(id){
 #' @noRd
 mod_load_cal_server <- function(
     id,
-    SearTbl,
+    SearProj,
     read_cal,
     ReactCal,
     ParsedCalFiles
@@ -28,7 +28,7 @@ mod_load_cal_server <- function(
     ns <- session$ns
 
     output$Load <- renderUI({
-      req(SearTbl())
+      req(SearProj())
 
       fluidRow(
         column(
@@ -49,7 +49,7 @@ mod_load_cal_server <- function(
       input$Cal,
       {
 
-        CalDir <- file.path(SearTbl()$ProjPath, "sear", "cal")
+        CalDir <- file.path(SearProj()$ProjPath, "sear", "cal")
 
         dir.create(CalDir, recursive = TRUE)
 

@@ -474,6 +474,58 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               }
             }
 
+            # HydroBall L1b -----------------------------------------------------------
+
+            if (any(str_detect(L1a$InstrumentList(), "HydroBall"))) {
+
+              progress$set(value = 0.6, detail = "HydroBall")
+
+              HydroBallL1b <- L1a$HBDevices() %>% filter(DateTime %within% TimeInt)
+
+              if (nrow(HydroBallL1b) == 0) {
+                warning(
+                  paste0("HydroBall data not found at time interval: ",TimeInt)
+                )
+              } else {
+
+                Obs$HydroBall$L1b <- HydroBallL1b %>%
+                  rename(H = DBT_meter) %>%
+                  mutate(
+                    H = if_else(H == 0, NA, H),
+                    H = -H
+                  ) %>%
+                  select(
+                    Lon,
+                    Lat,
+                    DateTime,
+                    Altitude,
+                    H
+                  )
+
+                test <- Obs$HydroBall$L1b %>% summarise(
+                  Lon = mean(Lon, na.rm = T),
+                  Lat = mean(Lat, na.rm = T),
+                  DateTime = mean(DateTime, na.rm = T),
+                  Altitude = mean(Altitude, na.rm = T),
+                  H = mean(H, na.rm = T)
+                )
+
+                Obs$HydroBall$L2 <- test
+
+                HydroBallL1b <- Obs$HydroBall$L1b  %>%
+                  mutate(
+                    UUID = ObsUUID
+                  )
+
+                HydroBallL2 <- Obs$HydroBall$L2  %>%
+                  mutate(UUID = ObsUUID)
+
+                DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
+                DBI::dbWriteTable(DB$Con(), "HydroBallL2", HydroBallL2, append = TRUE)
+
+              }
+            }
+
             # Feedback to the user
             # session$sendCustomMessage(
             #   type = "testmessage",

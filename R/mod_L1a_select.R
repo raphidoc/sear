@@ -319,7 +319,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
               "<b>Date</b>: ", format(DateTime, "%Y-%m-%d"), "<br>",
               "<b>Time</b>: ", format(DateTime, "%H:%M:%S"), "<br>",
               "<b>Speed (km/h)</b>: ", Speed_kmh, "<br>",
-              "<b>Course (TN)</b>: ", Course_TN, "<br>",
+              #"<b>Course (TN)</b>: ", Course_TN, "<br>",
               "<b>BoatSolAzm (degree)</b>: ", BoatSolAzm, "<br>"
             )
           ) %>%

@@ -22,7 +22,7 @@ mod_parse_cal_ui <- function(id) {
 #' load_cal Server Functions
 #'
 #' @noRd
-mod_parse_cal_server <- function(id, SearTbl) {
+mod_parse_cal_server <- function(id, SearProj) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -35,10 +35,10 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     ParsedCalFiles <- eventReactive(
       {
-        SearTbl()
+        SearProj()
       },{
 
-        CalDir <- file.path(SearTbl()$ProjPath, "sear", "cal")
+        CalDir <- file.path(SearProj()$ProjPath, "sear", "cal")
 
         if (dir.exists(CalDir)) {
 
@@ -53,7 +53,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     mod_load_cal_server(
       "HOCR",
-      SearTbl,
+      SearProj,
       tidy_cal_hocr,
       CalHOCR,
       ParsedCalFiles
@@ -61,7 +61,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     mod_load_cal_server(
       "SBE19",
-      SearTbl,
+      SearProj,
       read_sbe19_cal,
       CalSBE19,
       ParsedCalFiles
@@ -69,7 +69,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     mod_load_cal_server(
       "SBE18",
-      SearTbl,
+      SearProj,
       read_sbe18_cal,
       CalSBE18,
       ParsedCalFiles
@@ -77,7 +77,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     mod_load_cal_server(
       "SBE43",
-      SearTbl,
+      SearProj,
       read_sbe43_cal,
       CalSBE43,
       ParsedCalFiles
@@ -85,7 +85,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     mod_load_cal_server(
       "SeaOWL",
-      SearTbl,
+      SearProj,
       read_seaowl_cal,
       CalSeaOWL,
       ParsedCalFiles
@@ -93,7 +93,7 @@ mod_parse_cal_server <- function(id, SearTbl) {
 
     mod_load_cal_server(
       "BBFL2",
-      SearTbl,
+      SearProj,
       read_bbfl2_cal,
       CalBBFL2,
       ParsedCalFiles

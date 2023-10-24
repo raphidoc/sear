@@ -45,6 +45,8 @@ read_mtelog <- function(LogFile) {
 
 read_apla <- function(MTELog) {
 
+  # TODO Add NMEA checksum verification
+
   Apla <- MTELog %>%
     filter(Instrument == "APLA") %>%
     separate_wider_regex(
@@ -106,10 +108,11 @@ read_apla <- function(MTELog) {
     mutate(
       Lat_DD = ifelse(NS == "N", Lat_DD, -Lat_DD),
       Lon_DD = ifelse(EW == "W", -Lon_DD, Lon_DD)
-    )
+    ) %>%
+    mutate(Lon = Lon_DD, Lat = Lat_DD)
 
   GGA <- GGA %>%
-    select(Time, DateTime, Lat_DD, Lon_DD, HorizontalDilution, Altitude, AltitudeUnit)
+    select(Time, DateTime, Lat, Lon, HorizontalDilution, Altitude, AltitudeUnit)
 
   GGA <- unique_datetime_second(GGA)
 
@@ -153,7 +156,7 @@ read_apla <- function(MTELog) {
 
   } else {
     VTG <- tibble(
-      Time = NA,
+      DateTime = NA,
       Course_TN = NA,
       Reference_TN = NA,
       Course_MN = NA,
@@ -213,7 +216,7 @@ read_apla <- function(MTELog) {
 
   } else {
     PASHR <- tibble(
-      Time = NA,
+      DateTime = NA,
       UTC = NA,
       Heading = NA,
       T = NA,
@@ -232,13 +235,13 @@ read_apla <- function(MTELog) {
   Apla <- left_join(GGA, VTG, by = c("DateTime"))
   Apla <- left_join(Apla, PASHR, by = c("DateTime"))
 
-  Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
+  Apla <- Apla %>% rename(date = DateTime, lat = Lat, lon = Lon)
 
   # Solar altitude above the horizon in radian and azimuth in radian from south to west
   PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
 
   Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
-    rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolZen = altitude) %>%
+    rename(DateTime = date, Lat = lat, Lon = lon, SolAzm = azimuth, SolZen = altitude) %>%
     mutate(
       SolAzm = SolAzm * 180 / pi + 180, # convert rad to degree and shift to north reference
       SolZen = SolZen * 180 / pi,

@@ -111,7 +111,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         )
 
       Lu <- ply %>%
-        filter(str_detect(Instrument, "HPL")) %>%
+        filter(str_detect(Instrument, "HPL|HSL")) %>% # HSL is not supposed to be Lu ...
         subplot(shareX = T, shareY = T)
 
       Es <- ply %>%

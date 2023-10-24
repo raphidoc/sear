@@ -79,11 +79,11 @@ skip_if_no_kaitaistruct <- function() {
   Sys.setenv("PLOTLY_MATHJAX_PATH" = "/home/raphael/MathJax")
 }
 
-.onAttach <- function(lib, pkg) {
-  packageStartupMessage(
-    "sear v",
-    utils::packageDescription("sear",
-      fields = "Version"
-    )
-  )
-}
+# .onAttach <- function(lib, pkg) {
+#   packageStartupMessage(
+#     "sear v",
+#     utils::packageDescription("sear",
+#       fields = "Version"
+#     )
+#   )
+# }

@@ -34,14 +34,15 @@ mod_select_instrument_server <- function(id, ParsedFiles) {
     InstrumentList <- reactive({
 
       InstrumentList <- ParsedFiles() %>%
-        str_extract("apla|bbfl2|hocr|sbe19|seaowl|biosonic")
+        str_extract("apla|bbfl2|hocr|sbe19|seaowl|biosonic|hb_devices")
 
       case_when(
         str_detect(InstrumentList, "hocr") ~ "HOCR",
         str_detect(InstrumentList, "sbe19") ~ "SBE19",
         str_detect(InstrumentList, "bbfl2") ~ "BBFL2",
         str_detect(InstrumentList, "seaowl") ~ "SeaOWL",
-        str_detect(InstrumentList, "biosonic") ~ "BioSonic"
+        str_detect(InstrumentList, "biosonic") ~ "BioSonic",
+        str_detect(InstrumentList, "hb_devices") ~ "HydroBall"
       ) %>%
         unique() %>%
         na.omit()

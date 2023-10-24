@@ -406,7 +406,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           #                     as.character(AOPs),
           #                     collapse = ""))
 
-
           MetadataL2 <- Obs$MetadataL2 %>%
             mutate(
               UUID = ObsUUID,
@@ -420,62 +419,94 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
               UUID = ObsUUID
             )
 
-          HOCRL1b <- Obs$HOCR$L1b %>%
-            unnest(cols = c(AproxData)) %>%
-            mutate(
-              UUID = ObsUUID
-              )
-
-          HOCRL2 <- Obs$HOCR$L2 %>%
-            mutate(UUID = ObsUUID)
-
-          SBE19L1b <- Obs$SBE19$L1b %>%
-            unnest(c(Data)) %>%
-            mutate(
-              UUID = ObsUUID
-              )
-
-          SBE19L2 <- Obs$SBE19$L2  %>%
-            mutate(UUID = ObsUUID)
-
-          SeaOWLL1b <- Obs$SeaOWL$L1b %>%
-            unnest(c(Data)) %>%
-            mutate(
-              UUID = ObsUUID
-              )
-
-          SeaOWLL2 <- Obs$SeaOWL$L2  %>%
-            mutate(UUID = ObsUUID)
-
-          BBFL2L1b <- Obs$BBFL2$L1b %>%
-            unnest(c(Data)) %>%
-            mutate(
-              UUID = ObsUUID
-              )
-
-          BBFL2L2 <- Obs$BBFL2$L2  %>%
-            mutate(UUID = ObsUUID)
-
-          BioSonicL1b <- Obs$BioSonic$L1b  %>%
-            mutate(
-              UUID = ObsUUID
-              )
-
-          BioSonicL2 <- Obs$BioSonic$L2  %>%
-            mutate(UUID = ObsUUID)
+          browser()
 
           DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
+
+          if (nrow(Obs$HOCR$L1b) != 0) {
+            HOCRL1b <- Obs$HOCR$L1b %>%
+              unnest(cols = c(AproxData)) %>%
+              mutate(
+                UUID = ObsUUID
+              )
+
+            HOCRL2 <- Obs$HOCR$L2 %>%
+              mutate(UUID = ObsUUID)
+
+            DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
+          }
+
+          if (nrow(Obs$SBE19$L1b) != 0) {
+
+            SBE19L1b <- Obs$SBE19$L1b %>%
+              unnest(c(Data)) %>%
+              mutate(
+                UUID = ObsUUID
+              )
+
+            SBE19L2 <- Obs$SBE19$L2  %>%
+              mutate(UUID = ObsUUID)
+
+            DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
+          }
+
+
+          if (nrow(Obs$SeaOWL$L1b) != 0) {
+            SeaOWLL1b <- Obs$SeaOWL$L1b %>%
+              unnest(c(Data)) %>%
+              mutate(
+                UUID = ObsUUID
+              )
+
+            SeaOWLL2 <- Obs$SeaOWL$L2  %>%
+              mutate(UUID = ObsUUID)
+
+            DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
+          }
+
+          if (nrow(Obs$BBFL2$L1b) != 0) {
+            BBFL2L1b <- Obs$BBFL2$L1b %>%
+              unnest(c(Data)) %>%
+              mutate(
+                UUID = ObsUUID
+              )
+
+            BBFL2L2 <- Obs$BBFL2$L2  %>%
+              mutate(UUID = ObsUUID)
+
+            DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
+          }
+
+          if (nrow(Obs$BioSonic$L1b) != 0) {
+            BioSonicL1b <- Obs$BioSonic$L1b  %>%
+              mutate(
+                UUID = ObsUUID
+              )
+
+            BioSonicL2 <- Obs$BioSonic$L2  %>%
+              mutate(UUID = ObsUUID)
+
+            DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
+          }
+
+          if (nrow(Obs$HydroBall$L1b) != 0) {
+            HydroBallL1b <- Obs$HydroBall$L1b  %>%
+              mutate(
+                UUID = ObsUUID
+              )
+
+            HydroBallL2 <- Obs$HydroBall$L2  %>%
+              mutate(UUID = ObsUUID)
+
+            DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "HydroBallL2", HydroBallL2, append = TRUE)
+          }
 
           # Feedback to the user
           session$sendCustomMessage(
