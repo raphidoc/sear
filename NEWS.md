@@ -1,3 +1,15 @@
+# sear 0.4.0
+
+* Add parsing and processing support for HydroBall Devices as MainLog, NMEA string Depth Below Transducer (DBT) as water column height
+
+* Add parsing of  HOCR SatView raw files.
+
+* Improving error handling in reading HOCR binary Files
+
+* Violating Satlantinc standards, sensor HSL and HLD should NOT be $L_u$. Case in WISEMan 2019.
+
+* Adding vessel frame rotation from Tait-Bryan angles heading, pitch, roll in MetadataL1b and L2
+
 # sear 0.3.0
 
 # sear 0.2.0
