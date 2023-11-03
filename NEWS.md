@@ -1,3 +1,9 @@
+# sear 0.4.1
+
+* Fix bug for Applanix Trame being NA in `read_apla`
+
+* Fix bug for SeaOWL serial number being NA in `cal_seaowl`
+
 # sear 0.4.0
 
 * Add parsing and processing support for HydroBall Devices as MainLog, NMEA string Depth Below Transducer (DBT) as water column height

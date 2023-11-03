@@ -99,6 +99,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             TimeInt <- interval(x, y)
 
+            browser()
+
             progress$set(message = paste("Processing obs :",n, TimeInt), value = n/(length(MainTime)/4))
 
             message(paste("Processing obs:",n, TimeInt))

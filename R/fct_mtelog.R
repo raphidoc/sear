@@ -61,6 +61,9 @@ read_apla <- function(MTELog) {
       Trame = str_extract(Trame, "[[:alpha:]]+"),
       #Time = str_remove(Time, ".{4}$"),
       DateTime = round_date(DateTime, unit = "second")#format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
+    ) %>%
+    filter(
+      !is.na(Trame)
     )
 
   RawGGA <- Apla %>%
