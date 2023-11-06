@@ -1,3 +1,5 @@
+# sear 0.4.2
+
 # sear 0.4.1
 
 * Fix bug for Applanix Trame being NA in `read_apla`
