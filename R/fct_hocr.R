@@ -545,8 +545,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   if (nrow(HOCRLong) != 3) {
     warning("if no HOCR data have been recorded for a long time, there is not even dark and therfore no missing light SN to find ...")
-    MissSn <- unique(GlobCal$SN)[which(!unique(GlobCal$SN) %in% HOCRLong$SN)]
-    stop(glue::glue("No light record for instrument: ", MissSn))
+    MissSn <- unique(CalHOCR$OPTIC3$SN)[which(!unique(CalHOCR$OPTIC3$SN) %in% HOCRLong$SN)]
+    stop(paste("No light record for instrument:", MissSn))
   }
 
   # Convert to wide format
