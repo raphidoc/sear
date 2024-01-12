@@ -707,6 +707,9 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
         )
       )
 
+  # Should write down the structure of the return nested df
+  # Instrument, SN, Data
+
   return(L1bAproxLong)
 }
 
@@ -854,6 +857,7 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
 
   #Z1Depth <- 0.10 # 10 cm
 
+  # 0.54 is the radiance transmittance for the air/water interface
   Lw <- 0.54 * LuZ1 * exp(-Z1Depth * KLuWide)
   RrsWide <- Lw / Es
 

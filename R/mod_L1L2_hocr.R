@@ -24,7 +24,7 @@ mod_L1L2_hocr_ui <- function(id) {
 mod_L1L2_hocr_server <- function(id, Obs, Settings) {
   # stopifnot(is.reactive(L1bData))
 
-  PlyFont <- list(family = "Times New Roman", size = 18)
+  PlyFont <- list(family = "Times New Roman", size = 14)
   BlackSquare <- list(
     type = "rect",
     fillcolor = "transparent",
@@ -133,9 +133,9 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text ="Es [W.m-2]" #TeX("\\text{E}_\\text{s}")
+          yaxis = list(title = list(text ="Es [uW.cm-2.nm-1]" #TeX("\\text{E}_\\text{s}")
                                     )),
-          yaxis2 = list(title = list(text = "Lu [W.m-2.sr-1]" #TeX("\\text{L}_\\text{u}")
+          yaxis2 = list(title = list(text = "Lu [uW.cm-2.nm-1.sr-1]" #TeX("\\text{L}_\\text{u}")
                                      )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
