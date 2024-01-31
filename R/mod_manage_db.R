@@ -216,7 +216,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS `SeaOWLL2` (
-          `Bb_700` REAL,
+          `VSF_700` REAL,
           `Chl` REAL,
           `FDOM` REAL,
           `UUID` TEXT,
@@ -422,7 +422,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
 #         "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
 #           LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
 #
-#         "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, Bb_700, Chl, FDOM FROM Metadata
+#         "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, VSF_700, Chl, FDOM FROM Metadata
 # LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID
 # LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
 # LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID

@@ -18,7 +18,7 @@ cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
   SeaOWLData %>%
     mutate(
       DateTime = as.character(DateTime),
-      Bb_700 = SeaOWLCal$BbScaleFactor * (Bb700Output - SeaOWLCal$BbDarkCounts),
+      VSF_700 = SeaOWLCal$BbScaleFactor * (VSF700Output - SeaOWLCal$VSFDarkCounts),
       Chl = SeaOWLCal$ChlScaleFactor * (ChlOutput - SeaOWLCal$ChlDarkCounts),
       FDOM = SeaOWLCal$FDOMScaleFactor * (FDOMOutput - SeaOWLCal$FDOMDarkCounts),
       .after = SN

@@ -140,7 +140,7 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
                     selection = "none",
                     editable = F
       ) %>%
-        DT::formatRound(c("Bb_700"), digits=5) %>%
+        DT::formatRound(c("VSF_700"), digits=5) %>%
         DT::formatRound(c("Chl", "FDOM"), digits=3)
 
       },

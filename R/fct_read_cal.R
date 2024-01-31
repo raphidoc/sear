@@ -315,8 +315,8 @@ read_seaowl_cal <- function(CalFile){
     ) %>%
     mutate(
       CALDATE = dmy(CALDATE),
-      BbScaleFactor = as.numeric(BbScaleFactor),
-      BbDarkCounts = as.numeric(BbDarkCounts),
+      VSFScaleFactor = as.numeric(VSFScaleFactor),
+      VSFDarkCounts = as.numeric(VSFDarkCounts),
       ChlScaleFactor = as.numeric(ChlScaleFactor),
       ChlDarkCounts = as.numeric(ChlDarkCounts),
       OilScaleFactor = as.numeric(OilScaleFactor),

@@ -105,11 +105,33 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
 
-            # Create metadata for the selected L1a point
+            # Create metadata for the selected L1a points
+            browser()
+
+            ObsUUID <- uuid::UUIDgenerate(
+              use.time = T,
+              output = "string"
+            )
+
+            # First have to write MetadataL2 in which UUID primary key
+            # is the reference for UUID foreign key in all the other tables
+            # Otherwise it is a FOREIGN KEY constraint violation
+            Obs$MetadataL2 <- gen_metadataL2(Select = Select)
+            MetadataL2 <- Obs$MetadataL2 %>%
+              mutate(
+                UUID = ObsUUID,
+                ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
+                Analyst = "Raphael Mabit",
+                Mail = "raphael.mabit@gmail.com"
+              )
+            DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
 
             Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
-
-            Obs$MetadataL2 <- gen_metadataL2(Select = Select)
+            MetadataL1b <- Obs$MetadataL1b %>%
+              mutate(
+                UUID = ObsUUID
+              )
+            DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
 
             # Empty L1b and L2 on new processing to avoid confusion
             Obs$HOCR$L1b <- tibble()
@@ -193,35 +215,14 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                   # Delete the outdated metadata initially created
                   #  Necessarry to respect UUID foreign key rule (present in main table)
-                  #DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM Metadata WHERE UUID = ",ObsUUID,";"))
+                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ",ObsUUID,";"))
+                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ",ObsUUID,";"))
 
                   i = i
                   j = j + 1
 
                   next
                 }
-
-                ObsUUID <- uuid::UUIDgenerate(
-                  use.time = T,
-                  output = "string"
-                )
-
-                MetadataL2 <- Obs$MetadataL2 %>%
-                  mutate(
-                    UUID = ObsUUID,
-                    ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-                    Analyst = "Raphael Mabit",
-                    Mail = "raphael.mabit@gmail.com"
-                  )
-
-                DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
-
-                MetadataL1b <- Obs$MetadataL1b %>%
-                  mutate(
-                    UUID = ObsUUID
-                  )
-
-                DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
 
                 # HOCR
 
@@ -350,7 +351,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                 Obs$SeaOWL$L1b <- SeaOWLL1b %>%
                   select(!any_of(c("SN")))%>%
                   pivot_longer(
-                    cols = any_of(c("Bb_700", "Chl", "FDOM")),
+                    cols = any_of(c("VSF_700", "Chl", "FDOM")),
                     names_to = "Parameter",
                     values_to = "Value"
                   ) %>%

@@ -17,18 +17,25 @@ It allow to load, parse, display, process and save the data in an SQLite databas
 
 Along it's development the idea come that it could be more, something like a platform to manage and process ocean optic data coming from any numbers of instruments and platform. This could be achieve by defining the architecture common to all ocean optic projects, the specifics of each instrument and platform and the method to be applied upon them. It would improve the efficiency of the analysts and give a solution to common problems faced with data management, processing and quality control.
 
+To see a demonstration video of the software, click on the following picture:
 [![demo video](https://img.youtube.com/vi/zmpS2CwAwqY/0.jpg)](https://www.youtube.com/watch?v=zmpS2CwAwqY)
 
 
 ## Features
 
 ### Settings
+
 * Choose spectral resolution for HOCR output.
 * Enter custom values for HOCR positions in water, distance from the surface and distance between the instruments.
+* Settings are automatically saved to the application SQLite backend (different from the database backend)
 
+{::comment}
 *TODO* user input instruments position with serial number (sn) and instrument type (`"SAT(HPE|PED|HSE|HED|HPL|PLD|HSL|HLD)"`)
+*TODO* Should we use a single database for both application settings and project data ?
+{:/comment}
 
 ### Load and parse
+
 * Files `.txt` and `.bin` from MTE data logger.
 * Files `.txt` from HydroBall devices: NMEA log of GNSS (\$GPGGA), transducer (\$DBT), and gyrocompas (\$PTNTHPR).
 * Files `.raw` from SatView.
@@ -36,6 +43,10 @@ Along it's development the idea come that it could be more, something like a pla
 * Calibration files for HOCR, SBE19. SBE18, SBE43, SeaOWL, BBFL2.
 * Use longitude (`Lon`), latitude (`Lat`) and `DateTime` from GNSS device (Applanix for the SeaDoo) to create a `MainLog`.
 * Create a data synthesis, presence or absence of said instrument at a specific time in the `MainLog`.
+
+{::comment}
+*TODO* Save the calibration data from file format specific parser into the database with relation to the "environemental?" data that was created from it
+{:/comment}
 
 ### Filters
 
@@ -54,16 +65,19 @@ Along it's development the idea come that it could be more, something like a pla
 
 ### Processing
 
+* Click `Process L1b` to manually process selected raw data
+* Click `Auto Process` to automatically process all displayed raw data, discretization is performed with a time interval of minimum 4 and maximum 10 seconds.
 * Human QC of L1b data, analyst can click on the data to shift it between green (1 = good) and red (0 = bad). Data that have the flag QC flag 0 is removed from further analysis.
-* Process L2 to summarize (mean) non spectral data. For the HOCRs, AOPs are computed.
-* Loess interpolation and smoothing for AOPs.
-* Metadata include rotation of the vessel frame (X, Y, Z vectors in cartesian coordinates) from Tait-Bryan angles (heading, pitch, roll)
+* Process L2 to summarize (mean) non spectral data. For the HOCRs, mean AOPs are computed.
+* Additional Loess interpolation and smoothing for AOPs.
+* Metadata include rotation of the vessel frame (X, Y, Z vectors in cartesian coordinates) if Tait-Bryan angles (heading, pitch, roll) are available.
 
 ### Save
 
-* Once all instrument are processed, `Save` send the discrete observation L1b and L2 data to the SQL backend.
+* In manual processing,`Save` send the discrete observation L1b and L2 data to the SQL backend.
+* In automatic processing data is automatically saved during each observation processing.
 * If `Save` is hit for a UUID that is already present (reprocessing for example) the data corresponding to this UUID is updated.
-* `Delete` to delete an observation from the database.
+* `Delete` to delete an observation from the database (with FOREIGN KEY ON DELETE CASCADE)
 
 ## Instalation
 

@@ -51,12 +51,12 @@ cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
   
   SeaOWLData %>%
     mutate(
-      Bb_700 = SeaOWLCal$BbScaleFactor * (Bb700Output - SeaOWLCal$BbDarkCounts),
+      VSF_700 = SeaOWLCal$VSFScaleFactor * (VSF700Output - SeaOWLCal$VSFDarkCounts),
       Chl = SeaOWLCal$ChlScaleFactor * (ChlOutput - SeaOWLCal$ChlDarkCounts),
       FDOM = SeaOWLCal$FDOMScaleFactor * (FDOMOutput - SeaOWLCal$FDOMDarkCounts),
       .after = SN
     ) %>% 
-    select(DateTime, SN, Bb_700, Chl, FDOM)
+    select(DateTime, SN, VSF_700, Chl, FDOM)
 }
 
 SeaOWLL1b <- cal_seaowl(SeaOWLData, SeaOWLCal)  %>%
@@ -74,13 +74,12 @@ SeaOWLL1b <- cal_seaowl(SeaOWLData, SeaOWLCal)  %>%
 SeaOWLL1bNest <- SeaOWLL1b %>%
   select(!any_of(c("SN")))%>%
   pivot_longer(
-    cols = any_of(c("Bb_700", "Chl", "FDOM")),
+    cols = any_of(c("VSF_700", "Chl", "FDOM")),
     names_to = "Parameter",
     values_to = "Value"
   ) %>%
   group_by(Parameter) %>%
   nest()
-
 
 PlyFont <- list(family = "Times New Roman", size = 18)
 BlackSquare <- list(

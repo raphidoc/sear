@@ -229,7 +229,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
             Obs$SeaOWL$L1b <- SeaOWLL1b %>%
               select(!any_of(c("SN")))%>%
               pivot_longer(
-                cols = any_of(c("Bb_700", "Chl", "FDOM")),
+                cols = any_of(c("VSF_700", "Chl", "FDOM")),
                 names_to = "Parameter",
                 values_to = "Value"
               ) %>%
