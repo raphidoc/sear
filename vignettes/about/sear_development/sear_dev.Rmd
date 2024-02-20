@@ -19,11 +19,11 @@ This vignette intend to document the development and the functionality of the
 shiny app designed to process the data from the watercraft HOCR, BB3, SeaOWL, CTD and SUNA.
 
 ```{r setup}
-#golem::document_and_reload()
+# golem::document_and_reload()
 
 library(DBI)
 
-#library(sear)
+# library(sear)
 library(dplyr)
 library(lubridate)
 library(purrr)
@@ -59,10 +59,12 @@ AplaDate <- unique(date(Apla$DateTime))
 
 HOCRTimeIndex <- as.POSIXct(unlist(purrr::map(
   .x = HOCR,
-  ~ clock::date_time_parse(paste0(
-    AplaDate, " ", hms::as_hms(.x$gpstime / 1000)
-  ),
-  zone = "UTC")
+  ~ clock::date_time_parse(
+    paste0(
+      AplaDate, " ", hms::as_hms(.x$gpstime / 1000)
+    ),
+    zone = "UTC"
+  )
 )), tz = "UTC")
 ```
 
@@ -116,8 +118,8 @@ To reduce the raw .bin and .txt data we start by identifying with the help of th
 We also identifies the position of the corresponding HOCR binary packets on the time index.
 
 ```{r}
-#full <- "/D/Data/sear_test_data/full/"
-#reduced <- "/D/Data/sear_test_data/reduced/"
+# full <- "/D/Data/sear_test_data/full/"
+# reduced <- "/D/Data/sear_test_data/reduced/"
 ```
 
 TODO: Describe the selected data and explain it's utility (the logic of the selection)
@@ -129,46 +131,43 @@ TODO: Describe the selected data and explain it's utility (the logic of the sele
 ```{r eval=FALSE, include=TRUE}
 # Cloudy and wave that day
 D02 <- list(
-  strftime(seq(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"), by = 1), format="%H:%M:%S", tz = "GMT")
-  )
+  strftime(seq(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"), by = 1), format = "%H:%M:%S", tz = "GMT")
+)
 
 D05 <- list(
-  strftime(seq(ymd_hms("2022-07-05 11:50:27"), ymd_hms("2022-07-05 11:51:02"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-05 14:14:51"), ymd_hms("2022-07-05 14:21:16"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-05 14:40:20"), ymd_hms("2022-07-05 14:40:47"), by = 1), format="%H:%M:%S", tz = "GMT")
-  )
+  strftime(seq(ymd_hms("2022-07-05 11:50:27"), ymd_hms("2022-07-05 11:51:02"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-05 14:14:51"), ymd_hms("2022-07-05 14:21:16"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-05 14:40:20"), ymd_hms("2022-07-05 14:40:47"), by = 1), format = "%H:%M:%S", tz = "GMT")
+)
 
 D0615 <- list(
-  strftime(seq(ymd_hms("2022-07-06 15:48:00"), ymd_hms("2022-07-06 15:55:00"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-06 16:54:45"), ymd_hms("2022-07-06 17:02:41"), by = 1), format="%H:%M:%S", tz = "GMT")
-  )
+  strftime(seq(ymd_hms("2022-07-06 15:48:00"), ymd_hms("2022-07-06 15:55:00"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-06 16:54:45"), ymd_hms("2022-07-06 17:02:41"), by = 1), format = "%H:%M:%S", tz = "GMT")
+)
 
 D0618 <- list(
-  strftime(seq(ymd_hms("2022-07-06 20:26:50"), ymd_hms("2022-07-06 20:29:28"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-06 20:48:26"), ymd_hms("2022-07-06 20:50:28"), by = 1), format="%H:%M:%S", tz = "GMT")
-  )
+  strftime(seq(ymd_hms("2022-07-06 20:26:50"), ymd_hms("2022-07-06 20:29:28"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-06 20:48:26"), ymd_hms("2022-07-06 20:50:28"), by = 1), format = "%H:%M:%S", tz = "GMT")
+)
 
 D07 <- list(
-  strftime(seq(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"), by = 1), format="%H:%M:%S", tz = "GMT")
-
-  )
+  strftime(seq(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"), by = 1), format = "%H:%M:%S", tz = "GMT")
+)
 
 D08 <- list(
-  strftime(seq(ymd_hms("2022-07-08 19:10:42"), ymd_hms("2022-07-08 19:14:52"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-08 19:36:28"), ymd_hms("2022-07-08 19:39:19"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-08 20:47:42"), ymd_hms("2022-07-08 20:50:10"), by = 1), format="%H:%M:%S", tz = "GMT"),
-  strftime(seq(ymd_hms("2022-07-08 20:53:44"), ymd_hms("2022-07-08 20:56:34"), by = 1), format="%H:%M:%S", tz = "GMT")
-  )
-
+  strftime(seq(ymd_hms("2022-07-08 19:10:42"), ymd_hms("2022-07-08 19:14:52"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-08 19:36:28"), ymd_hms("2022-07-08 19:39:19"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-08 20:47:42"), ymd_hms("2022-07-08 20:50:10"), by = 1), format = "%H:%M:%S", tz = "GMT"),
+  strftime(seq(ymd_hms("2022-07-08 20:53:44"), ymd_hms("2022-07-08 20:56:34"), by = 1), format = "%H:%M:%S", tz = "GMT")
+)
 ```
 
 ### Reducing txt files. Easy Peasy Lemon Squeezy !
 
 ```{r eval=FALSE, include=TRUE}
-trim_MTELog <- function(If, Of, TimeSeq, n_head){
-
+trim_MTELog <- function(If, Of, TimeSeq, n_head) {
   Head <- readr::read_lines(If, n_max = n_head)
   readr::write_lines(Head, Of)
 
@@ -180,35 +179,35 @@ trim_MTELog <- function(If, Of, TimeSeq, n_head){
   readr::write_lines(Data[Tind], Of, append = T)
 }
 
-If <- file.path(full,"DATA_20220702_154124.txt")
-Of <- file.path(reduced,"DATA_20220702_154124.txt")
-trim_MTELog(If,Of, D02, n_head = 6)
+If <- file.path(full, "DATA_20220702_154124.txt")
+Of <- file.path(reduced, "DATA_20220702_154124.txt")
+trim_MTELog(If, Of, D02, n_head = 6)
 
-If <- file.path(full,"DATA_20220705_105732.txt")
-Of <- file.path(reduced,"DATA_20220705_105732.txt")
-trim_MTELog(If,Of,D05, n_head = 6)  
+If <- file.path(full, "DATA_20220705_105732.txt")
+Of <- file.path(reduced, "DATA_20220705_105732.txt")
+trim_MTELog(If, Of, D05, n_head = 6)
 
-If <- file.path(full,"DATA_20220706_153838.txt")
-Of <- file.path(reduced,"DATA_20220706_153838.txt")
-trim_MTELog(If,Of,D0615, n_head = 6)
+If <- file.path(full, "DATA_20220706_153838.txt")
+Of <- file.path(reduced, "DATA_20220706_153838.txt")
+trim_MTELog(If, Of, D0615, n_head = 6)
 
-If <- file.path(full,"DATA_20220706_183905.txt")
-Of <- file.path(reduced,"DATA_20220706_183905.txt")
-trim_MTELog(If,Of,D0618, n_head = 6)  
-
-
-If <- file.path(full,"DATA_20220707_181725.txt")
-Of <- file.path(reduced,"DATA_20220707_181725.txt")
-trim_MTELog(If,Of,D07, n_head = 6)
-
-If <- file.path(full,"DATA_20220708_165254.txt")
-Of <- file.path(reduced,"DATA_20220708_165254.txt")
-trim_MTELog(If,Of,D08, n_head = 6)
+If <- file.path(full, "DATA_20220706_183905.txt")
+Of <- file.path(reduced, "DATA_20220706_183905.txt")
+trim_MTELog(If, Of, D0618, n_head = 6)
 
 
-If <- file.path(full,"SBES_20220701_20220708.csv")
-Of <- file.path(reduced,"SBES_20220701_20220708.csv")
-trim_MTELog(If,Of,list(D02,D05,D0615,D0618,D07,D08), n_head = 1)
+If <- file.path(full, "DATA_20220707_181725.txt")
+Of <- file.path(reduced, "DATA_20220707_181725.txt")
+trim_MTELog(If, Of, D07, n_head = 6)
+
+If <- file.path(full, "DATA_20220708_165254.txt")
+Of <- file.path(reduced, "DATA_20220708_165254.txt")
+trim_MTELog(If, Of, D08, n_head = 6)
+
+
+If <- file.path(full, "SBES_20220701_20220708.csv")
+Of <- file.path(reduced, "SBES_20220701_20220708.csv")
+trim_MTELog(If, Of, list(D02, D05, D0615, D0618, D07, D08), n_head = 1)
 ```
 
 ### Reducing HOCR binary file ... Raaaaagh ...
@@ -222,171 +221,175 @@ Whats behind this number !?
 
 ```{r eval=FALSE, include=TRUE}
 trim_hocr <- function(If, Of, TimeIndex, TimeInt) {
-
   # Copy header
-  system2('dd', paste0("if=",If, " bs=512", " count=",1, " >>",Of))
+  system2("dd", paste0("if=", If, " bs=512", " count=", 1, " >>", Of))
 
   for (Tint in TimeInt) {
     print(Tint)
 
     ind <- which(purrr::map_lgl(.x = TimeIndex, ~ .x %within% Tint))
-    BytesStart <- min(ind)#*512
-    BytesEnd <- max(ind)#*512
-    Skip <- BytesStart-1
-    Count <- BytesEnd-BytesStart
+    BytesStart <- min(ind) #* 512
+    BytesEnd <- max(ind) #* 512
+    Skip <- BytesStart - 1
+    Count <- BytesEnd - BytesStart
 
     print(Skip)
     print(Count)
 
     # Append matching packets
-    system2('dd', paste0("if=",If, " bs=512", " skip=",Skip, " count=",Count, " >>",Of))
-
+    system2("dd", paste0("if=", If, " bs=512", " skip=", Skip, " count=", Count, " >>", Of))
   }
 }
 
-#MTEHeader <- 512
+# MTEHeader <- 512
 MTEBytes <- 512
 
 ######### F02
 
 # use  < to remove the filename
-F02bin <- file.path(full,"DATA_20220702_154124.bin")
-F02out <- file.path(reduced,"DATA_20220702_154124.bin")
-F02Nbytes <- as.numeric(system2('wc', paste0("-c < ", F02bin), stdout = T))
+F02bin <- file.path(full, "DATA_20220702_154124.bin")
+F02out <- file.path(reduced, "DATA_20220702_154124.bin")
+F02Nbytes <- as.numeric(system2("wc", paste0("-c < ", F02bin), stdout = T))
 
-F02Nbytes/MTEBytes
+F02Nbytes / MTEBytes
 # 84409
 
 RawHOCR <- sear:::read_hocr(F02bin)
-#Invalid HOCR packets detected and removed: 17
+# Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
 TimeIndex <- purrr::map(
   .x = RawHOCR,
   ~ clock::date_time_parse(
     paste0(ymd("20220702"), " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
+    zone = "UTC"
+  )
 )
 
 TimeInt <- list(
   interval(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00")),
   interval(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45")),
   interval(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"))
-  )
+)
 
 trim_hocr(If = F02bin, Of = F02out, TimeIndex, TimeInt)
 
 ######### F05
 
 # use  < to remove the filename
-F05bin <- file.path(full,"DATA_20220705_105732.bin")
-F05out <- file.path(reduced,"DATA_20220705_105732.bin")
+F05bin <- file.path(full, "DATA_20220705_105732.bin")
+F05out <- file.path(reduced, "DATA_20220705_105732.bin")
 
 RawHOCR <- sear:::read_hocr(F05bin)
-#Invalid HOCR packets detected and removed: 17
+# Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
 TimeIndex <- purrr::map(
   .x = RawHOCR,
   ~ clock::date_time_parse(
     paste0(ymd("20220705"), " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
+    zone = "UTC"
+  )
 )
 
 TimeInt <- list(
   interval(ymd_hms("2022-07-05 11:50:27"), ymd_hms("2022-07-05 11:51:02")),
   interval(ymd_hms("2022-07-05 14:14:51"), ymd_hms("2022-07-05 14:21:16")),
   interval(ymd_hms("2022-07-05 14:40:20"), ymd_hms("2022-07-05 14:40:47"))
-  )
+)
 
 trim_hocr(If = F05bin, Of = F05out, TimeIndex, TimeInt)
 
 ######### F0615
 
 # use  < to remove the filename
-F0615bin <- file.path(full,"DATA_20220706_153838.bin")
-F0615out <- file.path(reduced,"DATA_20220706_153838.bin")
+F0615bin <- file.path(full, "DATA_20220706_153838.bin")
+F0615out <- file.path(reduced, "DATA_20220706_153838.bin")
 
 RawHOCR <- sear:::read_hocr(F0615bin)
-#Invalid HOCR packets detected and removed: 17
+# Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
 TimeIndex <- purrr::map(
   .x = RawHOCR,
   ~ clock::date_time_parse(
     paste0(ymd("20220706"), " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
+    zone = "UTC"
+  )
 )
 
 TimeInt <- list(
   interval(ymd_hms("2022-07-06 15:48:00"), ymd_hms("2022-07-06 15:55:00")),
   interval(ymd_hms("2022-07-06 16:54:45"), ymd_hms("2022-07-06 17:02:41"))
-  )
+)
 
 trim_hocr(If = F0615bin, Of = F0615out, TimeIndex, TimeInt)
 
 ######### F0618
 
 # use  < to remove the filename
-F0618bin <- file.path(full,"DATA_20220706_183905.bin")
-F0618out <- file.path(reduced,"DATA_20220706_183905.bin")
+F0618bin <- file.path(full, "DATA_20220706_183905.bin")
+F0618out <- file.path(reduced, "DATA_20220706_183905.bin")
 
 RawHOCR <- sear:::read_hocr(F0618bin)
-#Invalid HOCR packets detected and removed: 17
+# Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
 TimeIndex <- purrr::map(
   .x = RawHOCR,
   ~ clock::date_time_parse(
     paste0(ymd("20220706"), " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
+    zone = "UTC"
+  )
 )
 
 TimeInt <- list(
   interval(ymd_hms("2022-07-06 20:26:50"), ymd_hms("2022-07-06 20:29:28")),
   interval(ymd_hms("2022-07-06 20:48:26"), ymd_hms("2022-07-06 20:50:28"))
-  )
+)
 
 trim_hocr(If = F0618bin, Of = F0618out, TimeIndex, TimeInt)
 
 ######### F07
 
 # use  < to remove the filename
-F07bin <- file.path(full,"DATA_20220707_181725.bin")
-F07out <- file.path(reduced,"DATA_20220707_181725.bin")
+F07bin <- file.path(full, "DATA_20220707_181725.bin")
+F07out <- file.path(reduced, "DATA_20220707_181725.bin")
 
 RawHOCR <- sear:::read_hocr(F07bin)
-#Invalid HOCR packets detected and removed: 17
+# Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
 TimeIndex <- purrr::map(
   .x = RawHOCR,
   ~ clock::date_time_parse(
     paste0(ymd("20220707"), " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
+    zone = "UTC"
+  )
 )
 
 TimeInt <- list(
   interval(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"))
-  )
+)
 
 trim_hocr(If = F07bin, Of = F07out, TimeIndex, TimeInt)
 
 ######### F08
 
 # use  < to remove the filename
-F08bin <- file.path(full,"DATA_20220708_165254.bin")
-F08out <- file.path(reduced,"DATA_20220708_165254.bin")
+F08bin <- file.path(full, "DATA_20220708_165254.bin")
+F08out <- file.path(reduced, "DATA_20220708_165254.bin")
 
 RawHOCR <- sear:::read_hocr(F08bin)
-#Invalid HOCR packets detected and removed: 17
+# Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
 TimeIndex <- purrr::map(
   .x = RawHOCR,
   ~ clock::date_time_parse(
     paste0(ymd("20220708"), " ", hms::as_hms(.x$gpstime / 1000)),
-    zone = "UTC")
+    zone = "UTC"
+  )
 )
 
 TimeInt <- list(
@@ -394,7 +397,7 @@ TimeInt <- list(
   interval(ymd_hms("2022-07-08 19:36:28"), ymd_hms("2022-07-08 19:39:19")),
   interval(ymd_hms("2022-07-08 20:47:42"), ymd_hms("2022-07-08 20:50:10")),
   interval(ymd_hms("2022-07-08 20:53:44"), ymd_hms("2022-07-08 20:56:34"))
-  )
+)
 
 trim_hocr(If = F08bin, Of = F08out, TimeIndex, TimeInt)
 ```
@@ -458,32 +461,30 @@ It slice the time vector by half on each iteration and match to any near
 4 or less remaining DateTime.
 
 ```{r}
-x <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by=1)
-y <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by=0.1)
+x <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by = 1)
+y <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by = 0.1)
 
 data_synthesis_any_near <- function(x, y, tol = 3) {
   purrr::map_lgl(
-          .x = x,
-          ~ any(near(as.numeric(.x), as.numeric(y), tol = tol))
-          )
+    .x = x,
+    ~ any(near(as.numeric(.x), as.numeric(y), tol = tol))
+  )
 }
 
 
 
 data_synthesis_half_time <- function(x, y, tol = 3) {
- half_life <- function(x, y, tol = tol){
-
+  half_life <- function(x, y, tol = tol) {
     condition <- T
     y3 <- y
 
-    while (condition){
-
-      y2 <- y3[length(y3)/2]
+    while (condition) {
+      y2 <- y3[length(y3) / 2]
 
       if (x <= y2) {
-        y3 <- y3[1:(length(y3)/2)]
+        y3 <- y3[1:(length(y3) / 2)]
       } else {
-        y3 <- y3[(length(y3)/2+1):length(y3)]
+        y3 <- y3[(length(y3) / 2 + 1):length(y3)]
       }
 
       condition <- length(y3) <= 2
@@ -498,7 +499,8 @@ data_synthesis_half_time <- function(x, y, tol = 3) {
   )
 }
 
-microbenchmark::microbenchmark(times = 1,
+microbenchmark::microbenchmark(
+  times = 1,
   AnyNear = data_synthesis_any_near(x, y, tol = 3),
   HalfLife = data_synthesis_half_time(x, y, tol = 3)
 )
@@ -594,7 +596,8 @@ The PASHR string appear to be recorded at 1 Hz, therfore fixing the time limit f
 ```{r}
 SQLDemo <- DBI::dbConnect(
   RSQLite::SQLite(),
-  system.file("data-raw", "demo_sear.sqlite", package = "sear", mustWork = T))
+  system.file("data-raw", "demo_sear.sqlite", package = "sear", mustWork = T)
+)
 ```
 
 ```{sql, connection=SQLDemo, output.var = "SQLDemo"}
@@ -603,7 +606,7 @@ LEFT JOIN HOCRL1b ON MetadataL1b.UUID = HOCRL1b.UUID
 ```
 
 ```{r}
-#convert to cartesian
+# convert to cartesian
 
 library(plot3D)
 library(viridis)
@@ -613,23 +616,23 @@ test <- SQLDemo %>%
     Pitch < 10,
     Roll < 10,
     !is.na(Channels),
-    date(DateTime) == "2022-07-08",#UUID == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7", 
+    date(DateTime) == "2022-07-08", # UUID == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7",
     Type == "LU", Wavelength == 580.44
   ) %>%
-  #filter(Type == "LU" & Wavelength == 580.44 & UUID == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7") %>%
+  # filter(Type == "LU" & Wavelength == 580.44 & UUID == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7") %>%
   mutate(
-    #Pitch = -Pitch, # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
-    #Roll = -Roll,
+    # Pitch = -Pitch, # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
+    # Roll = -Roll,
     # Convert sun azimuth and zenith angles to Cartesian coordinates
-    Solx = sin((90-SolZen) * pi / 180) * cos(SolAzm * pi / 180),
-    Soly = sin((90-SolZen) * pi / 180) * sin(SolAzm * pi / 180),
-    Solz = cos((90-SolZen) * pi / 180),
-    x1 = sin(Heading*pi/180)*cos(Pitch*pi/180),
-    y1 = sin(Heading*pi/180)*sin(Pitch*pi/180),
-    z1 = sin(Pitch*pi/180),
-    Phi = Roll*pi/180,
-    Theta = Pitch*pi/180,
-    Psi = Heading*pi/180
+    Solx = sin((90 - SolZen) * pi / 180) * cos(SolAzm * pi / 180),
+    Soly = sin((90 - SolZen) * pi / 180) * sin(SolAzm * pi / 180),
+    Solz = cos((90 - SolZen) * pi / 180),
+    x1 = sin(Heading * pi / 180) * cos(Pitch * pi / 180),
+    y1 = sin(Heading * pi / 180) * sin(Pitch * pi / 180),
+    z1 = sin(Pitch * pi / 180),
+    Phi = Roll * pi / 180,
+    Theta = Pitch * pi / 180,
+    Psi = Heading * pi / 180
   )
 ```
 
@@ -637,46 +640,46 @@ test <- SQLDemo %>%
 # create_cartesian_sphere_with_angles <- function(radius, latitude_divisions, longitude_divisions) {
 #   vertices <- matrix(0, nrow = (latitude_divisions + 1) * (longitude_divisions + 1), ncol = 5)
 #   indices <- matrix(0, nrow = latitude_divisions * longitude_divisions * 2, ncol = 3)
-#   
+#
 #   vertex_count <- 1
 #   index_count <- 1
-#   
+#
 #   for (lat in 0:latitude_divisions) {
 #     Theta <- lat * pi / latitude_divisions
 #     sin_Theta <- sin(Theta)
 #     cos_Theta <- cos(Theta)
-#     
+#
 #     for (lon in 0:longitude_divisions) {
 #       phi <- lon * 2 * pi / longitude_divisions
 #       sin_phi <- sin(phi)
 #       cos_phi <- cos(phi)
-#       
+#
 #       x <- radius * sin_Theta * cos_phi
 #       y <- radius * sin_Theta * sin_phi
 #       z <- radius * cos_Theta
-#       
+#
 #       azimuth <- phi * 180 / pi  # Azimuth angle in degrees
 #       zenith <- (pi/2 - Theta) * 180 / pi  # Zenith angle in degrees
-#       
+#
 #       vertices[vertex_count, ] <- c(x, y, z, azimuth, zenith)
 #       vertex_count <- vertex_count + 1
 #     }
 #   }
-#   
+#
 #   for (lat in 0:latitude_divisions) {
 #     for (lon in 0:longitude_divisions) {
 #       if (lat < latitude_divisions && lon < longitude_divisions) {
 #         first <- lat * (longitude_divisions + 1) + lon + 1
 #         second <- first + longitude_divisions + 1
-#         
+#
 #         indices[index_count, ] <- c(first, second, first + 1)
 #         indices[index_count + 1, ] <- c(second, second + 1, first + 1)
-#         
+#
 #         index_count <- index_count + 2
 #       }
 #     }
 #   }
-#   
+#
 #   return(
 #     tibble(
 #       x = vertices[,1],
@@ -686,20 +689,20 @@ test <- SQLDemo %>%
 #       Theta = vertices[,5]
 #       ))
 # }
-# 
+#
 # # Parameters for the sphere
 # radius <- 1.0  # Radius of the sphere
 # latitude_divisions <- 20  # Number of divisions along the latitude
 # longitude_divisions <- 20  # Number of divisions along the longitude
-# 
+#
 # # Create the sphere mesh in Cartesian coordinates
 # sphere_data <- create_cartesian_sphere_with_angles(radius, latitude_divisions, longitude_divisions)
-# 
+#
 # Function to plot circles in XY, XZ, and YZ planes
 # create_3d_planes <- function(radius = 1) {
 #   # Generate Theta values for the circles
 #   Theta <- seq(0, 2 * pi, length.out = 100)
-# 
+#
 #   # Generate coordinates for circles in XY, XZ, and YZ planes
 #   xy <- data.frame(
 #     x = radius * cos(Theta),
@@ -710,7 +713,7 @@ test <- SQLDemo %>%
 #     Plane = "xy",
 #     Color = "blue"
 #   )
-# 
+#
 #   xz <- data.frame(
 #     x = radius * cos(Theta),
 #     y = 0,
@@ -720,7 +723,7 @@ test <- SQLDemo %>%
 #     Plane = "xz",
 #     Color = "red"
 #   )
-# 
+#
 #   yz <- data.frame(
 #     x = 0,
 #     y = radius * cos(Theta),
@@ -730,10 +733,10 @@ test <- SQLDemo %>%
 #     Plane = "yz",
 #     Color = "green"
 #     )
-# 
+#
 #   merged <- bind_rows(xy, xz, yz) %>%
 #     group_by(Plane)
-# 
+#
 #   return(merged)
 # }
 
@@ -753,7 +756,7 @@ create_planes_data <- function(radius = 1, n_points = 100) {
   xy_circle$Color <- "blue"
 
   # Create XZ circle data
-  xz_circle <- expand.grid(theta = c(rep(0*pi/180, n_points/2),rep(180*pi/180, n_points/2)), phi = phi)
+  xz_circle <- expand.grid(theta = c(rep(0 * pi / 180, n_points / 2), rep(180 * pi / 180, n_points / 2)), phi = phi)
   xz_circle$x <- radius * cos(xz_circle$phi) * cos(xz_circle$theta)
   xz_circle$y <- rep(0, n_points)
   xz_circle$z <- radius * sin(xz_circle$phi)
@@ -763,7 +766,7 @@ create_planes_data <- function(radius = 1, n_points = 100) {
   xz_circle$Color <- "red"
 
   # Create YZ circle data
-  yz_circle <- expand.grid(theta = c(rep(90*pi/180, n_points/2),rep(270*pi/180, n_points/2)), phi = phi)
+  yz_circle <- expand.grid(theta = c(rep(90 * pi / 180, n_points / 2), rep(270 * pi / 180, n_points / 2)), phi = phi)
   yz_circle$x <- rep(0, n_points)
   yz_circle$y <- radius * cos(yz_circle$phi) * sin(yz_circle$theta)
   yz_circle$z <- radius * sin(yz_circle$phi)
@@ -771,7 +774,7 @@ create_planes_data <- function(radius = 1, n_points = 100) {
   yz_circle$Phi <- yz_circle$phi * 180 / pi
   yz_circle$Plane <- "YZ"
   yz_circle$Color <- "green"
-  
+
   # Order the points by for each circle
   xy_circle <- xy_circle[order(xy_circle$theta), ]
   xz_circle <- xz_circle[order(xz_circle$theta, xz_circle$phi, xz_circle$x), ]
@@ -800,10 +803,10 @@ polar_sphere <- function(radius = 1, n = 45) {
   PolarSphere$x <- PolarSphere$r * sin(PolarSphere$Phi) * cos(PolarSphere$Theta)
   PolarSphere$y <- PolarSphere$r * sin(PolarSphere$Phi) * sin(PolarSphere$Theta)
   PolarSphere$z <- PolarSphere$r * cos(PolarSphere$Phi)
-  
+
   PolarSphere$Theta <- PolarSphere$Theta * 180 / pi
-  PolarSphere$Phi <- (pi/2 - PolarSphere$Phi) * 180 / pi
-  
+  PolarSphere$Phi <- (pi / 2 - PolarSphere$Phi) * 180 / pi
+
   return(PolarSphere)
 }
 
@@ -815,7 +818,7 @@ rotate_body_frame <- function(heading, pitch, roll) {
   heading_rad <- heading * pi / 180
   pitch_rad <- -pitch * pi / 180 # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
   roll_rad <- -roll * pi / 180
-  
+
   # Create the rotation matrices
   rotation_z <- matrix(c(cos(heading_rad), sin(heading_rad), 0, -sin(heading_rad), cos(heading_rad), 0, 0, 0, 1), nrow = 3)
   rotation_y <- matrix(c(cos(pitch_rad), 0, -sin(pitch_rad), 0, 1, 0, sin(pitch_rad), 0, cos(pitch_rad)), nrow = 3)
@@ -823,13 +826,13 @@ rotate_body_frame <- function(heading, pitch, roll) {
 
   # Rotate the body frame in the correct order: Z (Yaw) -> Y (Pitch) -> X (Roll)
   rotation_matrix <- rotation_z %*% rotation_y %*% rotation_x
-  
+
   # Original body frame vectors (x, y, z)
-  body_vectors <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3)  # Unit vectors
-  
+  body_vectors <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3) # Unit vectors
+
   # Rotate the body frame vectors
   rotated_vectors <- rotation_matrix %*% body_vectors
-  
+
   rotated_vectors <- as_tibble(rotated_vectors) %>%
     mutate(
       Coord = c("x", "y", "z")
@@ -837,7 +840,7 @@ rotate_body_frame <- function(heading, pitch, roll) {
     rename(X = V1, Y = V2, Z = V3) %>%
     pivot_wider(
       names_from = Coord,
-      values_from = c(X,Y,Z),
+      values_from = c(X, Y, Z),
       names_sep = ""
     )
 
@@ -847,7 +850,8 @@ rotate_body_frame <- function(heading, pitch, roll) {
 test <- test %>%
   mutate(
     RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_body_frame)
-  ) %>% unnest(cols = c(RotatedBody))
+  ) %>%
+  unnest(cols = c(RotatedBody))
 
 # Function to rotate a point using Tait-Bryan angles
 rotate_point <- function(point, heading, pitch, roll) {
@@ -855,7 +859,7 @@ rotate_point <- function(point, heading, pitch, roll) {
   heading_rad <- heading * pi / 180
   pitch_rad <- -pitch * pi / 180 # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
   roll_rad <- -roll * pi / 180
-  
+
   # Create the rotation matrices
   rotation_z <- matrix(c(cos(heading_rad), sin(heading_rad), 0, -sin(heading_rad), cos(heading_rad), 0, 0, 0, 1), nrow = 3)
   rotation_y <- matrix(c(cos(pitch_rad), 0, -sin(pitch_rad), 0, 1, 0, sin(pitch_rad), 0, cos(pitch_rad)), nrow = 3)
@@ -875,15 +879,15 @@ rotate_point <- function(point, heading, pitch, roll) {
       names_prefix = "EsPoint",
       names_sep = ""
     )
-  
-  
+
+
   return(rotated_point)
 }
 
 # Generate a point representing a point in the body frame
 test <- test %>%
   mutate(
-   EsPoint = list(matrix(c(0, 0, 0.5), nrow = 3))  # Along the Z-axis, could place it precisely about the IMU 
+    EsPoint = list(matrix(c(0, 0, 0.5), nrow = 3)) # Along the Z-axis, could place it precisely about the IMU
   )
 
 test <- test %>%
@@ -895,7 +899,7 @@ test <- test %>%
 
 ```{r}
 fig <- test %>%
-  plot_ly(type = "scatter3d", mode = "markers") %>% 
+  plot_ly(type = "scatter3d", mode = "markers") %>%
   add_markers(
     name = "EsPosition",
     y = ~Zx, # reverse x and y to shift between applanix coordinate system and plotly
@@ -907,7 +911,7 @@ fig <- test %>%
     marker = list(
       size = 5
     ),
-    text = ~paste0(
+    text = ~ paste0(
       "<b>Heading</b>: ", Heading, "<br>",
       "<b>Pitch</b>: ", Pitch, "<br>",
       "<b>Roll</b>: ", Roll, "<br>",
@@ -921,14 +925,14 @@ fig <- test %>%
     x = ~Xy,
     z = ~Xz,
     marker = list(
-      color = 'rgb(253, 0, 0)',
+      color = "rgb(253, 0, 0)",
       size = 5,
       line = list(
-        color = 'rgb(0, 0, 0)',
+        color = "rgb(0, 0, 0)",
         width = 1
       )
     ),
-    text = ~paste0(
+    text = ~ paste0(
       "<b>Heading</b>: ", Heading, "<br>",
       "<b>Pitch</b>: ", Pitch, "<br>",
       "<b>Roll</b>: ", Roll, "<br>",
@@ -943,41 +947,41 @@ fig <- test %>%
     z = ~Solz,
     # color = ~SolZen,
     # colors = inferno(200),
-    text = ~paste0(
+    text = ~ paste0(
       "<b>SolAzm</b>: ", SolAzm, "<br>",
       "<b>SolZen</b>: ", SolZen, "<br>",
       "<b>DateTime</b>: ", DateTime, "<br>",
       "<b>BoatSolAzm</b>: ", BoatSolAzm, "<br>"
     ),
     marker = list(
-      color = 'rgb(253, 184, 19)',
+      color = "rgb(253, 184, 19)",
       size = 10,
       line = list(
-        color = 'rgb(0, 0, 0)',
+        color = "rgb(0, 0, 0)",
         width = 1
       )
     )
   ) %>%
   add_trace(
-    y = ~as.vector(rbind(0,Xx)),
-    x = ~as.vector(rbind(0,Xy)),
-    z = ~as.vector(rbind(0,Xz)),
+    y = ~ as.vector(rbind(0, Xx)),
+    x = ~ as.vector(rbind(0, Xy)),
+    z = ~ as.vector(rbind(0, Xz)),
     mode = "lines",
     line = list(color = "red"),
     name = "Rotated X"
   ) %>%
   add_trace(
-    y = ~as.vector(rbind(0,Yx)),
-    x = ~as.vector(rbind(0,Yy)),
-    z = ~as.vector(rbind(0,Yz)),
+    y = ~ as.vector(rbind(0, Yx)),
+    x = ~ as.vector(rbind(0, Yy)),
+    z = ~ as.vector(rbind(0, Yz)),
     mode = "lines",
     line = list(color = "green"),
     name = "Rotated Y"
   ) %>%
   add_trace(
-    y = ~as.vector(rbind(0,Zx)),
-    x = ~as.vector(rbind(0,Zy)),
-    z = ~as.vector(rbind(0,Zz)),
+    y = ~ as.vector(rbind(0, Zx)),
+    x = ~ as.vector(rbind(0, Zy)),
+    z = ~ as.vector(rbind(0, Zz)),
     mode = "lines",
     line = list(color = "purple"),
     name = "Rotated Z"
@@ -993,14 +997,14 @@ fig <- test %>%
     z = ~z,
     opacity = 0.5,
     marker = list(
-      color = 'rgb(201, 233, 246)',
+      color = "rgb(201, 233, 246)",
       size = 2,
       line = list(
-        color = 'rgb(53, 81, 92)',
+        color = "rgb(53, 81, 92)",
         width = 2
       )
     ),
-    text = ~paste0(
+    text = ~ paste0(
       "<b>Azimuth</b>: ", Theta, "<br>",
       "<b>Zenith</b>: ", Phi, "<br>"
     )
@@ -1012,7 +1016,7 @@ fig <- test %>%
     z = ~z,
     color = ~Plane,
     colors = ~Color,
-    text = ~paste0(
+    text = ~ paste0(
       "<b>Azimuth</b>: ", Theta, "<br>",
       "<b>Zenith</b>: ", Phi, "<br>"
     )
@@ -1028,13 +1032,12 @@ To make this work need to define clearly the body and the world frame.
 ```{r}
 # Function to convert Tait-Bryan angles to a rotation matrix
 tait_bryan_to_rotation_matrix <- function(roll, pitch, yaw) {
-  
   roll_rad <- roll * pi / 180
   pitch_rad <- pitch * pi / 180
   yaw_rad <- yaw * pi / 180
-  
+
   rotation_matrix <- matrix(0, nrow = 3, ncol = 3)
-  
+
   rotation_matrix[1, 1] <- cos(yaw_rad) * cos(pitch_rad)
   rotation_matrix[1, 2] <- cos(yaw_rad) * sin(pitch_rad) * sin(roll_rad) - sin(yaw_rad) * cos(roll_rad)
   rotation_matrix[1, 3] <- cos(yaw_rad) * sin(pitch_rad) * cos(roll_rad) + sin(yaw_rad) * sin(roll_rad)
@@ -1044,17 +1047,16 @@ tait_bryan_to_rotation_matrix <- function(roll, pitch, yaw) {
   rotation_matrix[3, 1] <- -sin(pitch_rad)
   rotation_matrix[3, 2] <- cos(pitch_rad) * sin(roll_rad)
   rotation_matrix[3, 3] <- cos(pitch_rad) * cos(roll_rad)
-  
+
   return(rotation_matrix)
 }
 
 # Convert Tait-Bryan angles to rotation matrix
 
-sol_direction_body <- function(RotationMatrixBody, Solx, Soly, Solz){
-  
+sol_direction_body <- function(RotationMatrixBody, Solx, Soly, Solz) {
   mat <- as_tibble(t(RotationMatrixBody %*% c(Solx, Soly, Solz)))
-  colnames(mat) <- c("BodySolx","BodySoly","BodySolz")
-  
+  colnames(mat) <- c("BodySolx", "BodySoly", "BodySolz")
+
   return(mat)
 }
 
@@ -1062,7 +1064,8 @@ test <- test %>%
   mutate(
     RotationMatrixBody = pmap(list(Roll, Pitch, Heading), tait_bryan_to_rotation_matrix),
     SolDirectionBody = pmap(list(RotationMatrixBody, Solx, Soly, Solz), sol_direction_body)
-  ) %>% unnest(cols = c(SolDirectionBody))
+  ) %>%
+  unnest(cols = c(SolDirectionBody))
 ```
 
 
@@ -1100,48 +1103,46 @@ The algorithmic logic for the discretization based on time slicing is as follow:
 
 ```{r}
 discretize_time <- function(MainTime) {
-  i = 1
-  j = 1
+  i <- 1
+  j <- 1
   while (T) {
     if (length(MainTime) < i + 1) {
       print("This is the end")
       break
     }
-    
-    j = i
-    
-    x = MainTime[i]
-    y = MainTime[j + 1]
-    
+
+    j <- i
+
+    x <- MainTime[i]
+    y <- MainTime[j + 1]
+
     if (interval(x, y) > seconds(10)) {
-      i = j + 1
+      i <- j + 1
       next
     }
-    
+
     # Step 1, iter until interval < 3 sec
     while (interval(x, y) < seconds(3)) {
       if (length(MainTime) < j + 1) {
         print("This is the end")
         break
       }
-      
-      j = j + 1
-      y = MainTime[j]
+
+      j <- j + 1
+      y <- MainTime[j]
     }
-    
+
     # At this point. this should always be true
     # Step 3 and 4, processing should happen at this stage
     if (!interval(x, y) > seconds(10) & !interval(x, y) < seconds(3)) {
       print(paste(i, interval(x, y)))
     }
-    
-    i = j + 1
+
+    i <- j + 1
   }
 }
 
 discretize_time(MainTime = MainLog$DateTime)
-
-
 ```
 
 

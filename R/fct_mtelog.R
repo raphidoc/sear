@@ -14,15 +14,14 @@
 # Read log ----------------------------------------------------------------
 
 read_mtelog <- function(LogFile) {
-
   MTELog <- tibble(
     Raw = readr::read_lines(LogFile)
-    )
+  )
 
   # Exctract date on line 3 of datalogger header
   Date <- str_extract(MTELog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
 
-  MTELog <- MTELog[7:length(rownames(MTELog)),]
+  MTELog <- MTELog[7:length(rownames(MTELog)), ]
 
   # With file DATA_20230720_164631.txt the following error occur:
   # Error in nchar: invalid multibyte string, element 336
@@ -38,13 +37,11 @@ read_mtelog <- function(LogFile) {
       DateTime = lubridate::ymd_hms(paste(Date, Time)),
       Instrument = str_extract(Instrument, "[:alnum:]+")
     )
-
 }
 
 # NMEA parsing ------------------------------------------------------------
 
 read_apla <- function(MTELog) {
-
   # TODO Add NMEA checksum verification
 
   Apla <- MTELog %>%
@@ -54,13 +51,13 @@ read_apla <- function(MTELog) {
       pattern = c("\\s[$]", Trame = "[[:alpha:]]+", ",", Data = ".*"),
       too_few = "align_start",
       cols_remove = T
-      #into = c("Trame", "Data"),
-      #extra = "merge"
+      # into = c("Trame", "Data"),
+      # extra = "merge"
     ) %>%
     mutate(
       Trame = str_extract(Trame, "[[:alpha:]]+"),
-      #Time = str_remove(Time, ".{4}$"),
-      DateTime = round_date(DateTime, unit = "second")#format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
+      # Time = str_remove(Time, ".{4}$"),
+      DateTime = round_date(DateTime, unit = "second") # format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
     ) %>%
     filter(
       !is.na(Trame)
@@ -122,7 +119,6 @@ read_apla <- function(MTELog) {
   # Extract VTG info, course and speed
 
   if (any(str_detect(Apla$Trame, "[:alpha:]{2}VTG"))) {
-
     RawVTG <- Apla %>%
       filter(str_detect(Trame, "[:alpha:]{2}VTG")) %>%
       pivot_wider(
@@ -156,7 +152,6 @@ read_apla <- function(MTELog) {
       )
 
     VTG <- unique_datetime_second(VTG)
-
   } else {
     VTG <- tibble(
       DateTime = NA,
@@ -175,7 +170,6 @@ read_apla <- function(MTELog) {
   # Extract pitch and roll from Applanix PASHR data
 
   if (any(str_detect(Apla$Trame, "PASHR"))) {
-
     RawPASHR <- Apla %>%
       filter(str_detect(Trame, "PASHR")) %>%
       pivot_wider(
@@ -197,7 +191,7 @@ read_apla <- function(MTELog) {
           "Pitch_Accuracy", # 0 to 9.999: b.bbb [degrees]
           "Heading_Accuracy", # 0 to 9.999: c.ccc [degrees]
           "Heading_Flag", # 0 = no aiding, 1 = GNSS aiding, 2 = GNSS & GAMS aiding
-          #"IMU_Flag", # 0 = IMU out, 1 = satisfactory *DOSENT SEEM TO BE IN DATA*
+          # "IMU_Flag", # 0 = IMU out, 1 = satisfactory *DOSENT SEEM TO BE IN DATA*
           "Checksum" # NA: *hh
         )
       ) %>%
@@ -216,7 +210,6 @@ read_apla <- function(MTELog) {
       )
 
     PASHR <- unique_datetime_second(PASHR)
-
   } else {
     PASHR <- tibble(
       DateTime = NA,
@@ -258,7 +251,6 @@ read_apla <- function(MTELog) {
 # BBFL2 extractor -----------------------------------------------------------
 
 read_bbfl2 <- function(MTELog) {
-
   BBFL2 <- MTELog %>%
     filter(Instrument == "ECO") %>%
     separate(

@@ -6,7 +6,6 @@
 #'
 #' @noRd
 cal_bbfl2 <- function(BBFL2Data, BBFL2Cal) {
-
   BBFL2Data %>%
     mutate(
       DateTime = as.character(DateTime),

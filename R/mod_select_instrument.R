@@ -27,12 +27,10 @@ mod_select_instrument_ui <- function(id) {
 #'
 #' @noRd
 mod_select_instrument_server <- function(id, ParsedFiles) {
-
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     InstrumentList <- reactive({
-
       InstrumentList <- ParsedFiles() %>%
         str_extract("apla|bbfl2|hocr|sbe19|seaowl|biosonic|hb_devices")
 
@@ -63,10 +61,14 @@ mod_select_instrument_server <- function(id, ParsedFiles) {
       )
     })
 
-    output$FilesPath <- renderText({ basename(ParsedFiles()) })
+    output$FilesPath <- renderText({
+      basename(ParsedFiles())
+    })
 
     list(
-      InstrumentList = reactive({input$InstrumentList})
+      InstrumentList = reactive({
+        input$InstrumentList
+      })
     )
   })
 }

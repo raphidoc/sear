@@ -43,23 +43,22 @@ SeaOWLData <- sear:::read_seaowl(MTELog)
 
 ```{r}
 cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
-  
   # Test that calibration and data have the same serial number
   if (!all(SeaOWLCal$SERIALNO == stringr::str_extract(SeaOWLData$SN, "(?<=-).*"))) {
     stop("Calibration and SeaOWL have different serial number")
   }
-  
+
   SeaOWLData %>%
     mutate(
       VSF_700 = SeaOWLCal$VSFScaleFactor * (VSF700Output - SeaOWLCal$VSFDarkCounts),
       Chl = SeaOWLCal$ChlScaleFactor * (ChlOutput - SeaOWLCal$ChlDarkCounts),
       FDOM = SeaOWLCal$FDOMScaleFactor * (FDOMOutput - SeaOWLCal$FDOMDarkCounts),
       .after = SN
-    ) %>% 
+    ) %>%
     select(DateTime, SN, VSF_700, Chl, FDOM)
 }
 
-SeaOWLL1b <- cal_seaowl(SeaOWLData, SeaOWLCal)  %>%
+SeaOWLL1b <- cal_seaowl(SeaOWLData, SeaOWLCal) %>%
   mutate(
     ID = seq_along(rownames(SeaOWLData)),
     QC = "1"
@@ -72,7 +71,7 @@ SeaOWLL1b <- cal_seaowl(SeaOWLData, SeaOWLCal)  %>%
 
 ```{r}
 SeaOWLL1bNest <- SeaOWLL1b %>%
-  select(!any_of(c("SN")))%>%
+  select(!any_of(c("SN"))) %>%
   pivot_longer(
     cols = any_of(c("VSF_700", "Chl", "FDOM")),
     names_to = "Parameter",
@@ -103,12 +102,11 @@ SeaOWLL1bNest <- SeaOWLL1bNest %>%
         layout(
           shapes = BlackSquare,
           yaxis = list(title = list(text = .y))
-        )
-    )
+        ))
   )
 
 
-#format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
+# format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
 
 subplot(SeaOWLL1bNest$Plot, nrows = nrow(SeaOWLL1bNest), shareX = TRUE, titleY = TRUE)
 ```

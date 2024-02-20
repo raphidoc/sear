@@ -6,7 +6,6 @@
 #'
 #' @noRd
 cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
-
   # Test that calibration and data have the same serial number
   # Should be stop
   SN <- stringr::str_extract(SeaOWLData$SN, "(?<=-).*")

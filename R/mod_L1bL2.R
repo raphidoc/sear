@@ -63,7 +63,6 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           mod_bottom_reflectance_ui(ns("bottom_reflectance"))
         )
       )
-
     })
 
     # Keep that for dev purpose
@@ -84,7 +83,6 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
 
     # DataTable used to display Obs information
     output$DataTable <- DT::renderDT(
-
       DT::datatable(
         Obs$MetadataL2,
         extensions = c("Buttons", "Scroller", "Select"),
@@ -99,7 +97,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           columnDefs = list(
             list(
               visible = FALSE,
-              targets = str_which(colnames(Obs$MetadataL2), "\\b(?!Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch)\\b\\S+")-1
+              targets = str_which(colnames(Obs$MetadataL2), "\\b(?!Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch)\\b\\S+") - 1
             )
           ),
           deferRender = TRUE,
@@ -112,7 +110,8 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
       ) %>%
         DT::formatRound(
           columns = as.character(na.omit(str_extract(colnames(Obs$MetadataL2), "Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch"))),
-          digits=2),
+          digits = 2
+        ),
       server = FALSE,
       editable = F
     )
@@ -142,37 +141,37 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
       }
     )
 
-# HOCR tab ----------------------------------------------------------------
+    # HOCR tab ----------------------------------------------------------------
 
     mod_L1L2_hocr_server("L1L2_hocr", Obs, Settings)
 
-# SBE19 tab ---------------------------------------------------------------
+    # SBE19 tab ---------------------------------------------------------------
 
     mod_L1L2_sbe19_server("L1L2_sbe19", Obs)
 
-# SeaOWL tab --------------------------------------------------------------
+    # SeaOWL tab --------------------------------------------------------------
 
     mod_L1L2_seaowl_server("L1L2_seaowl", Obs)
 
-# BBFL2 tab ---------------------------------------------------------------
+    # BBFL2 tab ---------------------------------------------------------------
 
     mod_L1L2_bbfl2_server("L1L2_bbfl2", Obs)
 
-# BioSonic ----------------------------------------------------------------
+    # BioSonic ----------------------------------------------------------------
 
     mod_L1L2_biosonic_server("L1L2_biosonic", Obs)
 
 
-# HydroBall ---------------------------------------------------------------
+    # HydroBall ---------------------------------------------------------------
 
     mod_L1L2_hydroball_server("L1L2_hydroball", Obs)
 
-# Bottom Reflectance ------------------------------------------------------
+    # Bottom Reflectance ------------------------------------------------------
 
     mod_bottom_reflectance_server("bottom_reflectance", Obs)
 
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
 
     list(
       # Save = reactive(input$Save),

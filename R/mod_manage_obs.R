@@ -29,14 +29,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       validate(need(nrow(Obs$HOCR$L2) != 0, message = "Process to L2 before saving"))
 
       actionButton(ns("Save"), "Save", icon = icon("glyphicon glyphicon-save", lib = "glyphicon"))
-
     })
 
     output$Delete <- renderUI({
       req(!is.na(Obs$MetadataL2$UUID))
 
       actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon"))
-
     })
 
     observeEvent(
@@ -86,7 +84,6 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         res <- DBI::dbSendQuery(DB$Con(), qry)
         L2Obs$BioSonic <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
-
       }
     )
 
@@ -174,17 +171,15 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BioSonic$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
-
       }
     )
 
-# Save to SQLite ----------------------------------------------------------
+    # Save to SQLite ----------------------------------------------------------
     UUID <- reactiveVal()
 
     observeEvent(
       req(input$Save),
       {
-
         # Sanitize tables ---------------------------------------------------------
         # Remove variables used for dev of Rb retrieval that don't belong in tables
 
@@ -204,8 +199,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
 
         # If UUID already exist, update record in SQLite
         if (UUIDPresent & UUIDExist) {
-
-# Update MetadataL2 ---------------------------------------------------------
+          # Update MetadataL2 ---------------------------------------------------------
 
           MetadataL2 <- Obs$MetadataL2 %>%
             mutate(
@@ -227,7 +221,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           MetaUp <- DBI::dbExecute(DB$Con(), qry)
 
 
-# Update HOCR -------------------------------------------------------------
+          # Update HOCR -------------------------------------------------------------
 
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(AproxData))
@@ -336,38 +330,38 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           HOCRL2Up <- DBI::dbExecute(DB$Con(), qry)
 
 
-# Update SBE19 ------------------------------------------------------------
+          # Update SBE19 ------------------------------------------------------------
 
           SBE19L1bUp <- update_L1b_param_val(L1b = Obs$SBE19$L1b, TableName = "SBE19L1b", Con = DB$Con())
 
-          SBE19L2Up <- update_L2_param_val(L2 = Obs$SBE19$L2,TableName = "SBE19L2", Con = DB$Con())
+          SBE19L2Up <- update_L2_param_val(L2 = Obs$SBE19$L2, TableName = "SBE19L2", Con = DB$Con())
 
-# Update SeaOWL ------------------------------------------------------------
+          # Update SeaOWL ------------------------------------------------------------
 
           SeaOWLL1bUp <- update_L1b_param_val(L1b = Obs$SeaOWL$L1b, TableName = "SeaOWLL1b", Con = DB$Con())
 
-          SeaOWLL2Up <- update_L2_param_val(L2 = Obs$SeaOWL$L2,TableName = "SeaOWLL2", Con = DB$Con())
+          SeaOWLL2Up <- update_L2_param_val(L2 = Obs$SeaOWL$L2, TableName = "SeaOWLL2", Con = DB$Con())
 
 
-# Update BBFL2 ------------------------------------------------------------
+          # Update BBFL2 ------------------------------------------------------------
 
           BBFL2L1bUp <- update_L1b_param_val(L1b = Obs$BBFL2$L1b, TableName = "BBFL2L1b", Con = DB$Con())
 
-          BBFL2L2Up <- update_L2_param_val(L2 = Obs$BBFL2$L2,TableName = "BBFL2L2", Con = DB$Con())
+          BBFL2L2Up <- update_L2_param_val(L2 = Obs$BBFL2$L2, TableName = "BBFL2L2", Con = DB$Con())
 
 
-# Update BioSonic ---------------------------------------------------------
+          # Update BioSonic ---------------------------------------------------------
 
           # there is no BioSonic data manipulation for now so no need to update
 
 
-# Update feedback UI ------------------------------------------------------
+          # Update feedback UI ------------------------------------------------------
 
           # Check that the number of line affected is correct, should probably improve this
           # MetaUp must be only one line affected, if more means UUID collision
           # L1bUp == 3 * 137 wavelengths * bins number
           # L2Up == User input wavelength
-          test <- all(MetaUp == 1)#, unique(HOCRL1bUp) == 411, HOCRL2Up == 150)
+          test <- all(MetaUp == 1) # , unique(HOCRL1bUp) == 411, HOCRL2Up == 150)
 
           # Feedback to the user
           session$sendCustomMessage(
@@ -390,9 +384,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           #   session = shiny::getDefaultReactiveDomain()
           # )
         } else {
-
-
-# Initial save if UUID doesn't exist --------------------------------------
+          # Initial save if UUID doesn't exist --------------------------------------
 
           ObsUUID <- uuid::UUIDgenerate(
             use.time = T,
@@ -439,14 +431,13 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           }
 
           if (nrow(Obs$SBE19$L1b) != 0) {
-
             SBE19L1b <- Obs$SBE19$L1b %>%
               unnest(c(Data)) %>%
               mutate(
                 UUID = ObsUUID
               )
 
-            SBE19L2 <- Obs$SBE19$L2  %>%
+            SBE19L2 <- Obs$SBE19$L2 %>%
               mutate(UUID = ObsUUID)
 
             DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
@@ -461,7 +452,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                 UUID = ObsUUID
               )
 
-            SeaOWLL2 <- Obs$SeaOWL$L2  %>%
+            SeaOWLL2 <- Obs$SeaOWL$L2 %>%
               mutate(UUID = ObsUUID)
 
             DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
@@ -475,7 +466,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                 UUID = ObsUUID
               )
 
-            BBFL2L2 <- Obs$BBFL2$L2  %>%
+            BBFL2L2 <- Obs$BBFL2$L2 %>%
               mutate(UUID = ObsUUID)
 
             DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
@@ -483,12 +474,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           }
 
           if (nrow(Obs$BioSonic$L1b) != 0) {
-            BioSonicL1b <- Obs$BioSonic$L1b  %>%
+            BioSonicL1b <- Obs$BioSonic$L1b %>%
               mutate(
                 UUID = ObsUUID
               )
 
-            BioSonicL2 <- Obs$BioSonic$L2  %>%
+            BioSonicL2 <- Obs$BioSonic$L2 %>%
               mutate(UUID = ObsUUID)
 
             DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
@@ -496,12 +487,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           }
 
           if (nrow(Obs$HydroBall$L1b) != 0) {
-            HydroBallL1b <- Obs$HydroBall$L1b  %>%
+            HydroBallL1b <- Obs$HydroBall$L1b %>%
               mutate(
                 UUID = ObsUUID
               )
 
-            HydroBallL2 <- Obs$HydroBall$L2  %>%
+            HydroBallL2 <- Obs$HydroBall$L2 %>%
               mutate(UUID = ObsUUID)
 
             DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
@@ -528,7 +519,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       }
     )
 
-# Delete button remove data from SQLite -----------------------------------
+    # Delete button remove data from SQLite -----------------------------------
 
     modal_confirm <- modalDialog(
       "Are you sure you want to continue?",

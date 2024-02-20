@@ -6,7 +6,6 @@
 #' @noRd
 # define some credentials
 app_server <- function(input, output, session) {
-
   # # Use keyring package to set keys
   # keyring::key_set("user", "sear")
   #
@@ -44,11 +43,11 @@ app_server <- function(input, output, session) {
   #   reactiveValuesToList(res_auth)
   # })
 
-# Global objects ----------------------------------------------------------
+  # Global objects ----------------------------------------------------------
 
-  #format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")
+  # format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")
   options(digits.secs = 3)
-  options(shiny.maxRequestSize=50*1024^2) # 50MB
+  options(shiny.maxRequestSize = 50 * 1024^2) # 50MB
   options(shiny.reactlog = TRUE)
 
   MainLog <- reactiveVal(tibble())
@@ -104,11 +103,13 @@ app_server <- function(input, output, session) {
   observeEvent(
     {
       input$ActiveMenu
-    },{
+    },
+    {
       ActiveMenu(append(ActiveMenu(), input$ActiveMenu))
-    })
+    }
+  )
 
-# Modules logic -----------------------------------------------------------
+  # Modules logic -----------------------------------------------------------
 
   SearProj <- mod_manage_project_server("manage_project")
 
@@ -124,7 +125,8 @@ app_server <- function(input, output, session) {
 
   AutoProcess <- mod_automatic_processing_server(
     "automatic_processing",
-    L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB)
+    L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB
+  )
 
   L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs, MainLog, Settings)
 

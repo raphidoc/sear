@@ -45,7 +45,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       validate(need(nrow(Obs$HOCR$L1b) != 0, "No L1b data"))
 
       # Add Pitch and Roll metadata
-      #TODO make this code clearer ... possibly with purrr::map ?
+      # TODO make this code clearer ... possibly with purrr::map ?
       Enhanced <- Obs$HOCR$L1b %>%
         unnest(cols = c(AproxData)) %>%
         mutate(DateTime = as.numeric(ymd_hms(DateTime))) %>%
@@ -55,7 +55,8 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           max_dist = 1,
           distance_col = "Distance"
         ) %>%
-        group_by(ID,Distance) %>% nest() %>%
+        group_by(ID, Distance) %>%
+        nest() %>%
         group_by(ID) %>%
         slice(which.min(Distance)) %>%
         unnest(cols = c(data)) %>%
@@ -70,7 +71,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
             .x = AproxData,
             .y = SN,
             ~ plot_ly(
-              .x  %>% group_by(ID),
+              .x %>% group_by(ID),
               text = ~ paste0(
                 "<b>ID</b>: ", ID, "<br>",
                 "<b>BoatSolAzm</b>: ", BoatSolAzm, "&deg;<br>",
@@ -133,10 +134,12 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text ="Es [uW.cm-2.nm-1]" #TeX("\\text{E}_\\text{s}")
-                                    )),
-          yaxis2 = list(title = list(text = "Lu [uW.cm-2.nm-1.sr-1]" #TeX("\\text{L}_\\text{u}")
-                                     )) # ,
+          yaxis = list(title = list(
+            text = "Es [uW.cm-2.nm-1]" # TeX("\\text{E}_\\text{s}")
+          )),
+          yaxis2 = list(title = list(
+            text = "Lu [uW.cm-2.nm-1.sr-1]" # TeX("\\text{L}_\\text{u}")
+          )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T) %>%
@@ -146,11 +149,10 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       p$x$source <- "HOCRL1b"
 
       # Save graph
-      #save_image(p, file=file.path(path.expand("~"), "sear_figure", "L1b.svg"), scale = 3, height = 720, width = 1280)
+      # save_image(p, file=file.path(path.expand("~"), "sear_figure", "L1b.svg"), scale = 3, height = 720, width = 1280)
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
-
     })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
@@ -166,24 +168,25 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
     )
 
     output$ProL2 <- renderUI({
-
-      validate(need({
-        Settings$HOCR$WaveMin() &
-        Settings$HOCR$WaveMax() &
-        Settings$HOCR$WaveStep() &
-        Settings$HOCR$Z1Depth() &
-        Settings$HOCR$Z1Z2Depth()
-      }, message = "Need HOCR settings"))
+      validate(need(
+        {
+          Settings$HOCR$WaveMin() &
+            Settings$HOCR$WaveMax() &
+            Settings$HOCR$WaveStep() &
+            Settings$HOCR$Z1Depth() &
+            Settings$HOCR$Z1Z2Depth()
+        },
+        message = "Need HOCR settings"
+      ))
 
       actionButton(ns("ProcessL2"), "Process L2")
     })
 
 
-# Compute AOPs ------------------------------------------------------------
+    # Compute AOPs ------------------------------------------------------------
     observeEvent(
       input$ProcessL2,
       {
-
         WaveSeq <- seq(
           Settings$HOCR$WaveMin(),
           Settings$HOCR$WaveMax(),
@@ -193,8 +196,10 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         Z1Depth <- Settings$HOCR$Z1Depth()
         Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
 
-        Obs$HOCR$L2 <- L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
-                               input$Loess,input$Span, Obs)
+        Obs$HOCR$L2 <- L2_hocr(
+          Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+          input$Loess, input$Span, Obs
+        )
       }
     )
 
@@ -211,7 +216,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       if (any(str_detect(names(Obs$HOCR$L2), "ScoreQWIP"))) {
         Rrsplot <- Rrsplot %>%
           add_annotations(
-            text = ~paste("QWIP:",unique(Obs$MetadataL2$ScoreQWIP)),
+            text = ~ paste("QWIP:", unique(Obs$MetadataL2$ScoreQWIP)),
             x = 0.01,
             y = 1,
             yref = "paper",
@@ -228,9 +233,10 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           add_trace(
             x = ~Wavelength,
             y = ~Rrs_loess,
-            type = 'scatter',
-            mode = 'lines',
-            line = list(dash = 'dash', color = 'red'))
+            type = "scatter",
+            mode = "lines",
+            line = list(dash = "dash", color = "red")
+          )
       }
 
       KLuplot <- Obs$HOCR$L2 %>%
@@ -240,12 +246,12 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
         KLuplot <- KLuplot %>%
-          add_trace(x = ~Wavelength, y = ~KLu_loess, type = 'scatter', mode = 'lines', line = list(dash = 'dash', color = 'red'))
+          add_trace(x = ~Wavelength, y = ~KLu_loess, type = "scatter", mode = "lines", line = list(dash = "dash", color = "red"))
       }
 
       ply <- subplot(Rrsplot, KLuplot, shareX = T, titleX = F) %>%
         add_annotations(
-          text = ~"Wavelength [nm]", #TeX("\\text{Wavelength [nm]}"),
+          text = ~"Wavelength [nm]", # TeX("\\text{Wavelength [nm]}"),
           x = 0.5,
           y = -0.15,
           yref = "paper",
@@ -257,10 +263,12 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(
           font = PlyFont,
-          yaxis = list(title = list(text = "Rrs [sr-1]"#TeX("\\text{R}_\\text{rs}")
-                                    )),
-          yaxis2 = list(title = list(text = "Klu [m-1]"#TeX("\\text{K}_\\text{Lu}")
-                                     )) # ,
+          yaxis = list(title = list(
+            text = "Rrs [sr-1]" # TeX("\\text{R}_\\text{rs}")
+          )),
+          yaxis2 = list(title = list(
+            text = "Klu [m-1]" # TeX("\\text{K}_\\text{Lu}")
+          )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T)
@@ -268,27 +276,28 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       ply$x$source <- "KLu"
 
       # Save graph
-      #save_image(ply, file=file.path(path.expand("~"), "sear_figure", "AOPs.svg"), scale = 3, height = 720, width = 1280)
+      # save_image(ply, file=file.path(path.expand("~"), "sear_figure", "AOPs.svg"), scale = 3, height = 720, width = 1280)
 
       widgetframe::frameableWidget(ply)
     })
 
 
 
-# Smooth KLu --------------------------------------------------------------
+    # Smooth KLu --------------------------------------------------------------
     output$SmoothKLu <- renderUI({
-
-      validate(need({
-        Settings$HOCR$WaveMin() &
-        Settings$HOCR$WaveMax() &
-        Settings$HOCR$WaveStep() &
-        Settings$HOCR$Z1Depth() &
-        Settings$HOCR$Z1Z2Depth()
-      }, message = "Need KLu"))
+      validate(need(
+        {
+          Settings$HOCR$WaveMin() &
+            Settings$HOCR$WaveMax() &
+            Settings$HOCR$WaveStep() &
+            Settings$HOCR$Z1Depth() &
+            Settings$HOCR$Z1Z2Depth()
+        },
+        message = "Need KLu"
+      ))
 
       actionButton(ns("SmoothKLu"), "Smooth KLu")
     })
-
   })
 }
 

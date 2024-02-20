@@ -29,7 +29,7 @@ BBFL2Cal <- sear:::read_bbfl2_cal()
 ## Load data
 
 ```{r}
-#Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
+# Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
 Station <- interval(ymd_hms("2022-07-05 12:23:00"), ymd_hms("2022-07-05 12:24:00"))
 
 DataFile <- sear:::app_sys("extdata", "DATA_20220705_105732.txt")
@@ -45,17 +45,16 @@ BBFL2Data <- sear:::read_bbfl2(MTELog)
 
 ```{r}
 cal_bbfl2 <- function(BBFL2Data, BBFL2Cal) {
-  
   BBFL2Data %>%
     mutate(
       NTU = BBFL2Cal$NTUScaleFactor * (NTUSig - BBFL2Cal$NTUDarkCounts),
       PE = BBFL2Cal$PEScaleFactor * (PESig - BBFL2Cal$PEDarkCounts),
       PC = BBFL2Cal$PCScaleFactor * (PCSig - BBFL2Cal$PCDarkCounts)
-    ) %>% 
+    ) %>%
     select(DateTime, NTU, PE, PC)
 }
 
-BBFL2L1b <- cal_bbfl2(BBFL2Data, BBFL2Cal)  %>%
+BBFL2L1b <- cal_bbfl2(BBFL2Data, BBFL2Cal) %>%
   mutate(
     ID = seq_along(rownames(BBFL2Data)),
     QC = "1"
@@ -99,12 +98,11 @@ ply <- BBFL2L1bNest %>%
         layout(
           shapes = BlackSquare,
           yaxis = list(title = list(text = .y))
-        )
-    )
+        ))
   )
 
 
-#format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
+# format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
 
 subplot(ply$Plot, nrows = nrow(BBFL2L1bNest), shareX = TRUE, titleY = TRUE)
 ```

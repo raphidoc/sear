@@ -8,16 +8,23 @@
 #' @noRd
 
 oxy_sol <- function(Temperature, SP) {
+  A0 <- 2.00907
+  A1 <- 3.22014
+  A2 <- 4.0501
+  A3 <- 4.94457
+  A4 <- -0.256847
+  A5 <- 3.88767
+  B0 <- -0.00624523
+  B1 <- -0.00737614
+  B2 <- -0.010341
+  B3 <- -0.00817083
+  C0 <- -0.000000488682
 
-  A0 = 2.00907; A1 = 3.22014; A2 = 4.0501; A3 = 4.94457; A4 = -0.256847; A5 = 3.88767
-  B0 = -0.00624523; B1 = -0.00737614; B2 = -0.010341; B3 = -0.00817083
-  C0 = -0.000000488682
-
-  Ts = log((298.15 - Temperature)/(273.15 + Temperature))
+  Ts <- log((298.15 - Temperature) / (273.15 + Temperature))
 
   OxSol <- exp({
-    A0 + (A1*Ts) + (A2*Ts)^2 + (A3*Ts)^3 + (A4*Ts)^4 + (A5*Ts)^5 +
-      SP * (B0 + (B1*Ts) + (B2*Ts)^2 + (B3*Ts)^3) + (C0*SP)^2
+    A0 + (A1 * Ts) + (A2 * Ts)^2 + (A3 * Ts)^3 + (A4 * Ts)^4 + (A5 * Ts)^5 +
+      SP * (B0 + (B1 * Ts) + (B2 * Ts)^2 + (B3 * Ts)^3) + (C0 * SP)^2
   })
 }
 
@@ -30,12 +37,11 @@ oxy_sol <- function(Temperature, SP) {
 #' @noRd
 
 cal_sbe19 <- function(Data, Lon, Lat) {
-
   Data %>%
     mutate(
       DateTime = as.character(DateTime),
       SP = gsw::gsw_SP_from_C( # Salinity Practical in PSU
-        C = Conductivity*10,
+        C = Conductivity * 10,
         t = Temperature,
         p = Pressure
       ),
@@ -73,7 +79,6 @@ cal_sbe19 <- function(Data, Lon, Lat) {
 #' @noRd
 
 cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, CalData) {
-
   Soc <- CalData$SOC
   Voffset <- CalData$VOFFSET
   A <- CalData$A
@@ -83,8 +88,7 @@ cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, CalData) {
 
   Tkelvin <- Tcelsius + 273.15
 
-  Oxygen <- (Soc * (Volt + Voffset)) * OxSol * (1.0 + A*Tcelsius + B*Tcelsius^2 + C*Tcelsius^3) * exp(1)^(E*Pressure/Tkelvin)
-
+  Oxygen <- (Soc * (Volt + Voffset)) * OxSol * (1.0 + A * Tcelsius + B * Tcelsius^2 + C * Tcelsius^3) * exp(1)^(E * Pressure / Tkelvin)
 }
 
 #' cal_sbe18
@@ -96,11 +100,10 @@ cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, CalData) {
 #' @noRd
 
 cal_sbe18 <- function(Volt, Tcelsius, CalData) {
-
   Voffset <- CalData$OFFSET
   Slope <- CalData$SLOPE
 
   Tkelvin <- Tcelsius + 273.15
 
-  pH <- 7.0 + (Volt - Voffset)/(Slope * Tkelvin * 1.98416e-4)
+  pH <- 7.0 + (Volt - Voffset) / (Slope * Tkelvin * 1.98416e-4)
 }

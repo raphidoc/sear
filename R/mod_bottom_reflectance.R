@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_bottom_reflectance_ui <- function(id){
+mod_bottom_reflectance_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("Rb"), height = 320)
@@ -17,12 +17,11 @@ mod_bottom_reflectance_ui <- function(id){
 #' bottom_reflectance Server Functions
 #'
 #' @noRd
-mod_bottom_reflectance_server <- function(id, Obs){
-  moduleServer( id, function(input, output, session){
+mod_bottom_reflectance_server <- function(id, Obs) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Rb <- renderPlotly({
-
       validate(need(nrow(Obs$HOCR$L2) != 0, "No HOCR L2 data"))
       validate(need(nrow(Obs$BioSonic$L2) != 0, "No BioSonic L2 data"))
 
@@ -53,20 +52,21 @@ mod_bottom_reflectance_server <- function(id, Obs){
 
       Obs$HOCR$L2 <- isolate(Obs$HOCR$L2) %>%
         mutate(
-          BRI = pi*Rrs_loess/exp(-KZ)
+          BRI = pi * Rrs_loess / exp(-KZ)
         )
 
-      pal <- c("Rw"="turquoise", "BRI"="orange")
+      pal <- c("Rw" = "turquoise", "BRI" = "orange")
 
-      ply <- Obs$HOCR$L2 %>% plot_ly(
-        colors = pal
-      ) %>%
+      ply <- Obs$HOCR$L2 %>%
+        plot_ly(
+          colors = pal
+        ) %>%
         add_lines(
           x = ~Wavelength,
           y = ~BRI,
           showlegend = T,
           color = "BRI"
-        ) %>% #add_lines(
+        ) %>% # add_lines(
         #   x = ~Wavelength,
         #   y = ~RbII,
         #   showlegend = T,
@@ -74,15 +74,15 @@ mod_bottom_reflectance_server <- function(id, Obs){
         # ) %>%
         add_lines(
           x = ~Wavelength,
-          y = ~pi*Rrs_loess,
+          y = ~ pi * Rrs_loess,
           showlegend = T,
           color = "Rw",
-          fill = 'tonexty'
+          fill = "tonexty"
         ) %>%
         layout(
           shapes = BlackSquare,
-          #yaxis =list(range=c(0,1)),
-          xaxis =list(range=c(400,700))
+          # yaxis =list(range=c(0,1)),
+          xaxis = list(range = c(400, 700))
         )
 
       # Set source for selection event
@@ -94,7 +94,6 @@ mod_bottom_reflectance_server <- function(id, Obs){
       # Iframe to render svg properly
       widgetframe::frameableWidget(ply)
     })
-
   })
 }
 

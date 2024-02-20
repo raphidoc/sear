@@ -11,11 +11,10 @@
 #'
 #' @noRd
 read_mte_hocr <- function(BinFile) {
-
   # now source python onload
   reticulate::source_python(system.file("py", "hocr_mte.py", package = "sear", mustWork = T))
 
-  message(paste("Reading MTE",basename(BinFile)))
+  message(paste("Reading MTE", basename(BinFile)))
 
   RawHOCR <- purrr::map(BinFile, HocrMte$from_file)
 
@@ -25,10 +24,9 @@ read_mte_hocr <- function(BinFile) {
   # How to avoid: Error in py_ref_to_r(x) : Embedded NUL in string ? (packet 27281 of AlgaeValidation (2022/07/05))
 
   RawHOCR <- purrr::imap(RawHOCR, ~ {
-
     tryCatch(
       {
-        i = .y
+        i <- .y
         list(
           "channel" = .$channel,
           "checksum" = .$checksum,
@@ -37,33 +35,41 @@ read_mte_hocr <- function(BinFile) {
           "frame" = .$frame,
           "time" = .$time,
           "instrument" = tryCatch(
-            as.character(.$instrument), error = function(e) {
-              message(paste("Packet",i,"instrument",e))
+            as.character(.$instrument),
+            error = function(e) {
+              message(paste("Packet", i, "instrument", e))
               return(NA)
-            }),
+            }
+          ),
           "inttime" = .$inttime,
           "loggerport" = .$loggerport,
           "mysterydate" = .$mysterydate,
           "sampledelay" = .$sampledelay,
           "sn" = tryCatch(
-            as.character(.$sn), error = function(e) {
-              message(paste("Packet",i,"SN",e))
+            as.character(.$sn),
+            error = function(e) {
+              message(paste("Packet", i, "SN", e))
               return(NA)
-            }),
+            }
+          ),
           "spectemp" = tryCatch(
-            as.character(.$spectemp), error = function(e) {
-              message(paste("Packet",i,"spectemp",e))
+            as.character(.$spectemp),
+            error = function(e) {
+              message(paste("Packet", i, "spectemp", e))
               return(NA)
-            }),
+            }
+          ),
           "timer" = tryCatch(
-            as.character(.$timer), error = function(e) {
-              message(paste("Packet",i,"timer",e))
+            as.character(.$timer),
+            error = function(e) {
+              message(paste("Packet", i, "timer", e))
               return(NA)
-            })
+            }
+          )
         )
       },
       error = function(e) {
-        message(paste("Packet",i,e))
+        message(paste("Packet", i, e))
         return(NA)
       }
     )
@@ -80,11 +86,11 @@ read_mte_hocr <- function(BinFile) {
   ValidInd <- purrr::map_lgl(
     RawHOCR,
     ~ ifelse(
-        is.na(.x$instrument),
-        F,
-        str_detect(.x$instrument, "SAT(HPE|PED|HSE|HED|HPL|PLD|HSL|HLD)")
-        )
+      is.na(.x$instrument),
+      F,
+      str_detect(.x$instrument, "SAT(HPE|PED|HSE|HED|HPL|PLD|HSL|HLD)")
     )
+  )
 
   if (any(!ValidInd)) {
     message("Invalid HOCR packets detected and removed: ", length(which(!ValidInd)) + NaPackets)
@@ -108,7 +114,6 @@ read_mte_hocr <- function(BinFile) {
 #'
 #' @noRd
 read_satview_hocr <- function(RawFile) {
-
   reticulate::source_python(system.file("py", "hocr_satview.py", package = "sear", mustWork = T))
 
   RawHOCR <- purrr::map(RawFile, HocrSatview$from_file)
@@ -121,7 +126,7 @@ read_satview_hocr <- function(RawFile) {
   RawHOCR <- purrr::imap(.x = RawHOCR, ~ {
     tryCatch(
       {
-        i = .y
+        i <- .y
         list(
           "channel" = .x$channel,
           "checksum" = .x$checksum,
@@ -130,32 +135,40 @@ read_satview_hocr <- function(RawFile) {
           "frame" = .x$frame,
           "time" = .x$time,
           "instrument" = tryCatch(
-            as.character(.x$instrument), error = function(e) {
-              message(paste("Packet",i,"instrument",e))
+            as.character(.x$instrument),
+            error = function(e) {
+              message(paste("Packet", i, "instrument", e))
               return(NA)
-            }),
+            }
+          ),
           "inttime" = .x$inttime,
           "date" = .x$date,
           "sampledelay" = .x$sampledelay,
           "sn" = tryCatch(
-            as.character(.x$sn), error = function(e) {
-              message(paste("Packet",i,"sn",e))
+            as.character(.x$sn),
+            error = function(e) {
+              message(paste("Packet", i, "sn", e))
               return(NA)
-            }),
+            }
+          ),
           "spectemp" = tryCatch(
-            as.character(.x$spectemp), error = function(e) {
-              message(paste("Packet",i,"spectemp",e))
+            as.character(.x$spectemp),
+            error = function(e) {
+              message(paste("Packet", i, "spectemp", e))
               return(NA)
-            }),
+            }
+          ),
           "timer" = tryCatch(
-            as.character(.x$timer), error = function(e) {
-              message(paste("Packet",i,"timer",e))
+            as.character(.x$timer),
+            error = function(e) {
+              message(paste("Packet", i, "timer", e))
               return(NA)
-            })
+            }
+          )
         )
       },
       error = function(e) {
-        message(paste("Packet",i,"instrument",e))
+        message(paste("Packet", i, "instrument", e))
         return(NA)
       }
     )
@@ -196,10 +209,9 @@ read_satview_hocr <- function(RawFile) {
 #'
 #' @noRd
 filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
-
   Ind <- purrr::map_lgl(
     .x = as.numeric(HOCRTimeIndex),
-    ~ .x >= as.numeric(int_start(TimeInt))-1 & .x <= as.numeric(int_end(TimeInt))
+    ~ .x >= as.numeric(int_start(TimeInt)) - 1 & .x <= as.numeric(int_end(TimeInt))
   )
 
   RawHOCR[Ind]
@@ -217,18 +229,16 @@ filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
 #'
 #' @noRd
 tidy_hocr <- function(Packets, Date) {
-
   # If HOCR log with SatView, use there date time format
-  #if (!inherits(Date, "Date") && Date == "data") {
+  # if (!inherits(Date, "Date") && Date == "data") {
   if (any(str_detect(names(Packets), "^date$"))) {
-
     Year <- str_extract(Packets$date, "^[:digit:]{4}")
 
     DOY <- str_extract(Packets$date, "[:digit:]{3}$")
 
-    Date <-  as.Date(as.numeric(DOY)-1, origin = as.Date(paste0(Year,"-01-01")))
+    Date <- as.Date(as.numeric(DOY) - 1, origin = as.Date(paste0(Year, "-01-01")))
 
-    Time <- substring(Packets$time, c(1,3,5,7), c(2,4,6,9))
+    Time <- substring(Packets$time, c(1, 3, 5, 7), c(2, 4, 6, 9))
 
     HMS <- str_c(Time[1:3], collapse = ":")
     HMSmmm <- str_c(HMS, Time[4], sep = ".")
@@ -274,9 +284,6 @@ tidy_hocr <- function(Packets, Date) {
       Channels = Packets$channel
     )
   }
-
-
-
 }
 
 #' cal_inttime
@@ -297,21 +304,18 @@ cal_inttime <- function(RawData, INTTIME) {
 #'
 #' @noRd
 cal_optic3 <- function(.x, Instrument) {
-
   # In WISEMan 2019, in air calibration file HSL and HLD where used to calibrate the 0237
   # and 0238 HOCR in water.
   # This lead to a situation here where the wrong equation (immersion factor) would be applied
   # I don't know how to deal with such peculiarities and I don't need too
-  #(maybe with the "Type" column) Future self or others, have fun !
+  # (maybe with the "Type" column) Future self or others, have fun !
 
   if (str_detect(Instrument, "HSE|HED")) { # In air
 
     dplyr::mutate(.data = .x, Channels = 1.0 * a1 * (Channels - a0) * (cint / IntTime))
-
   } else if (str_detect(Instrument, "HPE|PED|HPL|PLD|HSL|HLD")) { # In water (HSL and HLD are normaly in water)
 
     dplyr::mutate(.data = .x, Channels = im * a1 * (Channels - a0) * (cint / IntTime))
-
   } else {
     warning(paste0("Instrument name not valid: ", Instrument))
   }
@@ -323,7 +327,6 @@ cal_optic3 <- function(.x, Instrument) {
 #'
 #' @noRd
 approx_tbl <- function(., TimeSeq) {
-
   tbl <- tibble(DateTime = TimeSeq)
 
   for (i in seq_along(colnames(.))[-1]) {
@@ -333,11 +336,12 @@ approx_tbl <- function(., TimeSeq) {
     colnames(tbl)[i] <- colnames(.)[i]
   }
 
-  tbl %>% mutate(
-    ID = seq_along(TimeSeq),
-    QC = "1",
-    .before = DateTime
-  ) %>%
+  tbl %>%
+    mutate(
+      ID = seq_along(TimeSeq),
+      QC = "1",
+      .before = DateTime
+    ) %>%
     mutate(
       DateTime = as.character(format(DateTime, "%Y-%m-%d %H:%M:%S"))
     )
@@ -352,7 +356,6 @@ approx_tbl <- function(., TimeSeq) {
 #'
 #' @noRd
 cal_dark <- function(RawHOCR, CalHOCR, Date) {
-
   RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., Date))
 
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
@@ -463,7 +466,6 @@ cal_dark <- function(RawHOCR, CalHOCR, Date) {
 #'
 #' @noRd
 cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, WaveSeq) {
-
   # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
     text <- "HOCR: "
@@ -608,7 +610,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
     mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
 
 
-# Data is at level L2s -------------------------------------------------------
+  # Data is at level L2s -------------------------------------------------------
 
   # Apply dark correction
 
@@ -620,7 +622,6 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   HOCRWide <- left_join(HOCRWide, HOCRDark, by = c("SN"))
 
   cor_dark <- function(x, y) {
-
     ID <- x[, 1]
     QC <- x[, 2]
     DateTime <- x[, 3]
@@ -675,10 +676,9 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   #   ))
 
   # This parameter should be an user input
-  #WaveSeq <- seq(353, 800, 3)
+  # WaveSeq <- seq(353, 800, 3)
 
   approx_wave <- function(., WaveSeq) {
-
     tbl <- tibble(
       QC = unique(.$QC),
       DateTime = unique(.$DateTime),
@@ -690,22 +690,25 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
     tbl <- bind_cols(tbl, Channels = coord[[2]])
 
     return(tbl)
-
   }
 
   L1bAproxLong <- HOCRLong %>%
     mutate(
-      AproxData = purrr::map(.x = AproxData, ~ .x %>% na.omit() %>% group_by(ID) %>% nest(.key = "Nest"))
+      AproxData = purrr::map(.x = AproxData, ~ .x %>%
+        na.omit() %>%
+        group_by(ID) %>%
+        nest(.key = "Nest"))
     )
 
   L1bAproxLong <- L1bAproxLong %>%
     mutate(
       AproxData = purrr::map(
-          AproxData, ~  purrr::map2_df(
-            .x = .$ID, .y = .$Nest,
-            .f = ~ bind_cols(ID = .x, approx_wave(.y, WaveSeq)))
+        AproxData, ~ purrr::map2_df(
+          .x = .$ID, .y = .$Nest,
+          .f = ~ bind_cols(ID = .x, approx_wave(.y, WaveSeq))
         )
       )
+    )
 
   # Should write down the structure of the return nested df
   # Instrument, SN, Data
@@ -724,7 +727,6 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 #' @noRd
 L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
                     Loess, Span, Obs) {
-
   L1bDataWide <- L1bData %>%
     mutate(AproxData = purrr::map(
       AproxData,
@@ -783,18 +785,18 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
   #
   # L1bAproxLong <- L1bAverageLong %>%
   #   mutate(IntData = purrr::map(AproxData, ~ approx_wave(., WaveSeq)))
-#
-#   L1bAproxWide <- L1bAproxLong %>%
-#     mutate(IntData = purrr::map(
-#       IntData,
-#       ~ pivot_wider(
-#         .,
-#         names_from = all_of(c("Type", "Wavelength")),
-#         names_sep = "_",
-#         values_from = Channels
-#       )
-#     )) %>%
-#     ungroup()
+  #
+  #   L1bAproxWide <- L1bAproxLong %>%
+  #     mutate(IntData = purrr::map(
+  #       IntData,
+  #       ~ pivot_wider(
+  #         .,
+  #         names_from = all_of(c("Type", "Wavelength")),
+  #         names_sep = "_",
+  #         values_from = Channels
+  #       )
+  #     )) %>%
+  #     ungroup()
 
   Es <- L1bDataWide %>%
     filter(SN %in% "1397" | SN == "1396" | SN == "0341") %>%
@@ -811,7 +813,7 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
     unnest(cols = c(AproxData)) %>%
     select(!matches("Instrument|SN|DateTime|UUID"))
 
-  #Z1Z2Depth <- 0.15 # Algae Wise 2022
+  # Z1Z2Depth <- 0.15 # Algae Wise 2022
 
   # Consider suppressWarnings(expr)
 
@@ -831,7 +833,6 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
     )
 
   if (Loess) {
-
     KLuloess <- loess(
       KLu ~ Wavelength,
       data = KLuLong,
@@ -852,10 +853,9 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
         names_sep = "_",
         values_from = c(KLu_loess)
       )
-
   }
 
-  #Z1Depth <- 0.10 # 10 cm
+  # Z1Depth <- 0.10 # 10 cm
 
   # 0.54 is the radiance transmittance for the air/water interface
   Lw <- 0.54 * LuZ1 * exp(-Z1Depth * KLuWide)
@@ -885,7 +885,6 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
     )
 
   if (Loess) {
-
     Rrsloess <- loess(
       Rrs ~ Wavelength,
       data = RrsLong,
@@ -897,7 +896,6 @@ L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
       mutate(
         Rrs_loess = predict(Rrsloess, Wavelength)
       )
-
   }
 
   L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")

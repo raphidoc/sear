@@ -47,10 +47,10 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
             ~ plot_ly(
               .x,
               text = ~ID,
-              customdata = ~paste0(.y,"_",ID)
+              customdata = ~ paste0(.y, "_", ID)
             ) %>%
               add_markers(
-                x = ~ymd_hms(DateTime),
+                x = ~ ymd_hms(DateTime),
                 y = ~Value,
                 showlegend = F,
                 color = ~QC,
@@ -63,7 +63,7 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
           )
         )
 
-      p <- subplot(ply$Plot, nrows = nrow(ply), shareX = TRUE, titleY = TRUE)%>%
+      p <- subplot(ply$Plot, nrows = nrow(ply), shareX = TRUE, titleY = TRUE) %>%
         event_register("plotly_click")
 
       # Set source for selection event
@@ -71,7 +71,6 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
-
     })
 
     observeEvent(
@@ -79,7 +78,6 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
       label = "QC BBFL2",
       ignoreInit = TRUE,
       {
-
         Selected <- stringr::str_split_fixed(
           event_data("plotly_click", source = "BBFL2L1b")$customdata,
           "_(?=[:digit:]{1,}?$)",
@@ -101,7 +99,6 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
               }
             )
           )
-
       }
     )
 
@@ -112,40 +109,40 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
       }
     )
 
-    output$DataTable <- DT::renderDataTable({
+    output$DataTable <- DT::renderDataTable(
+      {
+        validate(need(nrow(Obs$BBFL2$L2) != 0, "Process L2 to dispaly observation statistics"))
 
-      validate(need(nrow(Obs$BBFL2$L2) != 0, "Process L2 to dispaly observation statistics"))
-
-      Obs$BBFL2$L2 %>% DT::datatable(extensions = c("Buttons", "Scroller", "Select"),
-                                      # filter = "top",
-                                      escape = TRUE, rownames = FALSE,
-                                      style = "bootstrap",
-                                      class = "compact",
-                                      options = list(
-                                        dom = "Brtip",
-                                        select = list(style = "os", items = "row"),
-                                        buttons = list(I("colvis"), "selectNone", "csv"),
-                                        columnDefs = list(
-                                          list(
-                                            visible = FALSE,
-                                            targets = c()
-                                          )
-                                        ),
-                                        deferRender = TRUE,
-                                        scrollY = 100,
-                                        pageLength = 10,
-                                        scroller = TRUE
-                                      ),
-                                      selection = "none",
-                                      editable = F
-      ) %>%
-        DT::formatRound(c("NTU", "PC", "PE"), digits=3)
-
-    },
-    server = FALSE,
-    editable = F
+        Obs$BBFL2$L2 %>%
+          DT::datatable(
+            extensions = c("Buttons", "Scroller", "Select"),
+            # filter = "top",
+            escape = TRUE, rownames = FALSE,
+            style = "bootstrap",
+            class = "compact",
+            options = list(
+              dom = "Brtip",
+              select = list(style = "os", items = "row"),
+              buttons = list(I("colvis"), "selectNone", "csv"),
+              columnDefs = list(
+                list(
+                  visible = FALSE,
+                  targets = c()
+                )
+              ),
+              deferRender = TRUE,
+              scrollY = 100,
+              pageLength = 10,
+              scroller = TRUE
+            ),
+            selection = "none",
+            editable = F
+          ) %>%
+          DT::formatRound(c("NTU", "PC", "PE"), digits = 3)
+      },
+      server = FALSE,
+      editable = F
     )
-
   })
 }
 

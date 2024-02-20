@@ -378,21 +378,22 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         options = list(
           create = FALSE,
           placeholder = "Search My UUID",
-          maxItems = '1',
+          maxItems = "1",
           onDropdownOpen = I("function($dropdown) {if (!this.lastQuery.length) {this.close(); this.settings.openOnFocus = false;}}"),
           onType = I("function (str) {if (str === \"\") {this.close();}}")
         )
       )
-
     })
 
     observeEvent(
       ObsMeta()$UUID,
       {
-      updateSelectizeInput(
-        session = getDefaultReactiveDomain(),
-        "ObsList", choices = c("", ObsMeta()$UUID), server = T)
-    })
+        updateSelectizeInput(
+          session = getDefaultReactiveDomain(),
+          "ObsList", choices = c("", ObsMeta()$UUID), server = T
+        )
+      }
+    )
 
     output$ExportDB <- renderUI({
       req(Con())
@@ -402,7 +403,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     })
 
 
-# Download SQLite DB ------------------------------------------------------
+    # Download SQLite DB ------------------------------------------------------
 
     output$DownloadDB <- downloadHandler(
       filename = function() {
@@ -416,27 +417,25 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     observeEvent(
       input$ExportDB,
       {
-
         browser()
 
-#         "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
-#           LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
-#
-#         "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, VSF_700, Chl, FDOM FROM Metadata
-# LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID
-# LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
-# LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID
-# LEFT JOIN SeaOWLL2 ON Metadata.UUID = SeaOWLL2.UUID;"
-#
-#         Long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
-#         Wide <- Long %>%
-#           pivot_wider(
-#             names_prefix = "Rrs_",
-#             names_from = Wavelength,
-#             values_from = Rrs
-#           )
-#         write_csv(Wide, "/D/Documents/Algae-WISE_jet-ski_Rrs_wide.csv")
-
+        #         "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
+        #           LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
+        #
+        #         "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, VSF_700, Chl, FDOM FROM Metadata
+        # LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID
+        # LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
+        # LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID
+        # LEFT JOIN SeaOWLL2 ON Metadata.UUID = SeaOWLL2.UUID;"
+        #
+        #         Long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
+        #         Wide <- Long %>%
+        #           pivot_wider(
+        #             names_prefix = "Rrs_",
+        #             names_from = Wavelength,
+        #             values_from = Rrs
+        #           )
+        #         write_csv(Wide, "/D/Documents/Algae-WISE_jet-ski_Rrs_wide.csv")
       }
     )
 

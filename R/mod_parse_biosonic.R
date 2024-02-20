@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_parse_biosonic_ui <- function(id){
+mod_parse_biosonic_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("Load"))
@@ -17,21 +17,19 @@ mod_parse_biosonic_ui <- function(id){
 #' parse_biosonic Server Functions
 #'
 #' @noRd
-mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
-  moduleServer( id, function(input, output, session){
+mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
       fileInput(ns("Files"), "Choose BioSonic .csv Files", accept = c(".csv"), multiple = T)
-
     })
 
     observeEvent(
       input$Files,
       {
-
         RawDir <- file.path(SearProj()$ProjPath, "sear", "data", "raw")
 
         dir.create(RawDir, recursive = TRUE)
@@ -51,17 +49,15 @@ mod_parse_biosonic_server <- function(id, SearProj, ParsedFiles){
 
         BioSonic <- read_biosonic(Files$rawpath)
 
-        PotBioSonic <- file.path(ParsedDir, paste0("biosonic_",DateRange,".csv"))
+        PotBioSonic <- file.path(ParsedDir, paste0("biosonic_", DateRange, ".csv"))
 
         write_csv(BioSonic, PotBioSonic)
-
       }
     )
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
 
     return(reactive(input$Files))
-
   })
 }
 

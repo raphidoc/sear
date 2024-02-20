@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup}
-#golem::document_and_reload()
+# golem::document_and_reload()
 
 library(sear)
 library(dplyr)
@@ -198,18 +198,16 @@ greater and lower than number of second, maybe faster than `%within%` time.
 
 ```{r}
 filter_hocr_time <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
-
   Ind <- purrr::map_lgl(.x = HOCRTimeIndex, ~ .x %within% TimeInt)
 
   RawHOCR[Ind]
 }
 
 filter_hocr_numeric <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
-
   Ind <- purrr::map_lgl(
     .x = as.numeric(HOCRTimeIndex),
     ~ .x >= as.numeric(int_start(TimeInt)) & .x <= as.numeric(int_end(TimeInt))
-    )
+  )
 
   RawHOCR[Ind]
 }

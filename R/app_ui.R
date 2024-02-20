@@ -5,14 +5,12 @@
 #' @import shiny shinydashboard plotly
 #' @noRd
 app_ui <- function(request) {
-
-
   Header <- dashboardHeader(
     title = tags$a(
       id = "app-name",
       href = "https://github.com/raphidoc/sear",
-      target="_blank",
-      rel="noopener noreferrer",
+      target = "_blank",
+      rel = "noopener noreferrer",
       tags$img(src = "www/logo_sear_2.png", width = "100px", height = "40px"),
       "sear"
     )
@@ -43,7 +41,7 @@ app_ui <- function(request) {
       tabItem(
         tabName = "Settings",
         mod_settings_ui("settings")
-        ),
+      ),
       tabItem(
         tabName = "Parsing",
         fluidRow(
@@ -86,7 +84,7 @@ app_ui <- function(request) {
   )
 }
 
-#app_ui <- shinymanager::secure_app(app_ui, enable_admin = TRUE)
+# app_ui <- shinymanager::secure_app(app_ui, enable_admin = TRUE)
 
 #' Add external Resources to the Application
 #'
@@ -111,7 +109,7 @@ golem_add_external_resources <- function() {
       path = app_sys("app/www"),
       app_title = "sear"
     ),
-    tags$link(rel="stylesheet", type="text/css", href="www/custom.css")
+    tags$link(rel = "stylesheet", type = "text/css", href = "www/custom.css")
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
   )

@@ -13,23 +13,20 @@
 #' @export
 
 data_synthesis <- function(x, y, tol = 3) {
-
   # as.POSIXct(y, tz = "UTC")
 
   # Recursive time matching algorithm splicing in half each time
-  half_life <- function(x, y, tol = tol){
-
+  half_life <- function(x, y, tol = tol) {
     condition <- T
     y3 <- y
 
-    while (condition){
-
-      y2 <- y3[length(y3)/2]
+    while (condition) {
+      y2 <- y3[length(y3) / 2]
 
       if (x <= y2) {
-        y3 <- y3[1:(length(y3)/2)]
+        y3 <- y3[1:(length(y3) / 2)]
       } else {
-        y3 <- y3[(length(y3)/2+1):length(y3)]
+        y3 <- y3[(length(y3) / 2 + 1):length(y3)]
       }
 
       condition <- length(y3) <= 3
@@ -42,7 +39,6 @@ data_synthesis <- function(x, y, tol = 3) {
     .x = x,
     ~ half_life(as.numeric(.x), as.numeric(y), tol = tol)
   )
-
 }
 
 #' discretize_time
@@ -54,21 +50,21 @@ data_synthesis <- function(x, y, tol = 3) {
 #' @noRd
 
 discretize_time <- function(MainTime) {
-  i = 1
-  j = 1
+  i <- 1
+  j <- 1
   while (T) {
     if (length(MainTime) < i + 1) {
       message("This is the end")
       break
     }
 
-    j = i
+    j <- i
 
-    x = MainTime[i]
-    y = MainTime[j + 1]
+    x <- MainTime[i]
+    y <- MainTime[j + 1]
 
     if (interval(x, y) > seconds(10)) {
-      i = j + 1
+      i <- j + 1
       message("next next")
       next
     }
@@ -80,8 +76,8 @@ discretize_time <- function(MainTime) {
         break
       }
 
-      j = j + 1
-      y = MainTime[j]
+      j <- j + 1
+      y <- MainTime[j]
     }
 
     # At this point. this should always be true
@@ -90,7 +86,7 @@ discretize_time <- function(MainTime) {
       print(paste(i, interval(x, y)))
     }
 
-    i = j + 1
+    i <- j + 1
   }
 }
 
@@ -110,10 +106,9 @@ discretize_time <- function(MainTime) {
 #'
 #' @noRd
 
-gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
-
+gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select) {
   MetadataL2 <- tibble(
-    DateTime = as.character(format(mean(Select$DateTime, na.rm = T) , "%Y-%m-%d %H:%M:%S")),
+    DateTime = as.character(format(mean(Select$DateTime, na.rm = T), "%Y-%m-%d %H:%M:%S")),
     DateTimeMin = as.character(min(Select$DateTime, na.rm = T)),
     DateTimeMax = as.character(max(Select$DateTime, na.rm = T)),
     TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
@@ -140,7 +135,8 @@ gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     mutate(
       RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_vessel_frame),
       .before = Comment
-    ) %>% unnest(cols = c(RotatedBody))
+    ) %>%
+    unnest(cols = c(RotatedBody))
 
   return(MetadataL2)
 }
@@ -161,8 +157,7 @@ gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
 #'
 #' @noRd
 
-gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
-
+gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select) {
   MetadataL1b <- tibble(
     DateTime = as.character(format(Select$DateTime, "%Y-%m-%d %H:%M:%S")),
     Speed = as.numeric(Select$Speed_kmh), # speed in kmh
@@ -183,7 +178,8 @@ gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
     mutate(
       RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_vessel_frame),
       .before = UUID
-    ) %>% unnest(cols = c(RotatedBody))
+    ) %>%
+    unnest(cols = c(RotatedBody))
 
   return(MetadataL1b)
 }
@@ -203,7 +199,6 @@ gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select){
 # }
 
 qc_shift <- function(df, Selected) {
-
   df %>%
     mutate(
       QC = case_when(
@@ -229,19 +224,17 @@ qc_shift <- function(df, Selected) {
 #' @export
 
 qc_qwip <- function(Waves, Rrs) {
-
-
   # Compute the Apparent Visible Wavelength (AVW)
   Waves.int <- (400:700)
-  Rrs.int <- spline(Waves, Rrs, xout=Waves.int, method = "natural")$y
+  Rrs.int <- spline(Waves, Rrs, xout = Waves.int, method = "natural")$y
 
-  AVW     <- sum(Rrs.int)/sum(Rrs.int/Waves.int)
+  AVW <- sum(Rrs.int) / sum(Rrs.int / Waves.int)
 
   # Compute Normalized Difference Index (NDI)
   ix.492 <- which(Waves.int == 492)
   ix.560 <- which(Waves.int == 560)
   ix.665 <- which(Waves.int == 665)
-  NDI     <- (Rrs.int[ix.665] - Rrs.int[ix.492])/(Rrs.int[ix.665] + Rrs.int[ix.492])
+  NDI <- (Rrs.int[ix.665] - Rrs.int[ix.492]) / (Rrs.int[ix.665] + Rrs.int[ix.492])
 
   # Compute the QWIP
   p1 <- -8.399885e-9
@@ -249,35 +242,35 @@ qc_qwip <- function(Waves, Rrs) {
   p3 <- -1.301670e-2
   p4 <- 4.357838e0
   p5 <- -5.449532e2
-  QWIP <- p1*(AVW^4) + p2*(AVW^3) + p3*(AVW^2) + p4*AVW   + p5
+  QWIP <- p1 * (AVW^4) + p2 * (AVW^3) + p3 * (AVW^2) + p4 * AVW + p5
 
   # QWIP Score
-  Score = NDI - QWIP
+  Score <- NDI - QWIP
 
   if (abs(Score) < 0.1) Pass <- TRUE else Pass <- FALSE
 
   predicted.AVW <- 440:600
-  predicted.NDI <- p1*(predicted.AVW^4) +
-    p2*(predicted.AVW^3) +
-    p3*(predicted.AVW^2) +
-    p4*predicted.AVW   + p5
+  predicted.NDI <- p1 * (predicted.AVW^4) +
+    p2 * (predicted.AVW^3) +
+    p3 * (predicted.AVW^2) +
+    p4 * predicted.AVW + p5
 
   # Classified the spectrum
   if (Rrs.int[ix.665] > Rrs.int[ix.560] | Rrs.int[ix.665] > 0.025) {
-    class = "Red"
-    class.col = "#c80d0d"
+    class <- "Red"
+    class.col <- "#c80d0d"
   } else {
     if (Rrs.int[ix.560] < Rrs.int[ix.492]) {
-      class = "Blue"
-      class.col = "#0888e0"
+      class <- "Blue"
+      class.col <- "#0888e0"
     } else {
-      class = "Green"
-      class.col = "#47bf13"
+      class <- "Green"
+      class.col <- "#47bf13"
     }
   }
 
   # Get FU color scale
-  #FU <- Rrs2FU(Waves, Rrs)$FU
+  # FU <- Rrs2FU(Waves, Rrs)$FU
 
 
   # # Plot
@@ -318,10 +311,9 @@ qc_qwip <- function(Waves, Rrs) {
   #   }
   #
   #   print(p)
-  #}
+  # }
 
   return(list("Score" = Score, "Pass" = Pass))
-
 }
 
 #' unique_datetime_second
@@ -335,25 +327,21 @@ qc_qwip <- function(Waves, Rrs) {
 #' @noRd
 
 unique_datetime_second <- function(data) {
-
   nm <- deparse(substitute(data))
 
   if (length(unique(as.numeric(data$DateTime))) == length(as.numeric(data$DateTime))) {
-
     message(paste0("No duplicated second in ", nm))
-
   } else {
-
     Nsec <- length(data$DateTime[duplicated(data$DateTime)])
 
     warning(
-      paste("Removing", Nsec, "duplicated second", nm, "at:",
-            paste(data$DateTime[duplicated(data$DateTime)], collapse = ", ")
+      paste(
+        "Removing", Nsec, "duplicated second", nm, "at:",
+        paste(data$DateTime[duplicated(data$DateTime)], collapse = ", ")
       )
     )
 
     data <- data[!duplicated(data$DateTime), ]
-
   }
 
   return(data)
@@ -390,7 +378,7 @@ rotate_vessel_frame <- function(Heading, Pitch, Roll) {
   RotationMatrix <- RotationZ %*% RotationY %*% RotationX
 
   # Original body frame vectors (X, Y, Z)
-  BodyVectors <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3)  # Unit vectors
+  BodyVectors <- matrix(c(1, 0, 0, 0, 1, 0, 0, 0, 1), nrow = 3) # Unit vectors
 
   # Rotate the body frame vectors
   RotatedVectors <- RotationMatrix %*% BodyVectors
@@ -402,7 +390,7 @@ rotate_vessel_frame <- function(Heading, Pitch, Roll) {
     rename(VesselX = V1, VesselY = V2, VesselZ = V3) %>%
     pivot_wider(
       names_from = Coord,
-      values_from = c(VesselX,VesselY,VesselZ),
+      values_from = c(VesselX, VesselY, VesselZ),
       names_sep = ""
     )
 

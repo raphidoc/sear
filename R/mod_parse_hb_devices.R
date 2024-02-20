@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_parse_hb_devices_ui <- function(id){
+mod_parse_hb_devices_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("Load"))
@@ -17,21 +17,19 @@ mod_parse_hb_devices_ui <- function(id){
 #' hb_devices Server Functions
 #'
 #' @noRd
-mod_parse_hb_devices_server <- function(id, SearProj, ParsedFiles){
-  moduleServer( id, function(input, output, session){
+mod_parse_hb_devices_server <- function(id, SearProj, ParsedFiles) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
       fileInput(ns("Files"), "Choose HydroBall Devices .txt Files", accept = c(".txt", ".TXT"), multiple = T)
-
     })
 
     observeEvent(
       input$Files,
       {
-
         RawDir <- file.path(SearProj()$ProjPath, "sear", "data", "raw")
 
         dir.create(RawDir, recursive = TRUE)
@@ -48,7 +46,7 @@ mod_parse_hb_devices_server <- function(id, SearProj, ParsedFiles){
         Time <- str_split(TimeTag, "-")[[1]][1]
         Date <- str_split(TimeTag, "-")[[1]][2]
 
-        DateTime <- ymd_hms(paste(Date,Time))
+        DateTime <- ymd_hms(paste(Date, Time))
 
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
@@ -57,15 +55,13 @@ mod_parse_hb_devices_server <- function(id, SearProj, ParsedFiles){
         # No date is available in the devices files, take it from the file name
         HBDevices <- read_hb_devices(Files$rawpath, date(DateTime))
 
-        PotHBDevices <- file.path(ParsedDir, paste0("hb_devices_",format(DateTime, "%Y%m%d_%H%M%S"),".csv"))
+        PotHBDevices <- file.path(ParsedDir, paste0("hb_devices_", format(DateTime, "%Y%m%d_%H%M%S"), ".csv"))
 
         write_csv(HBDevices, PotHBDevices)
-
       }
     )
 
     return(reactive(input$Files))
-
   })
 }
 

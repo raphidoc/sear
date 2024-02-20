@@ -18,18 +18,16 @@ mod_L1b_process_ui <- function(id) {
 #'
 #' @noRd
 mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Settings) {
-
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     observeEvent(
       list(
         input$ProcessL1b
-        ),
+      ),
       label = "processL1b",
       ignoreInit = T,
       {
-
         if (is.null(L1a$InstrumentList())) {
           showModal(modalDialog(
             title = "No instrument selected",
@@ -74,7 +72,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
         # HOCR L1b ----------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
-
           # Create a callback function to update progress.
           # Each time this is called:
           # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
@@ -101,7 +98,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
               "HOCR calibration data not loaded"
             )
           } else {
-
             # Select nearest dark data
             ObsTime <- int_end(TimeInt / 2)
 
@@ -134,7 +130,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
         # SBE19 L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "SBE19"))) {
-
           progress$set(message = "Processing L1b: ", value = progress$getValue())
 
           progress$set(value = 0.3, detail = "SBE19")
@@ -146,14 +141,13 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
 
           if (nrow(SBE19) == 0) {
             warning(
-              paste0("SBE19 data not found at time interval: ",TimeInt)
+              paste0("SBE19 data not found at time interval: ", TimeInt)
             )
           } else if (is.null(CalData$CalSBE19()) | is.null(CalData$CalSBE18()) | is.null(CalData$CalSBE43())) {
             warning(
               "SBE19 | SBE18 | SBE43 calibration data not loaded"
             )
           } else {
-
             SBE19 <- cal_sbe19(SBE19, Lon, Lat) %>%
               mutate(
                 Oxygen = cal_sbe43( # Oxygen in ml/l multiply by 1.42903 to get mg/l
@@ -190,7 +184,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
               )
 
             Obs$SBE19$L1b <- SBE19 %>%
-              select(!any_of(c("Conductivity", "CT", "O2Sol")))%>%
+              select(!any_of(c("Conductivity", "CT", "O2Sol"))) %>%
               pivot_longer(
                 cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
                 names_to = "Parameter",
@@ -199,27 +193,24 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
               group_by(Parameter) %>%
               nest(Data = !matches("Parameter"))
           }
-
         }
 
         # SeaOWL L1b --------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "SeaOWL"))) {
-
           progress$set(value = 0.4, detail = "SeaOWL")
 
           SeaOWL <- L1a$SeaOWL() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(SeaOWL) == 0) {
             warning(
-              paste0("SeaOWL data not found at time interval: ",TimeInt)
+              paste0("SeaOWL data not found at time interval: ", TimeInt)
             )
           } else if (is.null(CalData$CalSeaOWL())) {
             warning(
               "SeaOWL calibration data not loaded"
             )
           } else {
-
             SeaOWLL1b <- cal_seaowl(SeaOWL, CalData$CalSeaOWL()) %>%
               mutate(
                 ID = seq_along(rownames(SeaOWL)),
@@ -227,7 +218,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
               )
 
             Obs$SeaOWL$L1b <- SeaOWLL1b %>%
-              select(!any_of(c("SN")))%>%
+              select(!any_of(c("SN"))) %>%
               pivot_longer(
                 cols = any_of(c("VSF_700", "Chl", "FDOM")),
                 names_to = "Parameter",
@@ -241,21 +232,19 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
         # BBFL2 L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "BBFL2"))) {
-
           progress$set(value = 0.5, detail = "BBFL2")
 
           BBFL2 <- L1a$BBFL2() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(BBFL2) == 0) {
             warning(
-              paste0("BBFL2 data not found at time interval: ",TimeInt)
+              paste0("BBFL2 data not found at time interval: ", TimeInt)
             )
           } else if (is.null(CalData$CalBBFL2())) {
             warning(
               "BBFL2 calibration data not loaded"
             )
           } else {
-
             BBFL2L1b <- cal_bbfl2(BBFL2, CalData$CalBBFL2()) %>%
               mutate(
                 ID = seq_along(rownames(BBFL2)),
@@ -271,23 +260,20 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
               group_by(Parameter) %>%
               nest(Data = !matches("Parameter"))
           }
-
         }
 
         # BioSonic L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "BioSonic"))) {
-
           progress$set(value = 0.6, detail = "BioSonic")
 
           BioSonicL1b <- L1a$BioSonic() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(BioSonicL1b) == 0) {
             warning(
-              paste0("BioSonic data not found at time interval: ",TimeInt)
-              )
+              paste0("BioSonic data not found at time interval: ", TimeInt)
+            )
           } else {
-
             Obs$BioSonic$L1b <- BioSonicL1b %>%
               rename(Lon = Longitude_deg, Lat = Latitude_deg) %>%
               select(
@@ -299,35 +285,32 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
                 PlantHeight_m,
                 PercentCoverage
               )
-              # mutate(
-              #   ID = seq_along(rownames(BioSonicL1b)),
-              #   QC = "1"
-              # )
-
+            # mutate(
+            #   ID = seq_along(rownames(BioSonicL1b)),
+            #   QC = "1"
+            # )
           }
         }
 
 
-# HydroBall L1b -----------------------------------------------------------
+        # HydroBall L1b -----------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "HydroBall"))) {
-
           progress$set(value = 0.6, detail = "HydroBall")
 
           HydroBallL1b <- L1a$HBDevices() %>% filter(DateTime %within% TimeInt)
 
           if (nrow(HydroBallL1b) == 0) {
             warning(
-              paste0("HydroBall data not found at time interval: ",TimeInt)
+              paste0("HydroBall data not found at time interval: ", TimeInt)
             )
           } else {
-
             Obs$HydroBall$L1b <- HydroBallL1b %>%
               rename(H = DBT_meter) %>%
               mutate(
                 H = if_else(H == 0, NA, H),
                 H = -H
-                ) %>%
+              ) %>%
               select(
                 Lon,
                 Lat,
@@ -335,18 +318,16 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
                 Altitude,
                 H
               )
-
           }
         }
 
         progress$set(value = 1, detail = "Done")
-
       }
     )
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
     list(
-      #SelMainLog = L1aSelect$MainLog,
+      # SelMainLog = L1aSelect$MainLog,
       Map = L1aSelect$Map,
       ProcessL1b = reactive(input$ProcessL1b)
     )

@@ -7,31 +7,29 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_settings_ui <- function(id){
+mod_settings_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     uiOutput(ns("WaveSeq")),
     uiOutput(ns("PositionHOCR"))
-
   )
 }
 
 #' settings Server Functions
 #'
 #' @noRd
-mod_settings_server <- function(id, SearProj, ActiveMenu){
-  moduleServer( id, function(input, output, session){
+mod_settings_server <- function(id, SearProj, ActiveMenu) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
 
-    LastSettings <-reactiveVal()
+    LastSettings <- reactiveVal()
 
     observeEvent(
       {
         SearProj$Con()
-      },{
-
+      },
+      {
         DBI::dbSendStatement(
           SearProj$Con(),
           "CREATE TABLE IF NOT EXISTS `Settings` (
@@ -49,9 +47,8 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
         )
 
         LastSettings(tibble(DBI::dbGetQuery(SearProj$Con(), "SELECT * FROM Settings ORDER BY DateTime DESC LIMIT 1;")))
-
       }
-      )
+    )
 
     observeEvent(
       {
@@ -61,8 +58,8 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
               last(ActiveMenu() != "Settings")
           )
         )
-      },{
-
+      },
+      {
         req(SearProj$Con())
 
         NewSettings <- tibble(
@@ -76,26 +73,27 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
         )
 
         DBI::dbWriteTable(SearProj$Con(), "Settings", NewSettings, append = TRUE)
-
       }
     )
 
     output$WaveSeq <- renderUI({
-
       req(SearProj$History())
 
 
       WaveMin <- ifelse(
         identical(LastSettings()$WaveMin, as.numeric()),
-        353, LastSettings()$WaveMin)
+        353, LastSettings()$WaveMin
+      )
 
       WaveMax <- ifelse(
         identical(LastSettings()$WaveMax, as.numeric()),
-        800, LastSettings()$WaveMax)
+        800, LastSettings()$WaveMax
+      )
 
       WaveStep <- ifelse(
         identical(LastSettings()$WaveStep, as.numeric()),
-        3, LastSettings()$WaveStep)
+        3, LastSettings()$WaveStep
+      )
 
       tagList(
         numericInput(
@@ -126,10 +124,9 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
           width = NULL
         )
       )
-
     })
 
-    #TODO: Validate input unit (meter) based on reasonable value assumption.
+    # TODO: Validate input unit (meter) based on reasonable value assumption.
     # For example if input = 15, user probably want to say 0.15 ... from personal experience
 
     output$PositionHOCR <- renderUI({
@@ -137,11 +134,13 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
 
       Z1Depth <- ifelse(
         identical(LastSettings()$Z1Depth, as.numeric()),
-        NA, LastSettings()$Z1Depth)
+        NA, LastSettings()$Z1Depth
+      )
 
       Z1Z2Depth <- ifelse(
         identical(LastSettings()$Z1Z2Depth, as.numeric()),
-        NA, LastSettings()$Z1Z2Depth)
+        NA, LastSettings()$Z1Z2Depth
+      )
 
       tagList(
         numericInput(
@@ -163,22 +162,19 @@ mod_settings_server <- function(id, SearProj, ActiveMenu){
           width = NULL
         )
       )
-
     })
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
 
-Settings <- reactiveValues(
-  HOCR = reactiveValues(
-    WaveMin = reactive(input$WaveMin),
-    WaveMax = reactive(input$WaveMax),
-    WaveStep = reactive(input$WaveStep),
-    Z1Depth = reactive(input$Z1Depth),
-    Z1Z2Depth = reactive(input$Z1Z2Depth),
-
-  )
-)
-
+    Settings <- reactiveValues(
+      HOCR = reactiveValues(
+        WaveMin = reactive(input$WaveMin),
+        WaveMax = reactive(input$WaveMax),
+        WaveStep = reactive(input$WaveStep),
+        Z1Depth = reactive(input$Z1Depth),
+        Z1Z2Depth = reactive(input$Z1Z2Depth),
+      )
+    )
   })
 }
 

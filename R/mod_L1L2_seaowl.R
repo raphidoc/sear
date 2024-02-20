@@ -24,7 +24,6 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
     ns <- session$ns
 
     output$SeaOWLL1b <- renderPlotly({
-
       validate(need(nrow(Obs$SeaOWL$L1b) != 0, "No L1b data"))
 
       PlyFont <- list(family = "Times New Roman", size = 18)
@@ -46,12 +45,12 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
             .x = Data,
             .y = Parameter,
             ~ plot_ly(
-                .x,
-                text = ~ID,
-                customdata = ~paste0(.y,"_",ID)
+              .x,
+              text = ~ID,
+              customdata = ~ paste0(.y, "_", ID)
             ) %>%
               add_markers(
-                x = ~ymd_hms(DateTime),
+                x = ~ ymd_hms(DateTime),
                 y = ~Value,
                 showlegend = F,
                 color = ~QC,
@@ -64,7 +63,7 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
           )
         )
 
-      p <- subplot(ply$Plot, nrows = nrow(ply), shareX = TRUE, titleY = TRUE)%>%
+      p <- subplot(ply$Plot, nrows = nrow(ply), shareX = TRUE, titleY = TRUE) %>%
         event_register("plotly_click")
 
       # Set source for selection event
@@ -72,7 +71,6 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
-
     })
 
     observeEvent(
@@ -80,7 +78,6 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
       label = "QC SeaOWL",
       ignoreInit = TRUE,
       {
-
         Selected <- stringr::str_split_fixed(
           event_data("plotly_click", source = "SeaOWLL1b")$customdata,
           "_(?=[:digit:]{1,}?$)",
@@ -102,7 +99,6 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
               }
             )
           )
-
       }
     )
 
@@ -113,41 +109,41 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
       }
     )
 
-    output$DataTable <- DT::renderDataTable({
+    output$DataTable <- DT::renderDataTable(
+      {
+        validate(need(nrow(Obs$SeaOWL$L2) != 0, "Process L2 to dispaly observation statistics"))
 
-      validate(need(nrow(Obs$SeaOWL$L2) != 0, "Process L2 to dispaly observation statistics"))
-
-      Obs$SeaOWL$L2 %>% DT::datatable(extensions = c("Buttons", "Scroller", "Select"),
-                    # filter = "top",
-                    escape = TRUE, rownames = FALSE,
-                    style = "bootstrap",
-                    class = "compact",
-                    options = list(
-                      dom = "Brtip",
-                      select = list(style = "os", items = "row"),
-                      buttons = list(I("colvis"), "selectNone", "csv"),
-                      columnDefs = list(
-                        list(
-                          visible = FALSE,
-                          targets = c()
-                        )
-                      ),
-                      deferRender = TRUE,
-                      scrollY = 100,
-                      pageLength = 10,
-                      scroller = TRUE
-                    ),
-                    selection = "none",
-                    editable = F
-      ) %>%
-        DT::formatRound(c("VSF_700"), digits=5) %>%
-        DT::formatRound(c("Chl", "FDOM"), digits=3)
-
+        Obs$SeaOWL$L2 %>%
+          DT::datatable(
+            extensions = c("Buttons", "Scroller", "Select"),
+            # filter = "top",
+            escape = TRUE, rownames = FALSE,
+            style = "bootstrap",
+            class = "compact",
+            options = list(
+              dom = "Brtip",
+              select = list(style = "os", items = "row"),
+              buttons = list(I("colvis"), "selectNone", "csv"),
+              columnDefs = list(
+                list(
+                  visible = FALSE,
+                  targets = c()
+                )
+              ),
+              deferRender = TRUE,
+              scrollY = 100,
+              pageLength = 10,
+              scroller = TRUE
+            ),
+            selection = "none",
+            editable = F
+          ) %>%
+          DT::formatRound(c("VSF_700"), digits = 5) %>%
+          DT::formatRound(c("Chl", "FDOM"), digits = 3)
       },
       server = FALSE,
       editable = F
     )
-
   })
 }
 

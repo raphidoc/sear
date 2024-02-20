@@ -55,12 +55,12 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
             .x = Data,
             .y = Parameter,
             ~ plot_ly(
-                .x,
-                text = ~ID,
-                customdata = ~paste0(.y,"_",ID)
-              ) %>%
+              .x,
+              text = ~ID,
+              customdata = ~ paste0(.y, "_", ID)
+            ) %>%
               add_markers(
-                x = ~ymd_hms(DateTime),
+                x = ~ ymd_hms(DateTime),
                 y = ~Value,
                 showlegend = F,
                 color = ~QC,
@@ -81,7 +81,6 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
-
     })
 
     # Get the ID of HOCR spectra selected in: selected()$customdata
@@ -90,29 +89,27 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
       label = "QC SBE19",
       ignoreInit = TRUE,
       {
-
         Selected <- stringr::str_split_fixed(
           event_data("plotly_click", source = "SBE19L1b")$customdata,
           "_",
           n = 2
-          )
+        )
 
         SelParam <- Selected[1]
         SelID <- Selected[2]
 
-       Obs$SBE19$L1b <- Obs$SBE19$L1b %>%
-         mutate(
-           Data = purrr::map2(
-             .x = Parameter,
-             .y = Data,
-             ~ if (.x == SelParam) {
-               qc_shift(.y, SelID)
-             } else {
-               .y
-             }
-           )
-         )
-
+        Obs$SBE19$L1b <- Obs$SBE19$L1b %>%
+          mutate(
+            Data = purrr::map2(
+              .x = Parameter,
+              .y = Data,
+              ~ if (.x == SelParam) {
+                qc_shift(.y, SelID)
+              } else {
+                .y
+              }
+            )
+          )
       }
     )
 
@@ -123,36 +120,35 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
       }
     )
 
-    output$DataTable <- DT::renderDataTable({
+    output$DataTable <- DT::renderDataTable(
+      {
+        validate(need(nrow(Obs$SBE19$L2) != 0, "Process L2 to dispaly observation statistics"))
 
-      validate(need(nrow(Obs$SBE19$L2) != 0, "Process L2 to dispaly observation statistics"))
-
-      DT::datatable(Obs$SBE19$L2,
-                    extensions = c("Buttons", "Scroller", "Select"),
-                    # filter = "top",
-                    escape = TRUE, rownames = FALSE,
-                    style = "bootstrap",
-                    class = "compact",
-                    options = list(
-                      dom = "Brtip",
-                      select = list(style = "os", items = "row"),
-                      buttons = list(I("colvis"), "selectNone", "csv"),
-                      columnDefs = list(
-                        list(
-                          visible = FALSE,
-                          targets = c()
-                        )
-                      ),
-                      deferRender = TRUE,
-                      scrollY = 100,
-                      pageLength = 10,
-                      scroller = TRUE
-                    ),
-                    selection = "none",
-                    editable = F
-      ) %>%
-        DT::formatRound(c("OxSol", "Oxygen", "pH", "Pressure", "SA", "SP", "Temperature"), digits=3)
-
+        DT::datatable(Obs$SBE19$L2,
+          extensions = c("Buttons", "Scroller", "Select"),
+          # filter = "top",
+          escape = TRUE, rownames = FALSE,
+          style = "bootstrap",
+          class = "compact",
+          options = list(
+            dom = "Brtip",
+            select = list(style = "os", items = "row"),
+            buttons = list(I("colvis"), "selectNone", "csv"),
+            columnDefs = list(
+              list(
+                visible = FALSE,
+                targets = c()
+              )
+            ),
+            deferRender = TRUE,
+            scrollY = 100,
+            pageLength = 10,
+            scroller = TRUE
+          ),
+          selection = "none",
+          editable = F
+        ) %>%
+          DT::formatRound(c("OxSol", "Oxygen", "pH", "Pressure", "SA", "SP", "Temperature"), digits = 3)
       },
       server = FALSE,
       editable = F
@@ -164,9 +160,6 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
     #   validate(need(nrow(Obs$SBE19$L2) != 0, "Process L2 to dispaly observation statistics"))
     #
     # })
-
-
-
   })
 }
 

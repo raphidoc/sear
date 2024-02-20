@@ -7,10 +7,9 @@
 #'
 #' @noRd
 L2_param_val <- function(L1b) {
-
   L2 <- L1b %>%
     unnest(c(Data)) %>%
-    group_by(Parameter,) %>%
+    group_by(Parameter, ) %>%
     filter(QC > 0) %>%
     summarize(Value = mean(Value)) %>%
     pivot_wider(
@@ -25,11 +24,9 @@ L2_param_val <- function(L1b) {
   }
 
   L2
-
 }
 
 update_L1b_param_val <- function(L1b, TableName, Con) {
-
   L1b <- L1b %>%
     unnest(cols = c(Data))
 
@@ -44,7 +41,7 @@ update_L1b_param_val <- function(L1b, TableName, Con) {
 
   # Assemble query
   qry <- glue::glue_sql(
-    "UPDATE ",TableName,"
+    "UPDATE ", TableName, "
             SET QC = CASE
                   ", qryQC, "
                   ELSE QC
@@ -59,7 +56,6 @@ update_L1b_param_val <- function(L1b, TableName, Con) {
 }
 
 update_L2_param_val <- function(L2, TableName, Con) {
-
   L2 <- L2 %>%
     pivot_longer(
       cols = !matches("UUID"),
@@ -78,7 +74,7 @@ update_L2_param_val <- function(L2, TableName, Con) {
 
   # Assemble query
   qry <- glue::glue_sql(
-    "UPDATE ",TableName,"
+    "UPDATE ", TableName, "
               SET ", qryL2, "
             WHERE UUID = '", unique(L2$UUID), "';"
   )

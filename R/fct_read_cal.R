@@ -17,7 +17,6 @@
 #' @noRd
 
 read_hocr_cal <- function(CalFiles) {
-
   # CalFiles is a list of calibration files
 
   # Fit type specific coefficients
@@ -64,7 +63,7 @@ read_hocr_cal <- function(CalFiles) {
     rename(Instrument = .data$INSTRUMENT)
 
   OPTIC3 <- CalFile %>%
-    filter(.data$Type %in% c("ES","LU","Lu")) %>%
+    filter(.data$Type %in% c("ES", "LU", "Lu")) %>%
     separate(
       col = .data$Cal,
       into = c("a0", "a1", "im", "cint"),
@@ -116,8 +115,7 @@ read_hocr_cal <- function(CalFiles) {
 }
 
 tidy_cal_hocr <- function(CalFiles) {
-
-  #CalFiles <- list.files(system.file("cal", "hocr", package = "sear"), full.names = TRUE)
+  # CalFiles <- list.files(system.file("cal", "hocr", package = "sear"), full.names = TRUE)
 
   CalList <- purrr::map(CalFiles, read_hocr_cal)
 
@@ -164,8 +162,7 @@ tidy_cal_hocr <- function(CalFiles) {
 #'
 #' @noRd
 read_sbe19_cal <- function(CalFile) {
-
-  #CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
+  # CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -210,7 +207,6 @@ read_sbe19_cal <- function(CalFile) {
       PTEMPA1 = as.numeric(PTEMPA1),
       PTEMPA2 = as.numeric(PTEMPA2)
     )
-
 }
 
 #' sbe43_cal
@@ -221,8 +217,7 @@ read_sbe19_cal <- function(CalFile) {
 #'
 #' @noRd
 read_sbe43_cal <- function(CalFile) {
-
-  #CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
+  # CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -260,8 +255,7 @@ read_sbe43_cal <- function(CalFile) {
 #'
 #' @noRd
 read_sbe18_cal <- function(CalFile) {
-
-  #CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
+  # CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -293,9 +287,8 @@ read_sbe18_cal <- function(CalFile) {
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_seaowl_cal <- function(CalFile){
-
-  #CalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
+read_seaowl_cal <- function(CalFile) {
+  # CalFile <- sear:::app_sys("cal", "seaowl", "0144.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 
@@ -333,9 +326,8 @@ read_seaowl_cal <- function(CalFile){
 #' @return tibble with calibration data
 #'
 #' @noRd
-read_bbfl2_cal <- function(CalFile){
-
-  #CalFile <- sear:::app_sys("cal", "bbfl2", "5745.cal")
+read_bbfl2_cal <- function(CalFile) {
+  # CalFile <- sear:::app_sys("cal", "bbfl2", "5745.cal")
 
   CalRaw <- read_lines(CalFile, skip_empty_rows = T)
 

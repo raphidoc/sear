@@ -10,9 +10,7 @@
 mod_load_mtelog_ui <- function(id) {
   ns <- NS(id)
   tagList(
-
     uiOutput(outputId = ns("Load"))
-
   )
 }
 
@@ -20,31 +18,27 @@ mod_load_mtelog_ui <- function(id) {
 #'
 #' @noRd
 mod_load_mtelog_server <- function(id, SearProj) {
-
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
-      fileInput("Files", "Choose MTE txt and bin Files", accept = c(".txt",".bin"), multiple = T)
-
+      fileInput("Files", "Choose MTE txt and bin Files", accept = c(".txt", ".bin"), multiple = T)
     })
 
 
     reactive({
-
       req(input$Files)
 
       reactiveValues(
-            txt = {
-              stringr::str_subset(input$Files, ".txt")
-            },
-            bin = {
-              stringr::str_subset(input$Files, ".bin")
-            }
+        txt = {
+          stringr::str_subset(input$Files, ".txt")
+        },
+        bin = {
+          stringr::str_subset(input$Files, ".bin")
+        }
       )
-
     })
 
 

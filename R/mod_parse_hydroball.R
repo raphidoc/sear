@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_parse_hydroball_ui <- function(id){
+mod_parse_hydroball_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("Load"))
@@ -17,21 +17,19 @@ mod_parse_hydroball_ui <- function(id){
 #' parse_hydroball Server Functions
 #'
 #' @noRd
-mod_parse_hydroball_server <- function(id, SearProj, ParsedFiles){
-  moduleServer( id, function(input, output, session){
+mod_parse_hydroball_server <- function(id, SearProj, ParsedFiles) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
       fileInput(ns("Files"), "Choose HydroBall .csv Files", accept = c(".csv"), multiple = T)
-
     })
 
     observeEvent(
       input$Files,
       {
-
         RawDir <- file.path(SearProj()$ProjPath, "sear", "data", "raw")
 
         dir.create(RawDir, recursive = TRUE)
@@ -51,18 +49,16 @@ mod_parse_hydroball_server <- function(id, SearProj, ParsedFiles){
 
         HydroBall <- read_hydroball(Files$rawpath)
 
-        PotHydroBall <- file.path(ParsedDir, paste0("hydroball_",DateRange,".csv"))
+        PotHydroBall <- file.path(ParsedDir, paste0("hydroball_", DateRange, ".csv"))
 
         write_csv(HydroBall, PotHydroBall)
-
       }
     )
 
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
 
     return(reactive(input$Files))
-
   })
 }
 

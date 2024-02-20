@@ -36,18 +36,15 @@ mod_parse_cal_server <- function(id, SearProj) {
     ParsedCalFiles <- eventReactive(
       {
         SearProj()
-      },{
-
+      },
+      {
         CalDir <- file.path(SearProj()$ProjPath, "sear", "cal")
 
         if (dir.exists(CalDir)) {
-
           list.files(CalDir, full.names = TRUE)
-
         } else {
           FALSE
         }
-
       }
     )
 
@@ -57,7 +54,7 @@ mod_parse_cal_server <- function(id, SearProj) {
       tidy_cal_hocr,
       CalHOCR,
       ParsedCalFiles
-      )
+    )
 
     mod_load_cal_server(
       "SBE19",
@@ -99,16 +96,15 @@ mod_parse_cal_server <- function(id, SearProj) {
       ParsedCalFiles
     )
 
-# Module output -----------------------------------------------------------
-  list(
-    CalHOCR = CalHOCR,
-    CalSBE19 = CalSBE19,
-    CalSBE18 = CalSBE18,
-    CalSBE43 = CalSBE43,
-    CalSeaOWL = CalSeaOWL,
-    CalBBFL2 = CalBBFL2
-  )
-
+    # Module output -----------------------------------------------------------
+    list(
+      CalHOCR = CalHOCR,
+      CalSBE19 = CalSBE19,
+      CalSBE18 = CalSBE18,
+      CalSBE43 = CalSBE43,
+      CalSeaOWL = CalSeaOWL,
+      CalBBFL2 = CalBBFL2
+    )
   })
 }
 

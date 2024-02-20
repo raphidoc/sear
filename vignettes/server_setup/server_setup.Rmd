@@ -119,9 +119,9 @@ sudo apt install gdebi-core
 Check the latest version of [Rstudio Server](https://posit.co/download/rstudio-server/)
 
 ```{r}
-SystemRelease <- system2('lsb_release', '-cs', stdout = T)
-RstudioDown <- system2('curl', 'https://posit.co/download/rstudio-server/', stdout = T)
-stringr::str_subset(RstudioDown, paste0(SystemRelease,".*","rstudio-server.*\\.deb"))
+SystemRelease <- system2("lsb_release", "-cs", stdout = T)
+RstudioDown <- system2("curl", "https://posit.co/download/rstudio-server/", stdout = T)
+stringr::str_subset(RstudioDown, paste0(SystemRelease, ".*", "rstudio-server.*\\.deb"))
 ```
 
 ```
@@ -141,9 +141,9 @@ Could automatically fetch the latest with some web scrapping technique ?
 latest [Shiny Server](https://posit.co/download/shiny-server/)
 
 ```{r}
-SystemRelease <- system2('lsb_release', '-cs', stdout = T)
-RstudioDown <- system2('curl', 'https://posit.co/download/shiny-server/', stdout = T)
-stringr::str_subset(RstudioDown, paste0(".*","shiny-server.*\\.deb"))
+SystemRelease <- system2("lsb_release", "-cs", stdout = T)
+RstudioDown <- system2("curl", "https://posit.co/download/shiny-server/", stdout = T)
+stringr::str_subset(RstudioDown, paste0(".*", "shiny-server.*\\.deb"))
 ```
 
 

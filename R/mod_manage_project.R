@@ -15,7 +15,7 @@ mod_manage_project_ui <- function(id) {
     dropdownButton(
       actionGroupButtons(
         c(ns("New"), ns("Open")),
-        labels=c("New project", "Open project"),
+        labels = c("New project", "Open project"),
         direction = "vertical"
       ),
       circle = F,
@@ -38,7 +38,7 @@ mod_manage_project_server <- function(id) {
     )
 
     ModalNew <- modalDialog(
-      textInput(ns("NewProj"),"Enter a project name", value = "", placeholder = "super_duper"),
+      textInput(ns("NewProj"), "Enter a project name", value = "", placeholder = "super_duper"),
       title = "Creating new project",
       footer = tagList(
         actionButton(ns("create"), "Create"),
@@ -46,50 +46,46 @@ mod_manage_project_server <- function(id) {
       )
     )
 
-    observeEvent(input$New,
-      {
-        showModal(ModalNew)
-      }
-    )
+    observeEvent(input$New, {
+      showModal(ModalNew)
+    })
 
-    observeEvent(input$cancel,
-      {
-        removeModal()
-      }
-    )
+    observeEvent(input$cancel, {
+      removeModal()
+    })
 
-    observeEvent(input$create,
-      {
-        message(getwd())
+    observeEvent(input$create, {
+      message(getwd())
 
-        user <- system2('echo', '"$USER"', stdout = T)
+      user <- system2("echo", '"$USER"', stdout = T)
 
-        message(paste0("Connected as: ", user))
+      message(paste0("Connected as: ", user))
 
-        ProjPath <- normalizePath(file.path("~","sear_project",input$NewProj))
+      ProjPath <- normalizePath(file.path("~", "sear_project", input$NewProj))
 
-        dir.create(ProjPath, recursive = T)
+      dir.create(ProjPath, recursive = T)
 
-        #setwd(ProjPath)
+      # setwd(ProjPath)
 
-        #message(getwd())
+      # message(getwd())
 
-        Project$Path <- ProjPath
-        Project$Name <- basename(ProjPath)
+      Project$Path <- ProjPath
+      Project$Name <- basename(ProjPath)
 
-        removeModal()
-      }
-    )
+      removeModal()
+    })
 
     ModalOpen <- modalDialog(
       selectizeInput(
         ns("ProjList"),
         "Select a project",
         choices = c("", list.files(
-          normalizePath(file.path("~","sear_project")),
-          full.names = T)),
+          normalizePath(file.path("~", "sear_project")),
+          full.names = T
+        )),
         selected = NULL,
-        multiple = F),
+        multiple = F
+      ),
       title = "Opening an existing project",
       footer = tagList(
         modalButton("Cancel")
@@ -104,7 +100,7 @@ mod_manage_project_server <- function(id) {
       }
     )
 
-    test_input <- function(input){
+    test_input <- function(input) {
       if (!is.null(input)) {
         if (input == "") {
           return(NULL)
@@ -117,7 +113,9 @@ mod_manage_project_server <- function(id) {
     observeEvent(
       ignoreInit = T,
       ignoreNULL = T,
-      {test_input(input$ProjList)},
+      {
+        test_input(input$ProjList)
+      },
       {
         Project$Path <- input$ProjList
         Project$Name <- basename(input$ProjList)
@@ -146,8 +144,8 @@ mod_manage_project_server <- function(id) {
     Con <- reactive({
       req(Project$Path)
       PotSQLite <- file.path(Project$Path, "sear.sqlite")
-      DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)}
-      )
+      DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)
+    })
 
     History <- reactive({
       req(Project$Path)
@@ -161,7 +159,7 @@ mod_manage_project_server <- function(id) {
 
         SearProj <- tibble::tibble(
           DateTime = as.character(Sys.time()),
-          User = system2("echo","$USER", stdout = T),
+          User = system2("echo", "$USER", stdout = T),
           SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
           ProjPath = Project$Path,
@@ -172,11 +170,10 @@ mod_manage_project_server <- function(id) {
 
         # return SearTble object
         SearProj
-
       } else {
         message("Creating ", PotSQLite)
 
-        #Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)
+        # Con <- DBI::dbConnect(RSQLite::SQLite(), PotSQLite, extended_types = TRUE)
 
         # Enable foreign keys
         DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
@@ -197,7 +194,7 @@ mod_manage_project_server <- function(id) {
 
         SearProj <- tibble::tibble(
           DateTime = as.character(Sys.time()),
-          User = system2("echo","$USER", stdout = T),
+          User = system2("echo", "$USER", stdout = T),
           SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
           ProjPath = Project$Path,
@@ -209,17 +206,15 @@ mod_manage_project_server <- function(id) {
         # return SearTble object
         SearProj
       }
-
     })
 
-# Module output -----------------------------------------------------------
+    # Module output -----------------------------------------------------------
 
     list(
       History = History,
       Con = Con,
       AccessUUID = AccessUUID
     )
-
   })
 }
 

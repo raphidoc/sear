@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_load_cal_ui <- function(id){
+mod_load_cal_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("Load"))
@@ -22,9 +22,8 @@ mod_load_cal_server <- function(
     SearProj,
     read_cal,
     ReactCal,
-    ParsedCalFiles
-    ){
-  moduleServer( id, function(input, output, session){
+    ParsedCalFiles) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
@@ -33,29 +32,25 @@ mod_load_cal_server <- function(
       fluidRow(
         column(
           width = 6,
-          fileInput(ns("Cal"), paste0("Select ",id," calibration files"), accept = c(".cal"), multiple = T)
+          fileInput(ns("Cal"), paste0("Select ", id, " calibration files"), accept = c(".cal"), multiple = T)
         ),
         column(
           width = 6,
           textOutput(ns("CalPath"))
         )
       )
-
-
-
     })
 
     observeEvent(
       input$Cal,
       {
-
         CalDir <- file.path(SearProj()$ProjPath, "sear", "cal")
 
         dir.create(CalDir, recursive = TRUE)
 
         Files <- input$Cal %>%
           mutate(
-            calpath = file.path(CalDir, paste0(id,"_",name))
+            calpath = file.path(CalDir, paste0(id, "_", name))
           )
 
         file.copy(Files$datapath, Files$calpath)
@@ -63,7 +58,6 @@ mod_load_cal_server <- function(
         Cal <- read_cal(Files$calpath)
 
         ReactCal(Cal)
-
       }
     )
 
@@ -71,22 +65,19 @@ mod_load_cal_server <- function(
       ignoreInit = F,
       ParsedCalFiles(),
       {
-
         if (any(str_detect(ParsedCalFiles(), id))) {
-
           Pot <- str_subset(ParsedCalFiles(), id)
 
           temp <- read_cal(Pot)
 
           ReactCal(temp)
 
-          output$CalPath <- renderText({ basename(Pot) })
-
+          output$CalPath <- renderText({
+            basename(Pot)
+          })
         }
-
       }
     )
-
   })
 }
 

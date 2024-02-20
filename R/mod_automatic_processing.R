@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_automatic_processing_ui <- function(id){
+mod_automatic_processing_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("AutoProcess"))
@@ -17,12 +17,11 @@ mod_automatic_processing_ui <- function(id){
 #' automatic_processing Server Functions
 #'
 #' @noRd
-mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB){
-  moduleServer( id, function(input, output, session){
+mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$AutoProcess <- renderUI({
-
       req(L1a$ParsedFiles())
 
       tagList(
@@ -37,35 +36,34 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
       input$AutoProcess,
       label = "AutoProcess",
       {
-
         # Create a Progress object
         progress <- shiny::Progress$new()
         # Close the progress when this reactive exits (even if there's an error)
         on.exit(progress$close())
 
-        #discretize_time(L1a$Apla()$DateTime)
+        # discretize_time(L1a$Apla()$DateTime)
 
         MainTime <- L1aSelect$SubMainLog()$DateTime
 
         UpLimit <- 10 # Seconds
         LowLimit <- 4
 
-        i = 1
-        j = 1
-        n = 1
+        i <- 1
+        j <- 1
+        n <- 1
         while (T) {
           if (length(MainTime) < i + 1) {
             message("This is the end")
             break
           }
 
-          x = MainTime[i]
-          y = MainTime[j + 1]
+          x <- MainTime[i]
+          y <- MainTime[j + 1]
 
           # Set upper limit for time difference
           if (interval(x, y) > seconds(UpLimit)) {
-            i = j + 1
-            message(paste0("Reached time discretization upper limit: ", UpLimit,"S"))
+            i <- j + 1
+            message(paste0("Reached time discretization upper limit: ", UpLimit, "S"))
             next
           }
 
@@ -74,34 +72,32 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
           if (interval(x, y) < seconds(LowLimit)) {
             while (interval(x, y) < seconds(LowLimit)) {
-
               if (length(MainTime) < j + 1) {
                 message("This is the end")
                 break
               }
 
               if (interval(x, y) > seconds(UpLimit)) {
-                i = j + 1
+                i <- j + 1
                 message("next next")
                 next
               }
 
-              j = j + 1
-              y = MainTime[j]
+              j <- j + 1
+              y <- MainTime[j]
             }
           } else {
-            j=j+1
+            j <- j + 1
           }
 
           # At this point. this should always be true
           # Step 3 and 4, processing should happen at this stage
           if (interval(x, y) < seconds(UpLimit) & interval(x, y) >= seconds(LowLimit)) {
-
             TimeInt <- interval(x, y)
 
-            progress$set(message = paste("Processing obs :",n, TimeInt), value = n/(length(MainTime)/4))
+            progress$set(message = paste("Processing obs :", n, TimeInt), value = n / (length(MainTime) / 4))
 
-            message(paste("Processing obs:",n, TimeInt))
+            message(paste("Processing obs:", n, TimeInt))
 
             Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
 
@@ -147,10 +143,9 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             Obs$BioSonic$L2 <- tibble()
 
 
-# HOCR --------------------------------------------------------------------
+            # HOCR --------------------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
-
               UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
                 if (is.null(value)) {
                   value <- progress$getValue()
@@ -202,24 +197,27 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                 Z1Depth <- Settings$HOCR$Z1Depth()
                 Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
 
-                Obs$HOCR$L2 <- tryCatch({
-                  L2_hocr(Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
-                          T, 0.1, Obs)
-                },
-                error = function(e) e
+                Obs$HOCR$L2 <- tryCatch(
+                  {
+                    L2_hocr(
+                      Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+                      T, 0.1, Obs
+                    )
+                  },
+                  error = function(e) e
                 )
 
                 if (inherits(Obs$HOCR$L2, "error")) {
-                  #message(Obs$HOCR$L2)
+                  # message(Obs$HOCR$L2)
                   message("Sear is trying to take the next j point")
 
                   # Delete the outdated metadata initially created
                   #  Necessarry to respect UUID foreign key rule (present in main table)
-                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ",ObsUUID,";"))
-                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ",ObsUUID,";"))
+                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ", ObsUUID, ";"))
+                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ", ObsUUID, ";"))
 
-                  i = i
-                  j = j + 1
+                  i <- i
+                  j <- j + 1
 
                   next
                 }
@@ -235,14 +233,12 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
                 DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
-
               }
             }
 
             # SBE19 L1b ---------------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "SBE19"))) {
-
               progress$set(message = "Processing L1b: ", value = progress$getValue())
 
               progress$set(value = 0.3, detail = "SBE19")
@@ -254,14 +250,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
               if (nrow(SBE19) == 0) {
                 warning(
-                  paste0("SBE19 data not found at time interval: ",TimeInt)
+                  paste0("SBE19 data not found at time interval: ", TimeInt)
                 )
               } else if (is.null(CalData$CalSBE19()) | is.null(CalData$CalSBE18()) | is.null(CalData$CalSBE43())) {
                 warning(
                   "SBE19 | SBE18 | SBE43 calibration data not loaded"
                 )
               } else {
-
                 SBE19 <- cal_sbe19(SBE19, Lon, Lat) %>%
                   mutate(
                     Oxygen = cal_sbe43( # Oxygen in ml/l multiply by 1.42903 to get mg/l
@@ -298,7 +293,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   )
 
                 Obs$SBE19$L1b <- SBE19 %>%
-                  select(!any_of(c("Conductivity", "CT", "O2Sol")))%>%
+                  select(!any_of(c("Conductivity", "CT", "O2Sol"))) %>%
                   pivot_longer(
                     cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
                     names_to = "Parameter",
@@ -315,33 +310,30 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   unnest(c(Data)) %>%
                   mutate(UUID = ObsUUID)
 
-                SBE19L2 <- Obs$SBE19$L2  %>%
+                SBE19L2 <- Obs$SBE19$L2 %>%
                   mutate(UUID = ObsUUID)
 
                 DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
                 DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
-
               }
             }
 
             # SeaOWL L1b --------------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "SeaOWL"))) {
-
               progress$set(value = 0.4, detail = "SeaOWL")
 
               SeaOWL <- L1a$SeaOWL() %>% filter(DateTime %within% TimeInt)
 
               if (nrow(SeaOWL) == 0) {
                 warning(
-                  paste0("SeaOWL data not found at time interval: ",TimeInt)
+                  paste0("SeaOWL data not found at time interval: ", TimeInt)
                 )
               } else if (is.null(CalData$CalSeaOWL())) {
                 warning(
                   "SeaOWL calibration data not loaded"
                 )
               } else {
-
                 SeaOWLL1b <- cal_seaowl(SeaOWL, CalData$CalSeaOWL()) %>%
                   mutate(
                     ID = seq_along(rownames(SeaOWL)),
@@ -349,7 +341,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   )
 
                 Obs$SeaOWL$L1b <- SeaOWLL1b %>%
-                  select(!any_of(c("SN")))%>%
+                  select(!any_of(c("SN"))) %>%
                   pivot_longer(
                     cols = any_of(c("VSF_700", "Chl", "FDOM")),
                     names_to = "Parameter",
@@ -364,33 +356,30 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   unnest(c(Data)) %>%
                   mutate(UUID = ObsUUID)
 
-                SeaOWLL2 <- Obs$SeaOWL$L2  %>%
+                SeaOWLL2 <- Obs$SeaOWL$L2 %>%
                   mutate(UUID = ObsUUID)
 
                 DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
                 DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
-
               }
             }
 
             # BBFL2 L1b ---------------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "BBFL2"))) {
-
               progress$set(value = 0.5, detail = "BBFL2")
 
               BBFL2 <- L1a$BBFL2() %>% filter(DateTime %within% TimeInt)
 
               if (nrow(BBFL2) == 0) {
                 warning(
-                  paste0("BBFL2 data not found at time interval: ",TimeInt)
+                  paste0("BBFL2 data not found at time interval: ", TimeInt)
                 )
               } else if (is.null(CalData$CalBBFL2())) {
                 warning(
                   "BBFL2 calibration data not loaded"
                 )
               } else {
-
                 BBFL2L1b <- cal_bbfl2(BBFL2, CalData$CalBBFL2()) %>%
                   mutate(
                     ID = seq_along(rownames(BBFL2)),
@@ -412,29 +401,26 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   unnest(c(Data)) %>%
                   mutate(UUID = ObsUUID)
 
-                BBFL2L2 <- Obs$BBFL2$L2  %>%
+                BBFL2L2 <- Obs$BBFL2$L2 %>%
                   mutate(UUID = ObsUUID)
 
                 DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
                 DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
-
               }
             }
 
             # BioSonic L1b ---------------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "BioSonic"))) {
-
               progress$set(value = 0.6, detail = "BioSonic")
 
               BioSonicL1b <- L1a$BioSonic() %>% filter(DateTime %within% TimeInt)
 
               if (nrow(BioSonicL1b) == 0) {
                 warning(
-                  paste0("BioSonic data not found at time interval: ",TimeInt)
+                  paste0("BioSonic data not found at time interval: ", TimeInt)
                 )
               } else {
-
                 Obs$BioSonic$L1b <- BioSonicL1b %>%
                   rename(Lon = Longitude_deg, Lat = Latitude_deg) %>%
                   select(
@@ -463,32 +449,29 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 Obs$BioSonic$L2 <- test
 
-                BioSonicL1b <- Obs$BioSonic$L1b  %>%
+                BioSonicL1b <- Obs$BioSonic$L1b %>%
                   mutate(UUID = ObsUUID)
 
-                BioSonicL2 <- Obs$BioSonic$L2  %>%
+                BioSonicL2 <- Obs$BioSonic$L2 %>%
                   mutate(UUID = ObsUUID)
 
                 DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
                 DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
-
               }
             }
 
             # HydroBall L1b -----------------------------------------------------------
 
             if (any(str_detect(L1a$InstrumentList(), "HydroBall"))) {
-
               progress$set(value = 0.6, detail = "HydroBall")
 
               HydroBallL1b <- L1a$HBDevices() %>% filter(DateTime %within% TimeInt)
 
               if (nrow(HydroBallL1b) == 0) {
                 warning(
-                  paste0("HydroBall data not found at time interval: ",TimeInt)
+                  paste0("HydroBall data not found at time interval: ", TimeInt)
                 )
               } else {
-
                 Obs$HydroBall$L1b <- HydroBallL1b %>%
                   rename(H = DBT_meter) %>%
                   mutate(
@@ -513,17 +496,16 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
                 Obs$HydroBall$L2 <- test
 
-                HydroBallL1b <- Obs$HydroBall$L1b  %>%
+                HydroBallL1b <- Obs$HydroBall$L1b %>%
                   mutate(
                     UUID = ObsUUID
                   )
 
-                HydroBallL2 <- Obs$HydroBall$L2  %>%
+                HydroBallL2 <- Obs$HydroBall$L2 %>%
                   mutate(UUID = ObsUUID)
 
                 DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
                 DBI::dbWriteTable(DB$Con(), "HydroBallL2", HydroBallL2, append = TRUE)
-
               }
             }
 
@@ -541,24 +523,21 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             #
             # Obs$Metadata <- tibble(DBI::dbGetQuery(DB$Con(), qry))
 
-            n = n+1
+            n <- n + 1
           }
 
           # Exclude endpoints from %within%
-          i = j + 1
+          i <- j + 1
         }
 
         # Update the list of observation
         DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
-
-      })
-
-
-  # Module output -----------------------------------------------------------
-  list(
-  )
+      }
+    )
 
 
+    # Module output -----------------------------------------------------------
+    list()
   })
 }
 

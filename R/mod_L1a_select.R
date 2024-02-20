@@ -19,8 +19,8 @@ mod_L1a_select_ui <- function(id) {
       column(
         width = 6,
         plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100),
-        textOutput(ns("SurveyDuration"))#,
-        #selectInput(ns("Style"), "Select a mapbox style", MapStyles)
+        textOutput(ns("SurveyDuration")) # ,
+        # selectInput(ns("Style"), "Select a mapbox style", MapStyles)
       )
     ),
     plotlyOutput(ns("Map"), width = NULL, height = 500) # ,
@@ -29,7 +29,7 @@ mod_L1a_select_ui <- function(id) {
 }
 
 # get all the available mapbox styles
-#MapStyles <- schema()$layout$layoutAttributes$mapbox$style$values
+# MapStyles <- schema()$layout$layoutAttributes$mapbox$style$values
 
 #' selection_display Server Functions
 #'
@@ -103,7 +103,6 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       } else {
         MainLog()$DateTime[MainLog()$DateTime %within% Int]
       }
-
     })
 
     TimeInterval <- reactive({
@@ -120,23 +119,23 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       PrimMainLog <- MainLog()
 
       if (any(str_detect(Inst, "HOCR"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$HOCR == T,]
+        PrimMainLog <- PrimMainLog[PrimMainLog$HOCR == T, ]
       }
 
       if (any(str_detect(Inst, "SBE19"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$SBE19 == T,]
+        PrimMainLog <- PrimMainLog[PrimMainLog$SBE19 == T, ]
       }
 
       if (any(str_detect(Inst, "SeaOWL"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$SeaOWL == T,]
+        PrimMainLog <- PrimMainLog[PrimMainLog$SeaOWL == T, ]
       }
 
       if (any(str_detect(Inst, "BBFL2"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$BBFL2 == T,]
+        PrimMainLog <- PrimMainLog[PrimMainLog$BBFL2 == T, ]
       }
 
       if (any(str_detect(Inst, "BioSonic"))) {
-        PrimMainLog <- PrimMainLog[PrimMainLog$BioSonic == T,]
+        PrimMainLog <- PrimMainLog[PrimMainLog$BioSonic == T, ]
       }
 
       PrimMainLog <- PrimMainLog %>%
@@ -158,11 +157,10 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       label = "Select data",
       ignoreInit = F,
       {
-
         validate(need(!identical(event_data("plotly_selected", source = "map"), list()), message = "No data selected"))
 
         # curvenumber 0 is the Applanix trace
-        #warning("To Raph, curvenumber must equal 0 or 1")
+        # warning("To Raph, curvenumber must equal 0 or 1")
         ID <- event_data("plotly_selected", source = "map") %>%
           filter(curveNumber == 1 | curveNumber == 0)
 
@@ -319,7 +317,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
               "<b>Date</b>: ", format(DateTime, "%Y-%m-%d"), "<br>",
               "<b>Time</b>: ", format(DateTime, "%H:%M:%S"), "<br>",
               "<b>Speed (km/h)</b>: ", Speed_kmh, "<br>",
-              #"<b>Course (TN)</b>: ", Course_TN, "<br>",
+              # "<b>Course (TN)</b>: ", Course_TN, "<br>",
               "<b>BoatSolAzm (degree)</b>: ", BoatSolAzm, "<br>"
             )
           ) %>%
@@ -341,9 +339,9 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
             y = ~Lat,
             customdata = ~UUID,
             marker = list(
-              color = "rgb(127, 255, 212)"#,
-              #size = ~ DistanceRun
-              ),
+              color = "rgb(127, 255, 212)" # ,
+              # size = ~ DistanceRun
+            ),
             text = ~ paste0(
               "<b>DateTime</b>: ", DateTime, "<br>",
               "<b>UUID</b>: ", UUID, "<br>"
@@ -383,8 +381,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         ) %>% PlotDef()
 
         # To get the map objects reference
-        #htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.hmtl"))
-
+        # htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.hmtl"))
       } else {
         # Determine survey area bounding box and crop coastline accordingly
 
@@ -407,7 +404,6 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
         ) %>%
           add_sf(data = CoastCrop) %>%
           PlotDef(.)
-
       }
 
       # Save graph
@@ -450,21 +446,19 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     })
 
 
-# Infos on displayed data -------------------------------------------------
+    # Infos on displayed data -------------------------------------------------
 
     output$SurveyDuration <- renderText({
-
       validate(need(nrow(SubMainLog()) != 0, message = "No data to display with those filters"))
 
       Time <- SubMainLog()$DateTime
 
       as.character(dseconds(length(Time)))
-
     })
 
     # Module output -----------------------------------------------------------
     list(
-      #MainLog = MainLog,
+      # MainLog = MainLog,
       SubMainLog = SubMainLog,
       MainLog = SelMainLog,
       SelID = SelID,

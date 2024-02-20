@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_L2_select_ui <- function(id){
+mod_L2_select_ui <- function(id) {
   ns <- NS(id)
   tagList(
     fluidRow(
@@ -27,17 +27,14 @@ mod_L2_select_ui <- function(id){
         uiOutput(ns("EmptyList"))
       )
     )
-
-
-
   )
 }
 
 #' L2_select Server Functions
 #'
 #' @noRd
-mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
-  moduleServer( id, function(input, output, session){
+mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     SelUUID <- reactiveVal()
@@ -47,7 +44,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       label = "Click Obs display DB",
       ignoreInit = T,
       {
-
         UUID <- as.character(event_data("plotly_selected", source = "L2map")$customdata)
 
         if (!identical(UUID, character(0)) && any(!uuid::UUIDvalidate(UUID))) {
@@ -59,7 +55,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         } else {
           SelUUID(UUID)
         }
-
       }
     )
 
@@ -68,13 +63,11 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     observeEvent(
       nrow(L2Obs$MetadataL2 != 0),
       {
-
         browser()
 
         Instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
 
-        InstList(c("",Instruments))
-
+        InstList(c("", Instruments))
       }
     )
 
@@ -85,7 +78,8 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         "Select a x instrument",
         choices = InstList(),
         selected = NULL,
-        multiple = F)
+        multiple = F
+      )
     })
 
     output$InstY <- renderUI({
@@ -95,7 +89,8 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         "Select a y instrument",
         choices = InstList(),
         selected = NULL,
-        multiple = F)
+        multiple = F
+      )
     })
 
     VarListX <- reactiveVal()
@@ -106,7 +101,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       {
         Variables <- str_subset(names(L2Obs[[input$InstX]]), "[^(UUID)(Wavelength)]")
 
-        VarListX(c("",Variables))
+        VarListX(c("", Variables))
       }
     )
 
@@ -115,7 +110,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       {
         Variables <- str_subset(names(L2Obs[[input$InstY]]), "[^(UUID)(Wavelength)]")
 
-        VarListY(c("",Variables))
+        VarListY(c("", Variables))
       }
     )
 
@@ -126,7 +121,8 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         "Select a x variable",
         choices = VarListX(),
         selected = NULL,
-        multiple = F)
+        multiple = F
+      )
     })
 
     output$VarY <- renderUI({
@@ -136,7 +132,8 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         "Select a y variable",
         choices = VarListY(),
         selected = NULL,
-        multiple = F)
+        multiple = F
+      )
     })
 
     # VarX <- eventReactive(
@@ -181,7 +178,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     # )
 
 
-# Plot selected variables -------------------------------------------------
+    # Plot selected variables -------------------------------------------------
 
     output$Plot <- renderPlotly({
       req(nrow(L2Obs$MetadataL2 != 0))
@@ -200,43 +197,38 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       }
 
       if (InstX != "" && InstY != "") {
-
         p <- L2 %>%
-          filter(Wavelength %in% c(401,500,602,701)) %>%
+          filter(Wavelength %in% c(401, 500, 602, 701)) %>%
           plot_ly(
             source = "plot",
             text = ~UUID,
             customdata = ~UUID
           ) %>%
           add_markers(
-            x = ~.data[[VarX]],
-            y = ~.data[[VarY]],
-            color = ~as.character(Wavelength),
+            x = ~ .data[[VarX]],
+            y = ~ .data[[VarY]],
+            color = ~ as.character(Wavelength),
             showlegend = T
-            )%>%
+          ) %>%
           event_register("plotly_hover")
-
       }
 
       # In case of spectral data
-      if (InstX == "" && any(VarY %in% c("Rrs","KLu"))) {
-
+      if (InstX == "" && any(VarY %in% c("Rrs", "KLu"))) {
         p <- L2 %>%
           plot_ly(
             source = "plot",
             text = ~UUID,
             customdata = ~UUID
           ) %>%
-          add_lines(x = ~.data[["Wavelength"]], y = ~.data[[VarY]], showlegend = F, split = ~UUID)%>%
+          add_lines(x = ~ .data[["Wavelength"]], y = ~ .data[[VarY]], showlegend = F, split = ~UUID) %>%
           event_register("plotly_click")
-
       }
 
       p
-
     })
 
-# Add variable to deletion list -------------------------------------------
+    # Add variable to deletion list -------------------------------------------
 
     DelList <- reactiveVal(list())
 
@@ -253,37 +245,35 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
 
     output$DataTable <- DT::renderDT(
       DT::datatable(tibble(DelList()),
-                    extensions = c("Buttons", "Scroller", "Select"),
-                    # filter = "top",
-                    escape = TRUE, rownames = FALSE,
-                    style = "bootstrap",
-                    class = "compact",
-                    options = list(
-                      dom = "Brtip",
-                      select = list(style = "os", items = "row"),
-                      buttons = list(I("colvis"), "selectNone", "csv"),
-                      #columnDefs = list(
-                      #  list(
-                      #    visible = FALSE,
-                      #    targets = c(0, 1, 2, 4, 5, 8, 9, 10, 11, 12,13,14,17,18)
-                      #  )
-                      #),
-                      deferRender = TRUE,
-                      scrollY = 100,
-                      pageLength = 10,
-                      scroller = TRUE
-                    ),
-                    selection = "none",
-                    editable = T
+        extensions = c("Buttons", "Scroller", "Select"),
+        # filter = "top",
+        escape = TRUE, rownames = FALSE,
+        style = "bootstrap",
+        class = "compact",
+        options = list(
+          dom = "Brtip",
+          select = list(style = "os", items = "row"),
+          buttons = list(I("colvis"), "selectNone", "csv"),
+          # columnDefs = list(
+          #  list(
+          #    visible = FALSE,
+          #    targets = c(0, 1, 2, 4, 5, 8, 9, 10, 11, 12,13,14,17,18)
+          #  )
+          # ),
+          deferRender = TRUE,
+          scrollY = 100,
+          pageLength = 10,
+          scroller = TRUE
+        ),
+        selection = "none",
+        editable = T
       ),
       server = FALSE,
       editable = F
     )
 
     output$EmptyList <- renderUI({
-
       actionButton(ns("EmptyList"), "Empty List", class = "btn btn-success", icon = icon("glyphicon glyphicon-fast-backward", lib = "glyphicon"))
-
     })
 
     observeEvent(req(input$EmptyList), {
@@ -291,9 +281,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     })
 
     output$Delete <- renderUI({
-
       actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon"))
-
     })
 
     observeEvent(req(input$Delete), {
@@ -338,7 +326,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       removeModal()
     })
 
-# Map for data selection --------------------------------------------------
+    # Map for data selection --------------------------------------------------
 
     output$Map <- renderPlotly({
       req(DB$ObsMeta())
@@ -422,8 +410,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
         ) %>% PlotDef()
 
         # To get the map objects reference
-        #htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.html"))
-
+        # htmltools::save_html(plotly_json(p), file.path(app_sys("doc"), "map_json.html"))
       } else {
         # Determine survey area bounding box and crop coastline accordingly
 
@@ -454,7 +441,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
       }
 
       p
-
     })
 
 
@@ -463,7 +449,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs){
     list(
       SelUUID = SelUUID
     )
-
   })
 }
 

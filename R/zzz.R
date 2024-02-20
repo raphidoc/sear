@@ -13,58 +13,57 @@ skip_if_no_kaitaistruct <- function() {
 }
 
 .onLoad <- function(lib, pkg) {
-
   packageStartupMessage(
     "sear v",
     utils::packageDescription("sear",
-                              fields = "Version"
+      fields = "Version"
     )
   )
 
-  #reticulate::use_condaenv(condaenv = "py_sear", conda = "auto", required = NULL)
+  # reticulate::use_condaenv(condaenv = "py_sear", conda = "auto", required = NULL)
 
-  if (!"reticulate" %in% installed.packages()){
+  if (!"reticulate" %in% installed.packages()) {
     install.packages("reticulate")
   }
 
-  if (!dir.exists(reticulate::miniconda_path())){
+  if (!dir.exists(reticulate::miniconda_path())) {
     reticulate::install_miniconda(update = T)
   }
 
   if (!any(stringr::str_detect(
     reticulate::conda_list(
-      conda = file.path(reticulate::miniconda_path(),"bin","conda"))$name,
-    "pysear"))
-  ){
-
+      conda = file.path(reticulate::miniconda_path(), "bin", "conda")
+    )$name,
+    "pysear"
+  ))
+  ) {
     reticulate::conda_create(
-      envname = 'pysear',
-      packages = c('kaitaistruct', 'python-kaleido', 'plotly'),
+      envname = "pysear",
+      packages = c("kaitaistruct", "python-kaleido", "plotly"),
       forge = TRUE,
       environment = NULL,
-      conda = file.path(reticulate::miniconda_path(),"bin","conda"),
+      conda = file.path(reticulate::miniconda_path(), "bin", "conda"),
       python_version = miniconda_python_version()
     )
-
   }
 
-  #reticulate::conda_install('pysear', 'kaitaistruct')
-  #reticulate::conda_install('pysear', 'python-kaleido')
-  #reticulate::conda_install('pysear', 'plotly', channel = 'plotly')
+  # reticulate::conda_install('pysear', 'kaitaistruct')
+  # reticulate::conda_install('pysear', 'python-kaleido')
+  # reticulate::conda_install('pysear', 'plotly', channel = 'plotly')
 
-  #reticulate::conda_install('pysear', 'orca')
+  # reticulate::conda_install('pysear', 'orca')
 
-  reticulate::use_miniconda('pysear', required = T)
+  reticulate::use_miniconda("pysear", required = T)
 
   # Workaround for save_image() https://github.com/plotly/plotly.R/issues/2179
   reticulate::py_run_string("import sys")
 
 
-  #reticulate::virtualenv_create("pysear")
-  #reticulate::virtualenv_install("pysear", "kaitaistruct")
-  ##reticulate::virtualenv_install("pysear", "kaleido")
-  #reticulate::virtualenv_install("pysear", 'plotly', channel = 'plotly')
-  #reticulate::use_virtualenv("pysear", required = T)
+  # reticulate::virtualenv_create("pysear")
+  # reticulate::virtualenv_install("pysear", "kaitaistruct")
+  ## reticulate::virtualenv_install("pysear", "kaleido")
+  # reticulate::virtualenv_install("pysear", 'plotly', channel = 'plotly')
+  # reticulate::use_virtualenv("pysear", required = T)
 
   # use superassignment to update global reference to kaitaistruct
   kaitaistruct <<- reticulate::import("kaitaistruct", delay_load = TRUE)

@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_parse_data_ui <- function(id){
+mod_parse_data_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("TabPanel")),
@@ -18,8 +18,8 @@ mod_parse_data_ui <- function(id){
 #' parse_data Server Functions
 #'
 #' @noRd
-mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
-  moduleServer( id, function(input, output, session){
+mod_parse_data_server <- function(id, SearProj, CalData, MainLog) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$TabPanel <- renderUI({
@@ -51,7 +51,7 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
       )
     })
 
-# Parsing raw files -------------------------------------------------------
+    # Parsing raw files -------------------------------------------------------
 
     ToProcess <- mod_select_instrument_server("select_instrument", ParsedFiles)
 
@@ -59,11 +59,11 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
     MTELogInput <- mod_parse_mtelog_server("parse_mtelog", SearProj, CalData, ParsedFiles)
     BioSonicInput <- mod_parse_biosonic_server("parse_biosonic", SearProj, ParsedFiles)
 
-    #WISEMan, HBDevices configuration
+    # WISEMan, HBDevices configuration
     HBDevicesInput <- mod_parse_hb_devices_server("parse_hb_devices", SearProj, ParsedFiles)
     SatViewInput <- mod_parse_satview_server("parse_satview", SearProj, CalData, ParsedFiles)
 
-# Reading sear parsed files -----------------------------------------------
+    # Reading sear parsed files -----------------------------------------------
 
     Apla <- reactiveVal()
     HOCR <- reactiveVal()
@@ -88,31 +88,26 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         )
       },
       {
-
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
         if (dir.exists(ParsedDir)) {
-
           list.files(ParsedDir, full.names = TRUE)
-
         } else {
           FALSE
         }
-
       }
     )
 
     # ParsedData is used to keep track of the loaded data against MainLog
 
     observeEvent(
-      #ignoreInit = TRUE,
+      # ignoreInit = TRUE,
       {
         c(
           ParsedFiles()
         )
       },
       {
-
         # Create a Progress object
         progress <- shiny::Progress$new()
         progress$set(message = "Loading data: ", value = 0)
@@ -126,13 +121,11 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameApla <- c("apla_[:digit:]{8}_[:digit:]{6}\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameApla))) {
-
           PotApla <- str_subset(ParsedFiles(), NameApla)
 
           temp <- read_csv(PotApla)
 
           Apla(temp)
-
         }
 
         # HOCR
@@ -142,13 +135,11 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameHOCR <- c("hocr_[:digit:]{8}_[:digit:]{6}\\.rds")
 
         if (any(str_detect(ParsedFiles(), NameHOCR))) {
-
           PotHOCR <- str_subset(ParsedFiles(), NameHOCR)
 
           temp <- unlist(purrr::map(.x = PotHOCR, ~ read_rds(.x)), recursive = F)
 
           HOCR(temp)
-
         }
 
         progress$set(value = 0.3, detail = "HOCR dark")
@@ -156,7 +147,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameHOCRDark <- c("hocr_dark_[:digit:]{8}_[:digit:]{6}\\.rds")
 
         if (any(str_detect(ParsedFiles(), NameHOCRDark))) {
-
           PotHOCRDark <- str_subset(ParsedFiles(), NameHOCRDark)
 
           temp <- purrr::map(.x = PotHOCRDark, ~ read_rds(.x))
@@ -183,7 +173,7 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           test2 <- purrr::map(.x = test, ~ unnest(.x, cols = c(AproxData)))
 
-          test3 <- purrr::map_df(.x = test2, ~ .x) %>%
+          test3 <- purrr::map_df(.x = test2, ~.x) %>%
             group_by(Instrument, SN) %>%
             nest(AproxData = !matches("Instrument|SN")) %>%
             mutate(
@@ -199,7 +189,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
             )
 
           HOCRDark(test3)
-
         }
 
         progress$set(value = 0.4, detail = "HOCR time index")
@@ -207,7 +196,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameHOCRTimeIndex <- c("hocr_time_index_[:digit:]{8}_[:digit:]{6}\\.rds")
 
         if (any(str_detect(ParsedFiles(), NameHOCRTimeIndex))) {
-
           PotHOCRTimeIndex <- str_subset(ParsedFiles(), NameHOCRTimeIndex)
 
           # unlist convert posixct DateTime representation back to number of seconds
@@ -219,10 +207,10 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
 
           temp <- unlist(
             purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
-            recursive = T)
+            recursive = T
+          )
 
           HOCRTimeIndex(temp)
-
         }
 
         # SBE19
@@ -232,11 +220,9 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameSBE19 <- c("sbe19_[:digit:]{8}_[:digit:]{6}\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameSBE19))) {
-
           PotSBE19 <- str_subset(ParsedFiles(), NameSBE19)
 
           SBE19(read_csv(PotSBE19))
-
         }
 
         # SeaOWL
@@ -246,11 +232,9 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameSeaOWL <- c("seaowl_[:digit:]{8}_[:digit:]{6}\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameSeaOWL))) {
-
           PotSeaOWL <- str_subset(ParsedFiles(), NameSeaOWL)
 
           SeaOWL(read_csv(PotSeaOWL))
-
         }
 
         # BBFL2
@@ -260,11 +244,9 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameBBFL2 <- c("bbfl2_[:digit:]{8}_[:digit:]{6}\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameBBFL2))) {
-
           PotBBFL2 <- str_subset(ParsedFiles(), NameBBFL2)
 
           BBFL2(read_csv(PotBBFL2))
-
         }
 
         progress$set(value = 1, detail = "Done")
@@ -274,11 +256,9 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameBioSonic <- c("biosonic.*\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameBioSonic))) {
-
           PotBioSonic <- str_subset(ParsedFiles(), NameBioSonic)
 
           BioSonic(read_csv(PotBioSonic))
-
         }
 
         # HBDevices
@@ -286,17 +266,14 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         NameHBDevices <- c("hb_devices_.*\\.csv")
 
         if (any(str_detect(ParsedFiles(), NameHBDevices))) {
-
           PotHBDevices <- str_subset(ParsedFiles(), NameHBDevices)
 
           HBDevices(read_csv(PotHBDevices))
-
         }
-
       }
     )
 
-# MainLog -----------------------------------------------------------------
+    # MainLog -----------------------------------------------------------------
 
     observeEvent(
       ignoreInit = FALSE,
@@ -306,22 +283,18 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         )
       },
       {
-
         NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
-        #PotMainLog <- file.path(ParsedDir, paste0("main_log_",SysDateTime,".csv"))
+        # PotMainLog <- file.path(ParsedDir, paste0("main_log_",SysDateTime,".csv"))
 
         if (any(str_detect(ParsedFiles(), NameMainLog))) {
-
           PotMainLog <- str_subset(ParsedFiles(), NameMainLog)
 
           OldMainLog <- read_csv(PotMainLog)
 
           MainLog(OldMainLog)
-
         }
-
       }
     )
 
@@ -333,7 +306,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         )
       },
       {
-
         validate(need(!is.null(Apla()) | !is.null(HBDevices()), "Need either Apla or HBDevices"))
 
         # Create a Progress object
@@ -345,26 +317,19 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
         OldMainLog <- MainLog()
 
         if (!is.null(Apla())) {
-
           PrimMainLog <- Apla()
-
         } else if (!is.null(HBDevices())) {
-
           PrimMainLog <- HBDevices()
-
         }
 
         # TODO Need to figure out how to compute on BioSonic Load
         # | !is.null(BioSonic$BioSonic())
 
         if (nrow(OldMainLog) == nrow(PrimMainLog)) {
-
           message("MainLog up to date")
 
           progress$set(value = 1, detail = " up to date")
-
         } else {
-
           message("Updating MainLog")
 
           progress$set(value = 0, message = "Updating MainLog: ")
@@ -380,43 +345,36 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
             progress$set(value = 0.1, detail = "HOCR synthesis")
             DataSyntHOCR <- data_synthesis(PrimMainLog$DateTime, HOCRTimeIndex)
             message("HOCR synthesis done")
-
           } else {
             DataSyntHOCR <- NA
           }
 
           if (!is.null(SBE19())) {
-
             SBE19TimeIndex <- ymd_hms(unique(format(SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
 
             progress$set(value = 0.5, detail = "SBE19 synthesis")
             DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, SBE19TimeIndex)
             message("SBE19 synthesis done")
-
           } else {
             DataSyntSBE19 <- NA
           }
 
           if (!is.null(SeaOWL())) {
-
             SeaOWLTimeIndex <- ymd_hms(unique(format(SeaOWL()$DateTime, "%Y-%m-%d %H:%M:%S")))
 
             progress$set(value = 0.6, detail = "SeaOWL synthesis")
             DataSyntSeaOWL <- data_synthesis(PrimMainLog$DateTime, SeaOWLTimeIndex)
             message("SeaOWL synthesis done")
-
           } else {
             DataSyntSeaOWL <- NA
           }
 
           if (!is.null(BBFL2())) {
-
             BBFL2TimeIndex <- ymd_hms(unique(format(BBFL2()$DateTime, "%Y-%m-%d %H:%M:%S")))
 
             progress$set(value = 0.7, detail = "BBFL2 synthesis")
             DataSyntBBFL2 <- data_synthesis(PrimMainLog$DateTime, BBFL2TimeIndex)
             message("BBFL2 synthesis done")
-
           } else {
             DataSyntBBFL2 <- NA
           }
@@ -463,32 +421,26 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
           NameMainLog <- "main_log_[:digit:]{8}_[:digit:]{6}\\.csv"
 
           if (any(str_detect(ParsedFiles(), NameMainLog))) {
-
             PotMainLog <- str_subset(ParsedFiles(), NameMainLog)
 
             file.remove(PotMainLog)
-
           }
 
-          PotMainLog <- file.path(ParsedDir, paste0("main_log_",SysDateTime,".csv"))
+          PotMainLog <- file.path(ParsedDir, paste0("main_log_", SysDateTime, ".csv"))
 
           write_csv(MainLog(), PotMainLog)
 
           progress$set(value = 0.1, detail = "Done")
-
         }
-
       }
     )
 
     output$SurveyDuration <- renderText({
-
       validate(need(MainLog(), message = "Need MainLog"))
 
       Time <- MainLog()$DateTime
 
       as.character(dseconds(length(Time)))
-
     })
 
     # Module output -----------------------------------------------------------
@@ -501,12 +453,11 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog){
       HOCRDark = HOCRDark,
       HOCRTimeIndex = HOCRTimeIndex,
       SBE19 = SBE19,
-      SeaOWL =SeaOWL,
+      SeaOWL = SeaOWL,
       BBFL2 = BBFL2,
       BioSonic = BioSonic,
       HBDevices = HBDevices
     )
-
   })
 }
 

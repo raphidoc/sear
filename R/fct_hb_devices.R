@@ -7,7 +7,6 @@
 #' @noRd
 
 read_hb_devices <- function(DevFile, Date) {
-
   DevTbl <- tibble(
     Raw = readr::read_lines(DevFile, skip = 1)
   )
@@ -24,8 +23,8 @@ read_hb_devices <- function(DevFile, Date) {
       cols_remove = T
     ) %>%
     mutate(
-      DateTime = ymd_hms(paste0(Date,Time)),
-      DateTime = round_date(DateTime, unit = "second")#format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
+      DateTime = ymd_hms(paste0(Date, Time)),
+      DateTime = round_date(DateTime, unit = "second") # format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
     )
 
   if (all(is.na(NMEA$Data))) {
@@ -89,7 +88,6 @@ read_hb_devices <- function(DevFile, Date) {
   # Extract DBT (Depth Below Transducer) info
 
   if (any(str_detect(NMEA$Trame, "[:alpha:]{2}DBT"))) {
-
     RawDBT <- NMEA %>%
       filter(str_detect(Trame, "[:alpha:]{2}DBT")) %>%
       pivot_wider(
@@ -120,7 +118,6 @@ read_hb_devices <- function(DevFile, Date) {
       )
 
     DBT <- unique_datetime_second(DBT)
-
   } else {
     DBT <- tibble(
       DateTime = NA,
@@ -137,7 +134,6 @@ read_hb_devices <- function(DevFile, Date) {
   # Extract PTNTHPR heading, pitch, roll
 
   if (any(str_detect(NMEA$Trame, "PTNTHPR"))) {
-
     RawPTNTHPR <- NMEA %>%
       filter(str_detect(Trame, "PTNTHPR")) %>%
       pivot_wider(
@@ -168,7 +164,6 @@ read_hb_devices <- function(DevFile, Date) {
       )
 
     PTNTHPR <- unique_datetime_second(PTNTHPR)
-
   } else {
     PTNTHPR <- tibble(
       DateTime = NA,
@@ -207,19 +202,22 @@ read_hb_devices <- function(DevFile, Date) {
       TimeDiff = DateTime - lag(DateTime)
     )
 
-  LatMin <- MainLog$Lat[seq(1, length(MainLog$Lat)-1, by = 2)]
-  LonMin <- MainLog$Lon[seq(1, length(MainLog$Lat)-1, by = 2)]
+  LatMin <- MainLog$Lat[seq(1, length(MainLog$Lat) - 1, by = 2)]
+  LonMin <- MainLog$Lon[seq(1, length(MainLog$Lat) - 1, by = 2)]
   LatMax <- MainLog$Lat[seq(2, length(MainLog$Lat), by = 2)]
   LonMax <- MainLog$Lon[seq(2, length(MainLog$Lat), by = 2)]
   TimeDiff <- MainLog$TimeDiff[seq(2, length(MainLog$Lat), by = 2)] # in seconds
 
-  Speed <- purrr::pmap(list(LatMin, LonMin, LatMax, LonMax, TimeDiff),
-                      ~ pracma::haversine(c(..1, ..2), c(..3, ..4)) / ..5 * 3600) # in kmh
+  Speed <- purrr::pmap(
+    list(LatMin, LonMin, LatMax, LonMax, TimeDiff),
+    ~ pracma::haversine(c(..1, ..2), c(..3, ..4)) / ..5 * 3600
+  ) # in kmh
 
   SpeedApprox <- approx(
     x = MainLog$DateTime[seq(2, length(MainLog$Lat), by = 2)],
     y = Speed,
-    xout = MainLog$DateTime)[[2]]
+    xout = MainLog$DateTime
+  )[[2]]
 
   MainLog <- MainLog %>%
     mutate(

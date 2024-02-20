@@ -7,7 +7,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_L1L2_hydroball_ui <- function(id){
+mod_L1L2_hydroball_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("L1b"), height = 320),
@@ -19,8 +19,8 @@ mod_L1L2_hydroball_ui <- function(id){
 #' L1L2_hydroball Server Functions
 #'
 #' @noRd
-mod_L1L2_hydroball_server <- function(id, Obs){
-  moduleServer( id, function(input, output, session){
+mod_L1L2_hydroball_server <- function(id, Obs) {
+  moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$L1b <- renderPlotly({
@@ -39,7 +39,7 @@ mod_L1L2_hydroball_server <- function(id, Obs){
         y1 = 1
       )
 
-      pal <- c("Watercraft"="blue", "Bottom"="brown")
+      pal <- c("Watercraft" = "blue", "Bottom" = "brown")
 
       ply <- Obs$HydroBall$L1b %>%
         mutate(
@@ -61,21 +61,19 @@ mod_L1L2_hydroball_server <- function(id, Obs){
         layout(
           shapes = BlackSquare,
           xaxis = list(title = list(text = "Distance [m]"))
-          #yaxis = list(range = list(~min(BottomElevation_m, na.rm = TRUE), 0))
+          # yaxis = list(range = list(~min(BottomElevation_m, na.rm = TRUE), 0))
         )
 
       # Save graph
-      #save_image(ply, file=file.path(path.expand("~"), "sear_figure", "SBES.svg"), scale = 3 , height = 720, width = 1280)
+      # save_image(ply, file=file.path(path.expand("~"), "sear_figure", "SBES.svg"), scale = 3 , height = 720, width = 1280)
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(ply)
-
     })
 
     observeEvent(
       input$ProcessL2,
       {
-
         test <- Obs$HydroBall$L1b %>% summarise(
           Lon = mean(Lon, na.rm = T),
           Lat = mean(Lat, na.rm = T),
@@ -88,42 +86,40 @@ mod_L1L2_hydroball_server <- function(id, Obs){
       }
     )
 
-    output$DataTable <- DT::renderDataTable({
+    output$DataTable <- DT::renderDataTable(
+      {
+        validate(need(nrow(Obs$HydroBall$L2) != 0, "Process L2 to dispaly observation statistics"))
 
-      validate(need(nrow(Obs$HydroBall$L2) != 0, "Process L2 to dispaly observation statistics"))
-
-      DT::datatable(Obs$HydroBall$L2,
-                    extensions = c("Buttons", "Scroller", "Select"),
-                    # filter = "top",
-                    escape = TRUE, rownames = FALSE,
-                    style = "bootstrap",
-                    class = "compact",
-                    options = list(
-                      dom = "Brtip",
-                      select = list(style = "os", items = "row"),
-                      buttons = list(I("colvis"), "selectNone", "csv"),
-                      columnDefs = list(
-                        list(
-                          visible = FALSE,
-                          targets = c()
-                        )
-                      ),
-                      deferRender = TRUE,
-                      scrollY = 100,
-                      pageLength = 10,
-                      scroller = TRUE
-                    ),
-                    selection = "none",
-                    editable = F
-      ) %>%
-        DT::formatRound(c("Lat", "Lon"), digits=6) %>%
-        DT::formatRound(c("Altitude", "H"), digits=3)
-
-    },
-    server = FALSE,
-    editable = F
+        DT::datatable(Obs$HydroBall$L2,
+          extensions = c("Buttons", "Scroller", "Select"),
+          # filter = "top",
+          escape = TRUE, rownames = FALSE,
+          style = "bootstrap",
+          class = "compact",
+          options = list(
+            dom = "Brtip",
+            select = list(style = "os", items = "row"),
+            buttons = list(I("colvis"), "selectNone", "csv"),
+            columnDefs = list(
+              list(
+                visible = FALSE,
+                targets = c()
+              )
+            ),
+            deferRender = TRUE,
+            scrollY = 100,
+            pageLength = 10,
+            scroller = TRUE
+          ),
+          selection = "none",
+          editable = F
+        ) %>%
+          DT::formatRound(c("Lat", "Lon"), digits = 6) %>%
+          DT::formatRound(c("Altitude", "H"), digits = 3)
+      },
+      server = FALSE,
+      editable = F
     )
-
   })
 }
 
