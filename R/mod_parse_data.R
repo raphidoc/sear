@@ -55,11 +55,11 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog) {
 
     ToProcess <- mod_select_instrument_server("select_instrument", ParsedFiles)
 
-    # SeaDoo configuration
+    # SeaDoo MTE data logger configuration
     MTELogInput <- mod_parse_mtelog_server("parse_mtelog", SearProj, CalData, ParsedFiles)
     BioSonicInput <- mod_parse_biosonic_server("parse_biosonic", SearProj, ParsedFiles)
 
-    # WISEMan, HBDevices configuration
+    # HydroBall Devices configuration
     HBDevicesInput <- mod_parse_hb_devices_server("parse_hb_devices", SearProj, ParsedFiles)
     SatViewInput <- mod_parse_satview_server("parse_satview", SearProj, CalData, ParsedFiles)
 

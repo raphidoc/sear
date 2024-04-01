@@ -171,6 +171,17 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BioSonic$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
+
+        # HydroBall
+        qry <- paste0("SELECT * FROM HydroBallL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$HydroBall$L1b <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
+
+        qry <- paste0("SELECT * FROM HydroBallL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        res <- DBI::dbSendQuery(DB$Con(), qry)
+        Obs$HydroBall$L2 <- tibble(DBI::dbFetch(res))
+        DBI::dbClearResult(res)
       }
     )
 

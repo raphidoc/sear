@@ -23,7 +23,7 @@ mod_bottom_reflectance_server <- function(id, Obs) {
 
     output$Rb <- renderPlotly({
       validate(need(nrow(Obs$HOCR$L2) != 0, "No HOCR L2 data"))
-      validate(need(nrow(Obs$BioSonic$L2) != 0, "No BioSonic L2 data"))
+      validate(need(nrow(Obs$BioSonic$L2) != 0 | nrow(Obs$HydroBall$L2) != 0, "No BioSonic L2 data"))
 
       PlyFont <- list(family = "Times New Roman", size = 18)
       BlackSquare <- list(
@@ -48,7 +48,11 @@ mod_bottom_reflectance_server <- function(id, Obs) {
       #     Rb = Rw/eKZ
       #     )
 
-      KZ <- Obs$HOCR$L2$KLu_loess * (Obs$BioSonic$L2$BottomElevation_m)
+      if (nrow(Obs$BioSonic$L2) != 0) {
+        KZ <- Obs$HOCR$L2$KLu_loess * (Obs$BioSonic$L2$BottomElevation_m)
+      } else {
+        KZ <- Obs$HOCR$L2$KLu_loess * (Obs$HydroBall$L2$H)
+      }
 
       Obs$HOCR$L2 <- isolate(Obs$HOCR$L2) %>%
         mutate(
