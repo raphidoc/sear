@@ -349,12 +349,19 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog) {
             DataSyntHOCR <- NA
           }
 
+          #browser()
+          # TODO quick fix for SBE19() present but df is empty
           if (!is.null(SBE19())) {
-            SBE19TimeIndex <- ymd_hms(unique(format(SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
+            if (nrow(SBE19()) > 0) {
+              SBE19TimeIndex <- ymd_hms(unique(format(SBE19()$DateTime, "%Y-%m-%d %H:%M:%S")))
 
-            progress$set(value = 0.5, detail = "SBE19 synthesis")
-            DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, SBE19TimeIndex)
-            message("SBE19 synthesis done")
+              progress$set(value = 0.5, detail = "SBE19 synthesis")
+              DataSyntSBE19 <- data_synthesis(PrimMainLog$DateTime, SBE19TimeIndex)
+              message("SBE19 synthesis done")
+            } else {
+              DataSyntSBE19 <- NA
+            }
+
           } else {
             DataSyntSBE19 <- NA
           }
