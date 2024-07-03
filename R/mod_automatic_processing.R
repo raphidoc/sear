@@ -102,8 +102,6 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
 
             # Create metadata for the selected L1a points
-            browser()
-
             ObsUUID <- uuid::UUIDgenerate(
               use.time = T,
               output = "string"
@@ -211,10 +209,12 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
                   # message(Obs$HOCR$L2)
                   message("Sear is trying to take the next j point")
 
+                  #browser()
+
                   # Delete the outdated metadata initially created
                   #  Necessarry to respect UUID foreign key rule (present in main table)
-                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ", ObsUUID, ";"))
-                  DBI::dbWriteTable(DB$Con(), paste0("DELETE * FROM MetadataL1b WHERE UUID = ", ObsUUID, ";"))
+                  DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
+                  DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
 
                   i <- i
                   j <- j + 1

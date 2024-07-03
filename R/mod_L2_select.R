@@ -63,8 +63,6 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     observeEvent(
       nrow(L2Obs$MetadataL2 != 0),
       {
-        browser()
-
         Instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
 
         InstList(c("", Instruments))
