@@ -132,9 +132,9 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           "CREATE TABLE IF NOT EXISTS `HOCRL1b` (
           `Instrument` TEXT,
           `SN` TEXT,
-          `DateTime` TEXT,
           `ID` INTEGER,
           `QC` TEXT,
+          `DateTime` TEXT,
           `Type` TEXT,
           `Wavelength` REAL,
           `Channels` REAL,
@@ -146,21 +146,43 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         )
 
         # HOCRL2
+        # cat(paste(names(HOCRL2), collapse = ",\n"))
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS `HOCRL2` (
-          `Wavelength` REAL,
-          `Rrs` REAL,
-          `Rrs_loess` REAL,
-          `KLu` REAL,
-          `KLu_loess` REAL,
-          `RbI` REAL,
-          `UUID` TEXT,
+          wavelength REAL,
+          rrs_mean REAL,
+          rrs_sd REAL,
+          lw_mean REAL,
+          lw_sd REAL,
+          klu_mean REAL,
+          klu_sd REAL,
+          klu_luz1_rel_unc REAL,
+          lw_luz1_rel_unc REAL,
+          rrs_luz1_rel_unc REAL,
+          klu_luz2_rel_unc REAL,
+          lw_luz2_rel_unc REAL,
+          rrs_luz2_rel_unc REAL,
+          lw_z1_rel_unc REAL,
+          rrs_z1_rel_unc REAL,
+          rrs_es_rel_unc REAL,
+          klu_rel_unity REAL,
+          lw_rel_unity REAL,
+          rrs_rel_unity REAL,
+          UUID TEXT,
           FOREIGN KEY (UUID)
             REFERENCES MetadataL2 (UUID)
             ON DELETE CASCADE
           )"
         )
+
+        # `Wavelength` REAL,
+        # `Rrs` REAL,
+        # `Rrs_loess` REAL,
+        # `KLu` REAL,
+        # `KLu_loess` REAL,
+        # `RbI` REAL,
+        # `UUID` TEXT,
 
         # SBE19 L1b
         DBI::dbSendStatement(

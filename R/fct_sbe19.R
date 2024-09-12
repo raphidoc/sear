@@ -40,6 +40,10 @@ cal_sbe19 <- function(Data, Lon, Lat) {
   Data %>%
     mutate(
       DateTime = as.character(DateTime),
+      z = gsw::gsw_z_from_p(
+        p = Pressure,
+        lat = Lat
+      ),
       SP = gsw::gsw_SP_from_C( # Salinity Practical in PSU
         C = Conductivity * 10,
         t = Temperature,

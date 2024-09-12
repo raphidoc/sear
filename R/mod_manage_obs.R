@@ -114,7 +114,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
           group_by(ID) %>%
-          nest(AproxData = !matches("Instrument|SN|UUID"))
+          nest(CalData = !matches("Instrument|SN|UUID"))
         DBI::dbClearResult(res)
 
         qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
@@ -235,7 +235,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           # Update HOCR -------------------------------------------------------------
 
           HOCRL1b <- Obs$HOCR$L1b %>%
-            unnest(cols = c(AproxData))
+            unnest(cols = c(CalData))
 
           # List L1bID the link between the instruments spectrum.
           SumQC <- HOCRL1b %>%
@@ -422,14 +422,12 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
               UUID = ObsUUID
             )
 
-          browser()
-
           DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
 
           if (nrow(Obs$HOCR$L1b) != 0) {
             HOCRL1b <- Obs$HOCR$L1b %>%
-              unnest(cols = c(AproxData)) %>%
+              unnest(cols = c(CalData)) %>%
               mutate(
                 UUID = ObsUUID
               )

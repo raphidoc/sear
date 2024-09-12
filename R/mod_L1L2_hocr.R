@@ -44,11 +44,13 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
     output$HOCRL1b <- renderPlotly({
       validate(need(nrow(Obs$HOCR$L1b) != 0, "No L1b data"))
 
+      Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime)))
+
       # Add Pitch and Roll metadata
       # TODO make this code clearer ... possibly with purrr::map ?
       Enhanced <- Obs$HOCR$L1b %>%
-        unnest(cols = c(AproxData)) %>%
-        mutate(DateTime = as.numeric(ymd_hms(DateTime))) %>%
+        unnest(cols = c(CalData)) %>%
+        mutate(DateTime = as.numeric(DateTime)) %>%
         fuzzyjoin::difference_left_join(
           Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime))),
           by = c("DateTime"),
@@ -61,14 +63,14 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         slice(which.min(Distance)) %>%
         unnest(cols = c(data)) %>%
         group_by(Instrument, SN) %>%
-        nest(.key = "AproxData")
+        nest(.key = "CalData")
 
       ply <- Enhanced %>%
         arrange(SN) %>%
         # filter(str_detect(Instrument, "HPL")) %>%
         mutate(
           Plot = purrr::map2(
-            .x = AproxData,
+            .x = CalData,
             .y = SN,
             ~ plot_ly(
               .x %>% group_by(ID),
@@ -163,7 +165,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       {
         Selected <- event_data("plotly_click", source = "HOCRL1b")$customdata
 
-        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(AproxData = purrr::map(AproxData, ~ qc_shift(., Selected)))
+        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(CalData = purrr::map(CalData, ~ qc_shift(., Selected)))
       }
     )
 
@@ -171,10 +173,10 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       validate(need(
         {
           Settings$HOCR$WaveMin() &
-            Settings$HOCR$WaveMax() &
-            Settings$HOCR$WaveStep() &
-            Settings$HOCR$Z1Depth() &
-            Settings$HOCR$Z1Z2Depth()
+          Settings$HOCR$WaveMax() &
+          Settings$HOCR$WaveStep() &
+          Settings$HOCR$Z1Depth() &
+          Settings$HOCR$Z1Z2Depth()
         },
         message = "Need HOCR settings"
       ))
@@ -187,17 +189,38 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
     observeEvent(
       input$ProcessL2,
       {
-        WaveSeq <- seq(
+        wave_seq <- seq(
           Settings$HOCR$WaveMin(),
           Settings$HOCR$WaveMax(),
           Settings$HOCR$WaveStep()
         )
 
-        Z1Depth <- Settings$HOCR$Z1Depth()
-        Z1Z2Depth <- Settings$HOCR$Z1Z2Depth()
+        if (any(Obs$SBE19$L1b$Parameter == "Pressure")) {
+          message("Taking z1 from CTD")
+          pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$Parameter == "Pressure"][[1]]$Value
+
+          z1 <- tibble(
+            z = gsw::gsw_z_from_p(p = pressure, latitude = Obs$MetadataL2$Lat),
+            z1 = z + 0.1
+          ) %>%
+            select(z1) %>%
+            summarise(
+              across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}")
+            )
+
+
+        } else {
+          message("Taking single z1 from setting")
+          z1 <- tibble(
+            z1_median = Settings$HOCR$Z1Depth(),
+            z1_sd = 0
+          )
+        }
+
+        z2z1 <- Settings$HOCR$Z1Z2Depth()
 
         Obs$HOCR$L2 <- L2_hocr(
-          Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+          Obs$HOCR$L1b, wave_seq, z1, z2z1,
           input$Loess, input$Span, Obs
         )
       }
@@ -208,9 +231,26 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       validate(need(nrow(Obs$HOCR$L2) != 0, "Process L2 to display AOPs"))
 
-      Rrsplot <- Obs$HOCR$L2 %>%
-        plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = T) %>%
+      rrs_plot <- Obs$HOCR$L2 %>%
+        plot_ly(
+          x = ~wavelength,
+          y = ~rrs_mean
+          ) %>%
+        add_lines(
+          showlegend = T
+          ) %>%
+        add_ribbons(
+          ymin = ~
+            rrs_mean -
+            rrs_sd,
+          ymax = ~
+            rrs_mean +
+            rrs_sd,
+          name = "unc_rrs",
+          line = list(color = 'rgba(105, 159, 245, 0.2)'),
+          fillcolor = 'rgba(105, 159, 245, 0.1)',
+          showlegend = F
+        ) %>%
         layout(shapes = BlackSquare)
 
       if (any(str_detect(names(Obs$HOCR$L2), "ScoreQWIP"))) {
@@ -228,6 +268,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           )
       }
 
+
       if (any(str_detect(names(Obs$HOCR$L2), "Rrs_loess"))) {
         Rrsplot <- Rrsplot %>%
           add_trace(
@@ -239,17 +280,71 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           )
       }
 
-      KLuplot <- Obs$HOCR$L2 %>%
-        plot_ly(x = ~Wavelength) %>%
-        add_lines(y = ~KLu, showlegend = T) %>%
-        layout(shapes = BlackSquare)
+      rrs_unc_plot <- Obs$HOCR$L2 %>%
+        plot_ly(x = ~ wavelength) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~ rrs_sd * rrs_luz1_rel_unc ,
+          name = "unc_luz1",
+          line = list(color = 'rgba(105, 159, 245, 0.5)'),
+          fillcolor = 'rgba(105, 159, 245, 0.3)',
+          #legendgroup = 1,
+          showlegend = T
+        ) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~
+            rrs_sd * rrs_luz1_rel_unc +
+            rrs_sd * rrs_luz2_rel_unc ,
+          name = "unc_luz2",
+          line = list(color = 'rgba(6, 58, 143, 0.5)'),
+          fillcolor = 'rgba(6, 33, 143, 0.3)',
+          #legendgroup = 1,
+          showlegend = T
+        ) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~
+            rrs_sd * rrs_luz1_rel_unc +
+            rrs_sd * rrs_luz2_rel_unc +
+            rrs_sd * rrs_z1_rel_unc,
+          name = "unc_z1",
+          line = list(color = 'rgba(74, 176, 100, 0.5)'),
+          fillcolor = 'rgba(74, 176, 100, 0.3)',
+          #legendgroup = 1,
+          showlegend = T
+        ) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~
+            rrs_sd * rrs_luz1_rel_unc +
+            rrs_sd * rrs_luz2_rel_unc +
+            rrs_sd * rrs_z1_rel_unc +
+            rrs_sd * rrs_es_rel_unc,
+          name = "unc_es",
+          line = list(color = 'rgba(169, 74, 176, 0.5)'),
+          fillcolor = 'rgba(169, 74, 176, 0.3)',
+          #legendgroup = 1,
+          showlegend = T
+        )
 
-      if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
-        KLuplot <- KLuplot %>%
-          add_trace(x = ~Wavelength, y = ~KLu_loess, type = "scatter", mode = "lines", line = list(dash = "dash", color = "red"))
-      }
+      # KLuplot <- Obs$HOCR$L2 %>%
+      #   plot_ly(x = ~wavelength, y = ~klu_mean) %>%
+      #   add_lines(showlegend = T) %>%
+      #   layout(shapes = BlackSquare)
+      #
+      # if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
+      #   KLuplot <- KLuplot %>%
+      #     add_trace(x = ~Wavelength, y = ~KLu_loess, type = "scatter", mode = "lines", line = list(dash = "dash", color = "red"))
+      # }
 
-      ply <- subplot(Rrsplot, KLuplot, shareX = T, titleX = F) %>%
+      ply <- subplot(
+        rrs_plot,
+        rrs_unc_plot,
+        shareX = T,
+        titleX = F,
+        margin = 0.05
+        ) %>%
         add_annotations(
           text = ~"Wavelength [nm]", # TeX("\\text{Wavelength [nm]}"),
           x = 0.5,
@@ -267,7 +362,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
             text = "Rrs [sr-1]" # TeX("\\text{R}_\\text{rs}")
           )),
           yaxis2 = list(title = list(
-            text = "Klu [m-1]" # TeX("\\text{K}_\\text{Lu}")
+            text = "Rrs uncertainty [sr-1]" # TeX("\\text{K}_\\text{Lu}")
           )) # ,
           # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
         ) %>%

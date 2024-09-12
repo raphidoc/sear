@@ -91,6 +91,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
         PotApla <- file.path(ParsedDir, paste0("apla_", DateTime, ".csv"))
 
         if (any(str_detect(InstList, "APLA")) & !file.exists(PotApla)) {
+
           PrimApla <- read_apla(MTELog)
 
           write_csv(PrimApla, PotApla) # Should I use append = T to add data ?

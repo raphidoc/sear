@@ -69,64 +69,6 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
         Obs$BBFL2$L2 <- tibble()
         Obs$BioSonic$L2 <- tibble()
 
-        # HOCR L1b ----------------------------------------------------------------
-
-        if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
-          # Create a callback function to update progress.
-          # Each time this is called:
-          # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
-          #   distance. If non-NULL, it will set the progress to that value.
-          # - It also accepts optional detail text.
-          UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
-            if (is.null(value)) {
-              value <- progress$getValue()
-              value <- value + (progress$getMax() - value) / 5
-            }
-            progress$set(value = value, message = message, detail = detail)
-          }
-
-          progress$set(value = 0.1, detail = "HOCR")
-
-          FiltRawHOCR <- filter_hocr(L1a$HOCR(), L1a$HOCRTimeIndex(), TimeInt)
-
-          if (length(FiltRawHOCR) == 0) {
-            warning(
-              paste0("HOCR data not found at time interval: ", TimeInt)
-            )
-          } else if (is.null(CalData$CalHOCR())) {
-            warning(
-              "HOCR calibration data not loaded"
-            )
-          } else {
-            # Select nearest dark data
-            ObsTime <- int_end(TimeInt / 2)
-
-            HOCRDark <- L1a$HOCRDark() %>%
-              mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(ymd_hms(.x$DateTime) - ObsTime)), ])) %>%
-              ungroup() %>%
-              select(SN, DarkAproxData)
-
-            WaveSeq <- seq(
-              Settings$HOCR$WaveMin(),
-              Settings$HOCR$WaveMax(),
-              Settings$HOCR$WaveStep()
-            )
-
-            Obs$HOCR$L1b <- spsComps::shinyCatch(
-              cal_hocr(
-                RawHOCR = FiltRawHOCR,
-                CalHOCR = CalData$CalHOCR(),
-                HOCRDark = HOCRDark,
-                MetadataL1b = Obs$MetadataL1b,
-                UpdateProgress,
-                WaveSeq = WaveSeq
-              ),
-              shiny = T,
-              trace_back = TRUE
-            )
-          }
-        }
-
         # SBE19 L1b ---------------------------------------------------------------
 
         if (any(str_detect(L1a$InstrumentList(), "SBE19"))) {
@@ -192,6 +134,65 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
               ) %>%
               group_by(Parameter) %>%
               nest(Data = !matches("Parameter"))
+          }
+        }
+
+
+        # HOCR L1b ----------------------------------------------------------------
+
+        if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
+          # Create a callback function to update progress.
+          # Each time this is called:
+          # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
+          #   distance. If non-NULL, it will set the progress to that value.
+          # - It also accepts optional detail text.
+          UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
+            if (is.null(value)) {
+              value <- progress$getValue()
+              value <- value + (progress$getMax() - value) / 5
+            }
+            progress$set(value = value, message = message, detail = detail)
+          }
+
+          progress$set(value = 0.1, detail = "HOCR")
+
+          FiltRawHOCR <- filter_hocr(L1a$HOCR(), L1a$HOCRTimeIndex(), TimeInt)
+
+          if (length(FiltRawHOCR) == 0) {
+            warning(
+              paste0("HOCR data not found at time interval: ", TimeInt)
+            )
+          } else if (is.null(CalData$CalHOCR())) {
+            warning(
+              "HOCR calibration data not loaded"
+            )
+          } else {
+            # Select nearest dark data
+            ObsTime <- int_end(TimeInt / 2)
+
+            HOCRDark <- L1a$HOCRDark() %>%
+              mutate(DarkCalData = purrr::map(CalData, ~ .x[which.min(abs(ymd_hms(.x$DateTime) - ObsTime)), ])) %>%
+              ungroup() %>%
+              select(SN, DarkCalData)
+
+            WaveSeq <- seq(
+              Settings$HOCR$WaveMin(),
+              Settings$HOCR$WaveMax(),
+              Settings$HOCR$WaveStep()
+            )
+
+            Obs$HOCR$L1b <- spsComps::shinyCatch(
+              cal_hocr(
+                RawHOCR = FiltRawHOCR,
+                CalHOCR = CalData$CalHOCR(),
+                HOCRDark = HOCRDark,
+                MetadataL1b = Obs$MetadataL1b,
+                UpdateProgress,
+                WaveSeq = WaveSeq
+              ),
+              shiny = T,
+              trace_back = TRUE
+            )
           }
         }
 

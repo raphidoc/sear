@@ -156,8 +156,8 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog) {
             ~ tibble(
               Instrument = .x$Instrument,
               SN = .x$SN,
-              AproxData = purrr::map(
-                .x = ..1$AproxData,
+              CalData = purrr::map(
+                .x = ..1$CalData,
                 ~ pivot_longer(
                   .x,
                   cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
@@ -171,14 +171,14 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog) {
             )
           )
 
-          test2 <- purrr::map(.x = test, ~ unnest(.x, cols = c(AproxData)))
+          test2 <- purrr::map(.x = test, ~ unnest(.x, cols = c(CalData)))
 
           test3 <- purrr::map_df(.x = test2, ~.x) %>%
             group_by(Instrument, SN) %>%
-            nest(AproxData = !matches("Instrument|SN")) %>%
+            nest(CalData = !matches("Instrument|SN")) %>%
             mutate(
-              AproxData = purrr::map(
-                AproxData,
+              CalData = purrr::map(
+                CalData,
                 ~ pivot_wider(
                   .x,
                   names_from = all_of(c("Type", "Wavelength")),
@@ -349,7 +349,6 @@ mod_parse_data_server <- function(id, SearProj, CalData, MainLog) {
             DataSyntHOCR <- NA
           }
 
-          #browser()
           # TODO quick fix for SBE19() present but df is empty
           if (!is.null(SBE19())) {
             if (nrow(SBE19()) > 0) {

@@ -82,7 +82,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
 
       WaveMin <- ifelse(
         identical(LastSettings()$WaveMin, as.numeric()),
-        353, LastSettings()$WaveMin
+        356, LastSettings()$WaveMin
       )
 
       WaveMax <- ifelse(

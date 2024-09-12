@@ -209,6 +209,7 @@ read_satview_hocr <- function(RawFile) {
 #'
 #' @noRd
 filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
+
   Ind <- purrr::map_lgl(
     .x = as.numeric(HOCRTimeIndex),
     ~ .x >= as.numeric(int_start(TimeInt)) - 1 & .x <= as.numeric(int_end(TimeInt))
@@ -231,6 +232,7 @@ filter_hocr <- function(RawHOCR, HOCRTimeIndex, TimeInt) {
 tidy_hocr <- function(Packets, Date) {
   # If HOCR log with SatView, use there date time format
   # if (!inherits(Date, "Date") && Date == "data") {
+
   if (any(str_detect(names(Packets), "^date$"))) {
     Year <- str_extract(Packets$date, "^[:digit:]{4}")
 
@@ -419,35 +421,47 @@ cal_dark <- function(RawHOCR, CalHOCR, Date) {
     )) %>%
     mutate(CalData = purrr::map(CalData, ~ select(., where(function(x) all(!is.na(x))))))
 
+    HOCRWide <- HOCRWide %>%
+    mutate(
+      CalData = purrr::map(
+        .x = CalData,
+        ~ .x %>%
+          rename(DateTime = Time) %>%
+          mutate(
+            ID = seq(1, nrow(.x)),
+            QC = "1",
+            .before = DateTime))
+    )
+
   # Compute the Time Sequence
-
-  ShortNobs <- HOCRWide %>%
-    mutate(Nobs = purrr::map_dbl(CalData, ~ length(rownames(.))))
-
-  ShortNobs <- ShortNobs %>%
-    filter(Nobs == min(ShortNobs$Nobs)) %>%
-    unnest(cols = c(CalData))
-
-  MinTime <- min(ShortNobs$Time)
-  # format(MinTime, "%Y-%m-%d %H:%M:%OS3")
-
-  MaxTime <- max(ShortNobs$Time)
-  # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
-
-  TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60)
-  # format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
-
-  # Interpolate to commom time coordinates
+#
+#   ShortNobs <- HOCRWide %>%
+#     mutate(Nobs = purrr::map_dbl(CalData, ~ length(rownames(.))))
+#
+#   ShortNobs <- ShortNobs %>%
+#     filter(Nobs == min(ShortNobs$Nobs)) %>%
+#     unnest(cols = c(CalData))
+#
+#   MinTime <- min(ShortNobs$Time)
+#   # format(MinTime, "%Y-%m-%d %H:%M:%OS3")
+#
+#   MaxTime <- max(ShortNobs$Time)
+#   # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
+#
+#   TimeSeq <- seq.POSIXt(MinTime, MaxTime, by = 60)
+#   # format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
+#
+#   # Interpolate to commom time coordinate
+#
+#   HOCRWide <- HOCRWide %>%
+#     mutate(CalData = purrr::map(CalData, ~ approx_tbl(., TimeSeq))) #%>%
+#     #select(!CalData)
+#
+#   HOCRWide <- HOCRWide %>%
+#     mutate(CalData = purrr::map(CalData, na.omit))
 
   HOCRWide <- HOCRWide %>%
     mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
-
-  HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq))) %>%
-    select(!CalData)
-
-  HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map(AproxData, na.omit))
 
   return(HOCRWide)
 }
@@ -474,6 +488,14 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., unique(date(MetadataL1b$DateTime))))
 
+  if (length(unique(RawData$SN)) < 3) {
+    stop(
+      paste0("Missing instrument(s), detected only: ",
+             paste(unique(RawData$SN), collapse = ", ")
+             )
+      )
+  }
+
   # Bind HOCR with Calibration by Instrument (shutter mode) -----------------
 
   GlobCal <- RawData %>%
@@ -488,7 +510,6 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   GlobCal <- left_join(GlobCal, CalHOCR$SAMPLE, by = c("Instrument", "SN"))
 
-  # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
     text <- "add OPTIC3"
     UpdateProgress(detail = text)
@@ -567,8 +588,6 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   # Compute the Time Sequence for interpolation with start and end taken from the DataLogger time
   # The interval is fixed at 1 second as this is the rate of data output by the Applanix
-  # TODO: a more dynamic interval would be nice,
-  # also keep in mind that at a certain level all data must be recorded to common coordinates
 
   # ShortNobs <- HOCRWide %>%
   #   mutate(Nobs = purrr::map_dbl(CalData, ~ length(rownames(.))))
@@ -583,7 +602,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   # MaxTime <- max(ShortNobs$GPSTime)
   # # format(MaxTime, "%Y-%m-%d %H:%M:%OS3")
 
-  TimeSeq <- seq.POSIXt(min(ymd_hms(MetadataL1b$DateTime)), max(ymd_hms(MetadataL1b$DateTime)), by = 1)
+  # TimeSeq <- seq.POSIXt(min(ymd_hms(MetadataL1b$DateTime)), max(ymd_hms(MetadataL1b$DateTime)), by = 1)
   # format(TimeSeq, "%Y-%m-%d %H:%M:%OS3")
 
   # Interpolate to commom time coordinates
@@ -595,20 +614,14 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   if (any(purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1))) {
     MissSn <- HOCRWide$SN[purrr::map_lgl(HOCRWide$CalData, ~ !nrow(.) > 1)]
-    stop(glue::glue("Cannot interpolate with one light record for instrument: ", paste0(MissSn, collapse = ", ")))
+    stop(glue::glue("Cannot process with one light record for instrument: ", paste0(MissSn, collapse = ", ")))
   }
 
   # Need to test if two non-NA values are available to interpolate
   # This is handled by wrapping cal_hocr in spsComps::shinyCatch
 
-  # TODO: Structural NA beginning time coordinate interpolation
-  # There is structural NA at the first second of the interpolation
-  # data is never recorded exactly at the first second (30S) but some millisecond after (30.235S)
-  # Not Sure how to deal with that
-
-  HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
-
+  # HOCRWide <- HOCRWide %>%
+  #   mutate(AproxData = purrr::map(CalData, ~ approx_tbl(., TimeSeq)))
 
   # Data is at level L2s -------------------------------------------------------
 
@@ -632,7 +645,19 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   }
 
   HOCRWide <- HOCRWide %>%
-    mutate(AproxData = purrr::map2(AproxData, DarkAproxData, cor_dark))
+    mutate(
+      CalData = purrr::map(
+        .x = CalData,
+        ~ .x %>%
+          rename(DateTime = Time) %>%
+          mutate(
+            ID = seq(1, nrow(.x)),
+            QC = "1",
+            .before = DateTime))
+    )
+
+  HOCRWide <- HOCRWide %>%
+    mutate(CalData = purrr::map2(CalData, DarkCalData, cor_dark))
 
   # Transform back to long format
 
@@ -642,8 +667,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   }
 
   HOCRLong <- HOCRWide %>%
-    mutate(AproxData = purrr::map(
-      AproxData,
+    mutate(CalData = purrr::map(
+      CalData,
       ~ pivot_longer(
         .,
         cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
@@ -658,7 +683,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   # CalData is not needed further
   HOCRLong <- HOCRLong %>%
-    select(!CalData & !DarkAproxData)
+    select(!DarkCalData)
 
   ### Approx wavelength
   # L1bAverageLong <- L1bDataWide %>%
@@ -694,16 +719,18 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   L1bAproxLong <- HOCRLong %>%
     mutate(
-      AproxData = purrr::map(.x = AproxData, ~ .x %>%
-        na.omit() %>%
-        group_by(ID) %>%
-        nest(.key = "Nest"))
+      CalData = purrr::map(
+        .x = CalData,
+        ~ .x %>%
+          na.omit() %>%
+          group_by(ID) %>%
+          nest(.key = "Nest"))
     )
 
   L1bAproxLong <- L1bAproxLong %>%
     mutate(
-      AproxData = purrr::map(
-        AproxData, ~ purrr::map2_df(
+      CalData = purrr::map(
+        CalData, ~ purrr::map2_df(
           .x = .$ID, .y = .$Nest,
           .f = ~ bind_cols(ID = .x, approx_wave(.y, WaveSeq))
         )
@@ -725,180 +752,378 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 #' @return Tidy long tiblle with Rrs and KLu
 #'
 #' @noRd
-L2_hocr <- function(L1bData, WaveSeq, Z1Depth, Z1Z2Depth,
+L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
                     Loess, Span, Obs) {
-  L1bDataWide <- L1bData %>%
-    mutate(AproxData = purrr::map(
-      AproxData,
-      ~ pivot_wider(
-        .,
-        names_from = all_of(c("Type", "Wavelength")),
-        names_sep = "_",
-        values_from = Channels
-      ) %>%
-        ungroup()
-    )) %>%
-    ungroup()
 
-  L1bDataWide <- L1bDataWide %>%
-    mutate(AproxData = purrr::map(AproxData, ~ filter(., QC == "1")))
+  hocr_pdf <- function(df) {
 
-  L1bDataWide <- L1bDataWide %>%
-    mutate(AproxData = purrr::map(AproxData, ~ summarise(.x, across(.cols = !matches("ID|QC|DateTime"), ~ mean(.x, na.rm = T)))))
-
-  # ### Approx wavelength
-  # L1bAverageLong <- L1bDataWide %>%
-  #   mutate(AproxData = purrr::map(
-  #     AproxData,
-  #     ~ pivot_longer(
-  #       .,
-  #       cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-  #       values_to = "Channels",
-  #       names_to = c("Type", "Wavelength"),
-  #       names_sep = "_",
-  #       # names_prefix = "[[:alpha:]]{2}_",
-  #       names_transform = list(Wavelength = as.numeric)
-  #     )
-  #   ))
-  #
-  # # This parameter should be an user input
-  # #WaveSeq <- seq(353, 800, 3)
-  #
-  # approx_wave <- function(., WaveSeq) {
-  #
-  #   tbl <- tibble(
-  #     Type = unique(.$Type),
-  #     Wavelength = WaveSeq
-  #   )
-  #
-  #   for (i in seq_along(colnames(.))[-1:-2]) {
-  #     coord <- approx(x = .[[2]], y = .[[i]], xout = WaveSeq, method = "linear")
-  #
-  #     tbl <- bind_cols(tbl, x = coord[[2]])
-  #     colnames(tbl)[i] <- colnames(.)[i]
-  #   }
-  #
-  #   tbl
-  #
-  #   # tbl %>% mutate(ID = seq_along(TimeSeq))
-  # }
-  #
-  # L1bAproxLong <- L1bAverageLong %>%
-  #   mutate(IntData = purrr::map(AproxData, ~ approx_wave(., WaveSeq)))
-  #
-  #   L1bAproxWide <- L1bAproxLong %>%
-  #     mutate(IntData = purrr::map(
-  #       IntData,
-  #       ~ pivot_wider(
-  #         .,
-  #         names_from = all_of(c("Type", "Wavelength")),
-  #         names_sep = "_",
-  #         values_from = Channels
-  #       )
-  #     )) %>%
-  #     ungroup()
-
-  Es <- L1bDataWide %>%
-    filter(SN %in% "1397" | SN == "1396" | SN == "0341") %>%
-    unnest(cols = c(AproxData)) %>%
-    select(!matches("Instrument|SN|DateTime|UUID"))
-
-  LuZ1 <- L1bDataWide %>%
-    filter(SN == "1415" | SN == "1413" | SN == "0237") %>%
-    unnest(cols = c(AproxData)) %>%
-    select(!matches("Instrument|SN|DateTime|UUID"))
-
-  LuZ2 <- L1bDataWide %>%
-    filter(SN == "1416" | SN == "1414" | SN == "0238") %>%
-    unnest(cols = c(AproxData)) %>%
-    select(!matches("Instrument|SN|DateTime|UUID"))
-
-  # Z1Z2Depth <- 0.15 # Algae Wise 2022
-
-  # Consider suppressWarnings(expr)
-
-  KLuWide <- suppressWarnings((log(LuZ1) - log(LuZ2)) / Z1Z2Depth)
-
-  KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu"))
-
-  KLuLong <- KLuWide %>%
-    pivot_longer(
-      .,
-      cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-      values_to = "KLu",
-      names_to = c("Wavelength"),
-      # names_sep = "_",
-      names_prefix = "[[:alpha:]]{3}_",
-      names_transform = list(Wavelength = as.numeric)
-    )
-
-  if (Loess) {
-    KLuloess <- loess(
-      KLu ~ Wavelength,
-      data = KLuLong,
-      na.action = "na.omit",
-      span = Span
-    )
-
-    KLuLong <- KLuLong %>%
-      mutate(
-        KLu_loess = predict(KLuloess, Wavelength)
+    hocr_stats <- df %>%
+      group_by(SN, Wavelength) %>%
+      select(SN, Wavelength, Channels) %>%
+      summarise(
+        across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}")
       )
 
-    KLuWide <- KLuLong %>%
-      select(Wavelength, KLu_loess) %>%
-      pivot_wider(
-        names_from = "Wavelength",
-        names_prefix = "KLu_loess_",
-        names_sep = "_",
-        values_from = c(KLu_loess)
-      )
+    return(hocr_stats)
   }
 
-  # Z1Depth <- 0.10 # 10 cm
-
-  # 0.54 is the radiance transmittance for the air/water interface
-  Lw <- 0.54 * LuZ1 * exp(-Z1Depth * KLuWide)
-  RrsWide <- Lw / Es
-
-  RrsLong <- RrsWide %>%
-    pivot_longer(
-      .,
-      cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-      values_to = "Rrs",
-      names_to = c("Wavelength"),
-      # names_sep = "_",
-      names_prefix = "[[:alpha:]]{2}_",
-      names_transform = list(Wavelength = as.numeric)
+  df <- L1bData %>%
+    unnest(cols = c(CalData)) %>%
+    filter(
+      QC == 1
     )
 
-  QWIP <- qc_qwip(Waves = RrsLong$Wavelength, Rrs = RrsLong$Rrs)
+  df_pdf <- hocr_pdf(df)
 
-  # RrsLong <- RrsLong %>%
+  propagate_uncertainty <- function(wavelength, es, luz1, luz2, z1, z2z1, n_draws = 10^5) {
+
+    # Draw the samples from the PDFs of the input quantity
+    es_samples <- purrr::map2(
+      .x = es$Channels_median,
+      .y = es$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, .y
+      )
+    )
+    es_samples <- matrix(unlist(es_samples), nrow = n_draws, byrow = FALSE)
+
+    luz1_samples <- purrr::map2(
+      .x = luz1$Channels_median,
+      .y = luz1$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, .y
+      )
+    )
+    luz1_samples <- matrix(unlist(luz1_samples), nrow = n_draws, byrow = FALSE)
+
+    luz2_samples <- purrr::map2(
+      .x = luz2$Channels_median,
+      .y = luz2$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, .y
+      )
+    )
+    luz2_samples <- matrix(unlist(luz2_samples), nrow = n_draws, byrow = FALSE)
+
+    z1_samples <- rnorm(n_draws, z1$z1_median, z1$z1_sd)
+
+    # Compute klu, lw, rrs with combined uncertainty
+
+    compute_klu <- function(luz1, luz2, z2z1) {
+
+      klu_samples <- (log(luz1) - log(luz2)) / z2z1
+
+      klu_stats <- purrr::map_dfr(
+        seq_along(wavelength), ~ {
+          tibble(
+            klu_mean = mean(klu_samples[, .x], na.rm = T),
+            klu_sd = sd(klu_samples[, .x], na.rm = T)
+          )
+        })
+
+      return(list(tibble(wavelength, klu_stats), klu_samples))
+    }
+
+    klu <- compute_klu(luz1_samples, luz2_samples, z2z1)
+    klu_estimates <- klu[[1]]
+    klu_samples <- klu[[2]]
+
+    # klu_samples <- purrr::map2(
+    #   .x = klu$klu_mean,
+    #   .y = klu$klu_sd,
+    #   ~ rnorm(
+    #     n_draws, .x, .y
+    #   )
+    # )
+    # klu_samples <- matrix(unlist(klu_samples), nrow = n_draws, byrow = FALSE)
+
+    compute_lw <- function(luz1, klu, z1) {
+
+      lw_samples <- 0.54 * luz1 * exp(klu * z1)
+
+      lw_stats <- purrr::map_dfr(
+        seq_along(wavelength), ~ {
+          tibble(
+            lw_mean = mean(lw_samples[, .x], na.rm = T),
+            lw_sd = sd(lw_samples[, .x], na.rm = T)
+          )
+        })
+
+      return(list(tibble(wavelength, lw_stats), lw_samples))
+    }
+
+    lw <- compute_lw(luz1_samples, klu_samples, z1_samples)
+    lw_estimates <- lw[[1]] %>%
+      left_join(klu_estimates, by = "wavelength")
+    lw_samples <- lw[[2]]
+
+    # lw_samples <- purrr::map2(
+    #   .x = lw$lw_mean,
+    #   .y = lw$lw_sd,
+    #   ~ rnorm(
+    #       n_draws, .x, .y
+    #   )
+    # )
+    # lw_samples <- matrix(unlist(lw_samples), nrow = n_draws, byrow = FALSE)
+
+    compute_rrs <- function(lw, es) {
+      rrs_samples <- lw/es
+
+      rrs_stats <- purrr::map_dfr(
+        seq_along(wavelength), ~ {
+          tibble(
+            rrs_mean = mean(rrs_samples[, .x], na.rm = T),
+            rrs_sd = sd(rrs_samples[, .x], na.rm = T)
+          )
+        })
+
+      return(tibble(wavelength, rrs_stats))
+    }
+
+    rrs <- compute_rrs(lw_samples, es_samples) %>%
+      left_join(lw_estimates, by = "wavelength")
+
+    ####### Compute relative contribution of luz1
+
+    compute_rel_unc <- function(base_sd, perturbed_sd) {
+      # We compute on variance as it's additive
+      return ((base_sd^2 - perturbed_sd^2) / base_sd^2)
+    }
+
+    luz1_rel_samples <- purrr::map2(
+      .x = luz1$Channels_median,
+      .y = luz1$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, 0
+      )
+    )
+    luz1_rel_samples <- matrix(unlist(luz1_rel_samples), nrow = n_draws, byrow = FALSE)
+
+    klu_rel <- compute_klu(luz1_rel_samples, luz2_samples, z2z1)
+    klu_rel_estimates <- klu_rel[[1]]
+    klu_rel_samples <- klu_rel[[2]]
+
+    lw_rel <- compute_lw(luz1_rel_samples, klu_rel_samples, z1_samples)
+    lw_rel_estimates <- lw_rel[[1]]
+    lw_rel_samples <- lw_rel[[2]]
+
+    rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
+
+    rrs <- rrs %>%
+      mutate(
+        klu_luz1_rel_unc = compute_rel_unc(klu_sd, klu_rel_estimates$klu_sd),
+        lw_luz1_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
+        rrs_luz1_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
+      )
+
+    ###### Compute relative contribution of luz2
+
+    luz2_rel_samples<- purrr::map2(
+      .x = luz2$Channels_median,
+      .y = luz2$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, 0
+      )
+    )
+    luz2_rel_samples <- matrix(unlist(luz2_rel_samples), nrow = n_draws, byrow = FALSE)
+
+    klu_rel <- compute_klu(luz1_samples, luz2_rel_samples, z2z1)
+    klu_rel_estimates <- klu_rel[[1]]
+    klu_rel_samples <- klu_rel[[2]]
+
+    lw_rel <- compute_lw(luz1_samples, klu_rel_samples, z1_samples)
+    lw_rel_estimates <- lw_rel[[1]]
+    lw_rel_samples <- lw_rel[[2]]
+
+    rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
+
+    rrs <- rrs %>%
+      mutate(
+        klu_luz2_rel_unc = compute_rel_unc(klu_sd, klu_rel_estimates$klu_sd),
+        lw_luz2_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
+        rrs_luz2_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
+      )
+
+    ####### Compute relative contribution of z1
+
+    lw_rel <- compute_lw(luz1_samples, klu_samples, z1$z1_median)
+    lw_rel_estimates <- lw_rel[[1]]
+    lw_rel_samples <- lw_rel[[2]]
+
+    rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
+
+    rrs <- rrs %>%
+      mutate(
+        lw_z1_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
+        rrs_z1_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
+      )
+
+    ###### Compute relative contribution of es
+
+    es_rel_samples <- purrr::map2(
+      .x = es$Channels_median,
+      .y = es$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, 0
+      )
+    )
+    es_rel_samples <- matrix(unlist(es_rel_samples), nrow = n_draws, byrow = FALSE)
+
+    rrs_rel_estimates <- compute_rrs(lw_samples, es_rel_samples)
+
+    # Different result with Matrix * Matrix and Matrix + Vector ?
+    #rrs_rel_estimates_2 <- compute_rrs(lw_samples, es$Channels_median)
+
+    rrs <- rrs %>%
+      mutate(
+        rrs_es_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
+      )
+
+    ####### Check unity of relative contribution
+
+    rrs <- rrs %>%
+      mutate(
+        klu_rel_unity = klu_luz1_rel_unc + klu_luz2_rel_unc,
+        lw_rel_unity = lw_luz1_rel_unc + lw_luz2_rel_unc + lw_z1_rel_unc,
+        rrs_rel_unity = rrs_luz1_rel_unc + rrs_luz2_rel_unc + rrs_z1_rel_unc + rrs_es_rel_unc
+      )
+
+    return(rrs)
+  }
+
+  es <- df_pdf %>%
+    filter(SN %in% c(1397, 1396, 0341))
+
+  luz1 <- df_pdf %>%
+    filter(SN %in% c(1415, 1413, 0237))
+
+  luz2 <- df_pdf %>%
+    filter(SN %in% c(1416, 1414, 0238))
+
+  rrs <- propagate_uncertainty(wave_seq, es, luz1, luz2, z1, z2z1)
+
+  L2Data <- rrs
+
+  # L1bDataWide <- L1bData %>%
+  #   mutate(CalData = purrr::map(
+  #     CalData,
+  #     ~ pivot_wider(
+  #       .,
+  #       names_from = all_of(c("Type", "Wavelength")),
+  #       names_sep = "_",
+  #       values_from = Channels
+  #     ) %>%
+  #       ungroup()
+  #   )) %>%
+  #   ungroup()
+  #
+  # L1bDataWide <- L1bDataWide %>%
+  #   mutate(CalData = purrr::map(CalData, ~ filter(., QC == "1")))
+  #
+  # L1bDataWide <- L1bDataWide %>%
+  #   mutate(CalData = purrr::map(CalData, ~ summarise(.x, across(.cols = !matches("ID|QC|DateTime"), ~ mean(.x, na.rm = T)))))
+  #
+  # Es <- L1bDataWide %>%
+  #   filter(SN %in% "1397" | SN == "1396" | SN == "0341") %>%
+  #   unnest(cols = c(CalData)) %>%
+  #   select(!matches("Instrument|SN|DateTime|UUID"))
+  #
+  # LuZ1 <- L1bDataWide %>%
+  #   filter(SN == "1415" | SN == "1413" | SN == "0237") %>%
+  #   unnest(cols = c(CalData)) %>%
+  #   select(!matches("Instrument|SN|DateTime|UUID"))
+  #
+  # LuZ2 <- L1bDataWide %>%
+  #   filter(SN == "1416" | SN == "1414" | SN == "0238") %>%
+  #   unnest(cols = c(CalData)) %>%
+  #   select(!matches("Instrument|SN|DateTime|UUID"))
+  #
+  # # Z1Z2Depth <- 0.15 # Algae Wise 2022
+  #
+  # # Consider suppressWarnings(expr)
+  #
+  # KLuWide <- suppressWarnings((log(LuZ1) - log(LuZ2)) / Z1Z2Depth)
+  #
+  # KLuWide <- rename_with(KLuWide, ~ str_replace(.x, "LU", "KLu"))
+  #
+  # KLuLong <- KLuWide %>%
+  #   pivot_longer(
+  #     .,
+  #     cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+  #     values_to = "KLu",
+  #     names_to = c("Wavelength"),
+  #     # names_sep = "_",
+  #     names_prefix = "[[:alpha:]]{3}_",
+  #     names_transform = list(Wavelength = as.numeric)
+  #   )
+  #
+  # if (Loess) {
+  #   KLuloess <- loess(
+  #     KLu ~ Wavelength,
+  #     data = KLuLong,
+  #     na.action = "na.omit",
+  #     span = Span
+  #   )
+  #
+  #   KLuLong <- KLuLong %>%
+  #     mutate(
+  #       KLu_loess = predict(KLuloess, Wavelength)
+  #     )
+  #
+  #   KLuWide <- KLuLong %>%
+  #     select(Wavelength, KLu_loess) %>%
+  #     pivot_wider(
+  #       names_from = "Wavelength",
+  #       names_prefix = "KLu_loess_",
+  #       names_sep = "_",
+  #       values_from = c(KLu_loess)
+  #     )
+  # }
+  #
+  # # Z1Depth <- 0.10 # 10 cm
+  #
+  # # 0.54 is the radiance transmittance for the air/water interface
+  # Lw <- 0.54 * LuZ1 * exp(-Z1Depth * KLuWide)
+  # RrsWide <- Lw / Es
+  #
+  # RrsLong <- RrsWide %>%
+  #   pivot_longer(
+  #     .,
+  #     cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
+  #     values_to = "Rrs",
+  #     names_to = c("Wavelength"),
+  #     # names_sep = "_",
+  #     names_prefix = "[[:alpha:]]{2}_",
+  #     names_transform = list(Wavelength = as.numeric)
+  #   )
+  #
+  # QWIP <- qc_qwip(Waves = RrsLong$Wavelength, Rrs = RrsLong$Rrs)
+  #
+  # # RrsLong <- RrsLong %>%
+  # #   mutate(
+  # #     ScoreQWIP = QWIP$Score
+  # #   )
+  #
+  # Obs$MetadataL2 <- Obs$MetadataL2 %>%
   #   mutate(
   #     ScoreQWIP = QWIP$Score
   #   )
-
-  Obs$MetadataL2 <- Obs$MetadataL2 %>%
-    mutate(
-      ScoreQWIP = QWIP$Score
-    )
-
-  if (Loess) {
-    Rrsloess <- loess(
-      Rrs ~ Wavelength,
-      data = RrsLong,
-      na.action = "na.omit",
-      span = Span
-    )
-
-    RrsLong <- RrsLong %>%
-      mutate(
-        Rrs_loess = predict(Rrsloess, Wavelength)
-      )
-  }
-
-  L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
+  #
+  # if (Loess) {
+  #   Rrsloess <- loess(
+  #     Rrs ~ Wavelength,
+  #     data = RrsLong,
+  #     na.action = "na.omit",
+  #     span = Span
+  #   )
+  #
+  #   RrsLong <- RrsLong %>%
+  #     mutate(
+  #       Rrs_loess = predict(Rrsloess, Wavelength)
+  #     )
+  # }
+  #
+  # L2Data <- left_join(RrsLong, KLuLong, by = "Wavelength")
 
 
   # RbII computation --------------------------------------------------------
