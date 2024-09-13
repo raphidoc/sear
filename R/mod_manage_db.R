@@ -58,6 +58,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS MetadataL2 (
+          ensemble DOUBLE NOT NULL,
           DateTime TEXT NOT NULL,
           DateTimeMin TEXT NOT NULL,
           DateTimeMax TEXT NOT NULL,
@@ -99,7 +100,8 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS MetadataL1b (
-          DateTime TEXT,
+          ensemble DOUBLE,
+          DateTime DOUBLE,
           Speed DOUBLE,
           Lon DOUBLE,
           Lat DOUBLE,
@@ -132,12 +134,20 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           "CREATE TABLE IF NOT EXISTS `HOCRL1b` (
           `Instrument` TEXT,
           `SN` TEXT,
-          `ID` INTEGER,
-          `QC` TEXT,
-          `DateTime` TEXT,
-          `Type` TEXT,
-          `Wavelength` REAL,
-          `Channels` REAL,
+          ID,
+          QC,
+          DateTime,
+          IntTime,
+          SampleDelay,
+          DarkSample,
+          DarkAverage,
+          SpecTemp,
+          Frame,
+          Timer,
+          CheckSum,
+          Type,
+          Wavelength,
+          Channels,
           `UUID` TEXT,
           FOREIGN KEY (UUID)
             REFERENCES MetadataL2 (UUID)

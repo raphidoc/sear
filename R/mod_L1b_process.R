@@ -52,9 +52,9 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
 
         # Create metadata for the selected L1a point
 
-        Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
+        Obs$MetadataL1b <- gen_metadataL1b(metadata = Select, ensemble = 0)
 
-        Obs$MetadataL2 <- gen_metadataL2(Select = Select)
+        Obs$MetadataL2 <- gen_metadataL2(metadata = Select, ensemble = 0)
 
         # Empty L1b and L2 on new processing to avoid confusion
         Obs$HOCR$L1b <- tibble()
@@ -186,7 +186,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, CalData, Obs, MainLog, Se
                 RawHOCR = FiltRawHOCR,
                 CalHOCR = CalData$CalHOCR(),
                 HOCRDark = HOCRDark,
-                MetadataL1b = Obs$MetadataL1b,
+                MetadataL2 = Obs$MetadataL2,
                 UpdateProgress,
                 WaveSeq = WaveSeq
               ),

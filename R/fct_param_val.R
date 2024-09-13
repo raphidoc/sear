@@ -9,9 +9,9 @@
 L2_param_val <- function(L1b) {
   L2 <- L1b %>%
     unnest(c(Data)) %>%
-    group_by(Parameter, ) %>%
+    group_by(Parameter) %>%
     filter(QC > 0) %>%
-    summarize(Value = mean(Value)) %>%
+    summarize(Value = median(Value, na.rm = T)) %>%
     pivot_wider(
       names_from = Parameter,
       values_from = Value

@@ -479,14 +479,14 @@ cal_dark <- function(RawHOCR, CalHOCR, Date) {
 #' @return Return L1b HOCR data in a tidy long format
 #'
 #' @noRd
-cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, WaveSeq) {
+cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL2, UpdateProgress, WaveSeq) {
   # If we were passed a progress update function, call it
   if (is.function(UpdateProgress)) {
     text <- "HOCR: "
     UpdateProgress(message = text)
   }
 
-  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., unique(date(MetadataL1b$DateTime))))
+  RawData <- purrr::map_df(RawHOCR, ~ tidy_hocr(., date(MetadataL2$DateTime)))
 
   if (length(unique(RawData$SN)) < 3) {
     stop(
@@ -548,7 +548,7 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   # Interpolate time coordinate ---------------------------------------------
 
   if (is.function(UpdateProgress)) {
-    detail <- "time interpolation"
+    detail <- "Cleaning HOCR"
     UpdateProgress(detail = detail)
   }
 
@@ -557,10 +557,10 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
       CalData,
       ~ select(.x, !all_of(c("Units", "FieldLength", "DataType", "CalLines", "FitType", "a0", "a1", "im", "cint")))
     )) %>% # Packet metadata
-    mutate(CalData = purrr::map(
-      CalData,
-      ~ select(.x, !all_of(c("SampleDelay", "DarkSample", "DarkAverage", "SpecTemp", "Frame", "Timer", "CheckSum")))
-    )) %>%
+    # mutate(CalData = purrr::map(
+    #   CalData,
+    #   ~ select(.x, !all_of(c("SampleDelay", "DarkSample", "DarkAverage", "SpecTemp", "Frame", "Timer", "CheckSum")))
+    # )) %>%
     select(Instrument, SN, CalData) %>%
     filter(str_detect(Instrument, "HPE|HSE|HPL|HSL"))
 
@@ -607,8 +607,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   # Interpolate to commom time coordinates
 
-  HOCRWide <- HOCRWide %>%
-    mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
+  # HOCRWide <- HOCRWide %>%
+  #   mutate(CalData = purrr::map(CalData, ~ select(., !IntTime)))
 
   # Debug for NA values in interpolation
 
@@ -634,14 +634,24 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
 
   HOCRWide <- left_join(HOCRWide, HOCRDark, by = c("SN"))
 
-  cor_dark <- function(x, y) {
-    ID <- x[, 1]
-    QC <- x[, 2]
-    DateTime <- x[, 3]
+  cor_dark <- function(light, dark) {
 
-    Data <- x[, -1:-3] - row_rep(y[, -1:-3], nrow(x[, -1:-3]))
+    data <- light %>%
+      select(!matches("[[:alpha:]]*_[[:digit:]]{3}"))
 
-    bind_cols(ID, QC, DateTime, Data)
+    light <- light %>%
+      select(matches("[[:alpha:]]*_[[:digit:]]{3}"))
+
+    dark <- dark %>%
+      select(matches("[[:alpha:]]*_[[:digit:]]{3}"))
+
+    if (length(dark) != length(light)) {
+      stop("dark and light have different number of wavelength")
+    } else {
+      light <- light - row_rep(dark, nrow(light))
+    }
+
+    return(bind_cols(data, light))
   }
 
   HOCRWide <- HOCRWide %>%
@@ -703,16 +713,19 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
   # This parameter should be an user input
   # WaveSeq <- seq(353, 800, 3)
 
-  approx_wave <- function(., WaveSeq) {
-    tbl <- tibble(
-      QC = unique(.$QC),
-      DateTime = unique(.$DateTime),
-      Type = unique(.$Type),
-      Wavelength = WaveSeq
-    )
+  approx_wave <- function(df, WaveSeq) {
 
-    coord <- approx(x = .$Wavelength, y = .$Channels, xout = WaveSeq, method = "linear")
-    tbl <- bind_cols(tbl, Channels = coord[[2]])
+    data <- df %>%
+      select(!all_of(c("Wavelength", "Channels"))) %>%
+      unique()
+
+    coord <- approx(x = df$Wavelength, y = df$Channels, xout = WaveSeq, method = "linear")
+
+    tbl <- tibble(
+      data,
+      Wavelength = coord[[1]],
+      Channels = coord[[2]]
+    )
 
     return(tbl)
   }
@@ -736,9 +749,6 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL1b, UpdateProgress, Wa
         )
       )
     )
-
-  # Should write down the structure of the return nested df
-  # Instrument, SN, Data
 
   return(L1bAproxLong)
 }

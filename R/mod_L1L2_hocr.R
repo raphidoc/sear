@@ -48,24 +48,24 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       # Add Pitch and Roll metadata
       # TODO make this code clearer ... possibly with purrr::map ?
-      Enhanced <- Obs$HOCR$L1b %>%
-        unnest(cols = c(CalData)) %>%
-        mutate(DateTime = as.numeric(DateTime)) %>%
-        fuzzyjoin::difference_left_join(
-          Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime))),
-          by = c("DateTime"),
-          max_dist = 1,
-          distance_col = "Distance"
-        ) %>%
-        group_by(ID, Distance) %>%
-        nest() %>%
-        group_by(ID) %>%
-        slice(which.min(Distance)) %>%
-        unnest(cols = c(data)) %>%
-        group_by(Instrument, SN) %>%
-        nest(.key = "CalData")
+      # Enhanced <- Obs$HOCR$L1b %>%
+      #   unnest(cols = c(CalData)) %>%
+      #   mutate(DateTime = as.numeric(DateTime)) %>%
+      #   fuzzyjoin::difference_left_join(
+      #     Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime))),
+      #     by = c("DateTime"),
+      #     max_dist = 1,
+      #     distance_col = "Distance"
+      #   ) %>%
+      #   group_by(ID, Distance) %>%
+      #   nest() %>%
+      #   group_by(ID) %>%
+      #   slice(which.min(Distance)) %>%
+      #   unnest(cols = c(data)) %>%
+      #   group_by(Instrument, SN) %>%
+      #   nest(.key = "CalData")
 
-      ply <- Enhanced %>%
+      ply <- Obs$HOCR$L1b %>%
         arrange(SN) %>%
         # filter(str_detect(Instrument, "HPL")) %>%
         mutate(
@@ -75,11 +75,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
             ~ plot_ly(
               .x %>% group_by(ID),
               text = ~ paste0(
-                "<b>ID</b>: ", ID, "<br>",
-                "<b>BoatSolAzm</b>: ", BoatSolAzm, "&deg;<br>",
-                "<b>Pitch</b>: ", Pitch, "&deg;<br>",
-                "<b>Roll</b>: ", Roll, "&deg;<br>",
-                "<b>Speed</b>: ", Speed, " kmh<sup>-1</sup><br>"
+                "<b>ID</b>: ", ID, "<br>"
               ),
               customdata = ~ID
             ) %>%
@@ -90,6 +86,17 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
                 showlegend = F,
                 color = ~QC,
                 colors = c("1" = "seagreen", "0" = "red")
+              ) %>%
+              add_annotations(
+                text = ~paste0("N = ", length(unique(ID))),
+                x = 0.8,
+                y = 1,
+                yref = "paper",
+                xref = "paper",
+                xanchor = "middle",
+                yanchor = "top",
+                showarrow = FALSE,
+                font = list(size = 15)
               ) %>%
               add_annotations(
                 text = ~.y,

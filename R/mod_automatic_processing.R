@@ -47,14 +47,6 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
 # Create ensemble of 10 seconds -------------------------------------------
 
-        make_ensemble <- function(date_time, duration = 10) {
-
-          # Transform time stamp to group by interval duration
-          ensemble = (as.numeric(date_time) %/% duration) * duration
-
-          return(ensemble)
-        }
-
         ensemble_main <- unique(make_ensemble(MainTime))
 
         ensemble_metadata <- make_ensemble(MainLog()$DateTime)
@@ -92,7 +84,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           # First have to write MetadataL2 in which UUID primary key
           # is the reference for UUID foreign key in all the other tables
           # Otherwise it is a FOREIGN KEY constraint violation
-          Obs$MetadataL2 <- gen_metadataL2(Select = metadata)
+          Obs$MetadataL2 <- gen_metadataL2(metadata, ensemble)
           MetadataL2 <- Obs$MetadataL2 %>%
             mutate(
               UUID = ObsUUID,
@@ -102,7 +94,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             )
           DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
 
-          Obs$MetadataL1b <- gen_metadataL1b(Select = metadata)
+          Obs$MetadataL1b <- gen_metadataL1b(metadata, ensemble)
           MetadataL1b <- Obs$MetadataL1b %>%
             mutate(
               UUID = ObsUUID
@@ -136,7 +128,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             if (nrow(sbe19) == 0) {
               warning(
-                paste0("SBE19 data not found at time interval: ", TimeInt)
+                paste0("SBE19 data not found at time interval: ", ensemble)
               )
             } else if (is.null(CalData$CalSBE19()) | is.null(CalData$CalSBE18()) | is.null(CalData$CalSBE43())) {
               warning(
@@ -237,13 +229,22 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               RawHOCR = hocr,
               CalHOCR = CalData$CalHOCR(),
               HOCRDark = hocr_dark,
-              MetadataL1b = Obs$MetadataL1b,
+              MetadataL2 = Obs$MetadataL2,
               UpdateProgress = NULL,
               wave_seq
             ),
             shiny = T,
             trace_back = TRUE
           )
+
+          if (is.null(Obs$HOCR$L1b)) {
+            # Delete the outdated metadata initially created
+            #  Necessarry to respect UUID foreign key rule (present in main table)
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
+
+            next
+          }
 
           # Filter out of water ensemble --------------------------------------------
           # Ensemble where the closest radiance value to 800 nm exceeds 0.01 sd
@@ -269,10 +270,12 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             next
           }
 
-
           # HOCR L2 processing ------------------------------------------------------
 
-          if (any(Obs$SBE19$L1b$Parameter == "Pressure")) {
+          if (
+            any(str_detect(L1a$InstrumentList(), "SBE19")) &&
+            any(Obs$SBE19$L1b$Parameter == "Pressure")
+            ) {
             message("Taking z1 from CTD")
             pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$Parameter == "Pressure"][[1]]$Value
 
@@ -284,6 +287,14 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               summarise(
                 across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}")
               )
+
+            if (z1$z > 0) {
+              message("CTD in air, taking single z1 from setting")
+              z1 <- tibble(
+                z1_median = Settings$HOCR$Z1Depth(),
+                z1_sd = 0
+              )
+            }
 
 
           } else {
@@ -326,7 +337,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             if (nrow(SeaOWL) == 0) {
               warning(
-                paste0("SeaOWL data not found at time interval: ", TimeInt)
+                paste0("SeaOWL data not found at time interval: ", ensemble)
               )
             } else if (is.null(CalData$CalSeaOWL())) {
               warning(
@@ -372,7 +383,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             if (nrow(BBFL2) == 0) {
               warning(
-                paste0("BBFL2 data not found at time interval: ", TimeInt)
+                paste0("BBFL2 data not found at time interval: ", ensemble)
               )
             } else if (is.null(CalData$CalBBFL2())) {
               warning(
@@ -417,7 +428,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             if (nrow(BioSonicL1b) == 0) {
               warning(
-                paste0("BioSonic data not found at time interval: ", TimeInt)
+                paste0("BioSonic data not found at ensemble: ", ensemble)
               )
             } else {
               Obs$BioSonic$L1b <- BioSonicL1b %>%
@@ -468,7 +479,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
             if (nrow(HydroBallL1b) == 0) {
               warning(
-                paste0("HydroBall data not found at time interval: ", TimeInt)
+                paste0("HydroBall data not found at time interval: ", ensemble)
               )
             } else {
               Obs$HydroBall$L1b <- HydroBallL1b %>%

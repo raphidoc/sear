@@ -90,6 +90,22 @@ discretize_time <- function(MainTime) {
   }
 }
 
+#' make_ensemble
+#'
+#' @description Make ensemble group by duration from timestamp
+#'
+#' @return A vector of ensemble group
+#'
+#' @noRd
+
+make_ensemble <- function(date_time, duration = 10) {
+
+  # Transform time stamp to group by interval duration
+  ensemble = (as.numeric(date_time) %/% duration) * duration
+
+  return(ensemble)
+}
+
 #' gen_metadata
 #'
 #' @description generate metadata for a discrete obs from MainLog
@@ -106,27 +122,28 @@ discretize_time <- function(MainTime) {
 #'
 #' @noRd
 
-gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select) {
+gen_metadataL2 <- function(metadata, ensemble) {
   MetadataL2 <- tibble(
-    DateTime = as.character(format(mean(Select$DateTime, na.rm = T), "%Y-%m-%d %H:%M:%S")),
-    DateTimeMin = as.character(min(Select$DateTime, na.rm = T)),
-    DateTimeMax = as.character(max(Select$DateTime, na.rm = T)),
+    ensemble = ensemble,
+    DateTime = as.character(format(mean(metadata$DateTime, na.rm = T), "%Y-%m-%d %H:%M:%S")),
+    DateTimeMin = as.character(min(metadata$DateTime, na.rm = T)),
+    DateTimeMax = as.character(max(metadata$DateTime, na.rm = T)),
     TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
-    Speed = as.numeric(mean(Select$Speed_kmh, na.rm = T)), # speed in kmh
-    Lon = mean(Select$Lon, na.rm = T),
-    Lat = mean(Select$Lat, na.rm = T),
-    LonMin = min_geo(Select$Lon, na.rm = T),
-    LonMax = max_geo(Select$Lon, na.rm = T),
-    LatMin = min_geo(Select$Lat, na.rm = T),
-    LatMax = max_geo(Select$Lat, na.rm = T),
+    Speed = as.numeric(mean(metadata$Speed_kmh, na.rm = T)), # speed in kmh
+    Lon = mean(metadata$Lon, na.rm = T),
+    Lat = mean(metadata$Lat, na.rm = T),
+    LonMin = min_geo(metadata$Lon, na.rm = T),
+    LonMax = max_geo(metadata$Lon, na.rm = T),
+    LatMin = min_geo(metadata$Lat, na.rm = T),
+    LatMax = max_geo(metadata$Lat, na.rm = T),
     DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
-    Altitude = mean(as.numeric(Select$Altitude), na.rm = T),
-    SolZen = mean(Select$SolZen, na.rm = T),
-    SolAzm = mean(Select$SolAzm, na.rm = T),
-    BoatSolAzm = mean(Select$BoatSolAzm, na.rm = T),
-    Roll = mean(Select$Roll, na.rm = T),
-    Pitch = mean(Select$Pitch, na.rm = T),
-    Heading = mean(Select$Heading, na.rm = T),
+    Altitude = mean(as.numeric(metadata$Altitude), na.rm = T),
+    SolZen = mean(metadata$SolZen, na.rm = T),
+    SolAzm = mean(metadata$SolAzm, na.rm = T),
+    BoatSolAzm = mean(metadata$BoatSolAzm, na.rm = T),
+    Roll = mean(metadata$Roll, na.rm = T),
+    Pitch = mean(metadata$Pitch, na.rm = T),
+    Heading = mean(metadata$Heading, na.rm = T),
     Comment = "NA",
     UUID = NA
   )
@@ -157,19 +174,20 @@ gen_metadataL2 <- function(DateTime = c(), Lon = c(), Lat = c(), Select) {
 #'
 #' @noRd
 
-gen_metadataL1b <- function(DateTime = c(), Lon = c(), Lat = c(), Select) {
+gen_metadataL1b <- function(metadata, ensemble) {
   MetadataL1b <- tibble(
-    DateTime = as.character(format(Select$DateTime, "%Y-%m-%d %H:%M:%S")),
-    Speed = as.numeric(Select$Speed_kmh), # speed in kmh
-    Lon = Select$Lon,
-    Lat = Select$Lat,
-    Altitude = as.numeric(Select$Altitude),
-    SolZen = Select$SolZen,
-    SolAzm = Select$SolAzm,
-    BoatSolAzm = Select$BoatSolAzm,
-    Roll = Select$Roll,
-    Pitch = Select$Pitch,
-    Heading = Select$Heading,
+    ensemble = ensemble,
+    DateTime = as.numeric(metadata$DateTime),
+    Speed = as.numeric(metadata$Speed_kmh), # speed in kmh
+    Lon = metadata$Lon,
+    Lat = metadata$Lat,
+    Altitude = as.numeric(metadata$Altitude),
+    SolZen = metadata$SolZen,
+    SolAzm = metadata$SolAzm,
+    BoatSolAzm = metadata$BoatSolAzm,
+    Roll = metadata$Roll,
+    Pitch = metadata$Pitch,
+    Heading = metadata$Heading,
     UUID = NA
   )
 
