@@ -749,7 +749,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL2, UpdateProgress, Wav
       )
     )
 
-# filter median +- sd -----------------------------------------------------
+
+# filter median +-  1.96 * sd (95% conf) ----------------------------------
 
   df <- L1bAproxLong %>%
     ungroup() %>%
@@ -788,8 +789,8 @@ cal_hocr <- function(RawHOCR, CalHOCR, HOCRDark, MetadataL2, UpdateProgress, Wav
         .x = data,
         ~ if_else(
         any(
-          # .x$Channels > .x$Channels_median + 2*.x$Channels_sd |
-          # .x$Channels < .x$Channels_median - 2*.x$Channels_sd
+          # .x$Channels > .x$Channels_median + 1.96*.x$Channels_sd |
+          # .x$Channels < .x$Channels_median - 1.96*.x$Channels_sd
           F
           ),
         "0",
@@ -857,30 +858,30 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
 # Smooth input spectrum ---------------------------------------------------
 # Usefull to reduce noise in KLu(700 nm >)
 
-  if (Loess) {
-
-    df <- df %>%
-      group_by(SN, ID) %>%
-      nest() %>%
-      mutate(
-        channels_loess = purrr::map(
-          .x = data,
-          function(.x) {
-            func <- loess(
-              Channels ~ Wavelength,
-              data = .x,
-              na.action = "na.omit",
-              span = Span
-            )
-
-            .x %>%
-              mutate(Channels = predict(func, Wavelength))
-          }
-        )
-      ) %>%
-      select(channels_loess) %>%
-      unnest(cols = c(channels_loess))
-  }
+  # if (Loess) {
+  #
+  #   df <- df %>%
+  #     group_by(SN, ID) %>%
+  #     nest() %>%
+  #     mutate(
+  #       channels_loess = purrr::map(
+  #         .x = data,
+  #         function(.x) {
+  #           func <- loess(
+  #             Channels ~ Wavelength,
+  #             data = .x,
+  #             na.action = "na.omit",
+  #             span = Span
+  #           )
+  #
+  #           .x %>%
+  #             mutate(Channels = predict(func, Wavelength))
+  #         }
+  #       )
+  #     ) %>%
+  #     select(channels_loess) %>%
+  #     unnest(cols = c(channels_loess))
+  # }
 
 # DEV ---------------------------------------------------------------------
   #
@@ -949,15 +950,6 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
     set.seed(1234)
 
     # Draw the samples from the PDFs of the input quantity
-    es_samples <- purrr::map2(
-      .x = es$Channels_median,
-      .y = es$Channels_sd,
-      ~ rnorm(
-        n_draws, .x, .y
-      )
-    )
-    es_samples <- matrix(unlist(es_samples), nrow = n_draws, byrow = FALSE)
-
     luz1_samples <- purrr::map2(
       .x = luz1$Channels_median,
       .y = luz1$Channels_sd,
@@ -976,11 +968,9 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
     )
     luz2_samples <- matrix(unlist(luz2_samples), nrow = n_draws, byrow = FALSE)
 
-    z1_samples <- rnorm(n_draws, z1$z1_median, z1$z1_sd)
-
     # Compute klu, lw, rrs with combined uncertainty
 
-    compute_klu <- function(luz1, luz2, z2z1) {
+    compute_klu <- function(luz1, luz2, z2z1 = 0.15) {
 
       klu_samples <- (log(luz1) - log(luz2)) / z2z1
 
@@ -995,7 +985,7 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
       return(list(tibble(wavelength, klu_stats), klu_samples))
     }
 
-    klu <- compute_klu(luz1_samples, luz2_samples, z2z1)
+    klu <- compute_klu(luz1_samples, luz2_samples)
     klu_estimates <- klu[[1]]
     klu_samples <- klu[[2]]
 
@@ -1038,6 +1028,7 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
 
     compute_lw <- function(luz1, klu, z1) {
 
+      # z1 should be positive
       lw_samples <- 0.54 * luz1 * exp(klu * abs(z1))
 
       lw_stats <- purrr::map_dfr(
@@ -1051,22 +1042,19 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
       return(list(tibble(wavelength, lw_stats), lw_samples))
     }
 
+    z1_samples <- matrix(
+      rep(
+        rnorm(n_draws, z1$z1_median, z1$z1_sd),
+        length(wavelength)
+      ),
+      nrow = n_draws, byrow = F)
+
     lw <- compute_lw(luz1_samples, klu_samples, z1_samples)
     lw_estimates <- lw[[1]] %>%
       left_join(klu_estimates, by = "wavelength")
     lw_samples <- lw[[2]]
 
-    # lw_samples <- purrr::map2(
-    #   .x = lw$lw_mean,
-    #   .y = lw$lw_sd,
-    #   ~ rnorm(
-    #       n_draws, .x, .y
-    #   )
-    # )
-    # lw_samples <- matrix(unlist(lw_samples), nrow = n_draws, byrow = FALSE)
-
     compute_rrs <- function(lw, es) {
-
       rrs_samples <- lw/es
 
       rrs_stats <- purrr::map_dfr(
@@ -1079,6 +1067,15 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
 
       return(tibble(wavelength, rrs_stats))
     }
+
+    es_samples <- purrr::map2(
+      .x = es$Channels_median,
+      .y = es$Channels_sd,
+      ~ rnorm(
+        n_draws, .x, .y
+      )
+    )
+    es_samples <- matrix(unlist(es_samples), nrow = n_draws, byrow = FALSE)
 
     rrs <- compute_rrs(lw_samples, es_samples) %>%
       left_join(lw_estimates, by = "wavelength")
@@ -1226,7 +1223,6 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
     filter(SN %in% c(1416, 1414, 0238))
 
   rrs <- propagate_uncertainty(wave_seq, es, luz1, luz2, z1, z2z1)
-
 
 # DEV ---------------------------------------------------------------------
 #

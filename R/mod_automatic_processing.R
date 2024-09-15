@@ -316,6 +316,19 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             error = function(e) e
           )
 
+          if (inherits(Obs$HOCR$L2, "error")) {
+            message("Failled L2 processing:")
+            # Passing the error actually triggers it ! who would have guess !?
+            #message(Obs$HOCR$L2)
+
+            # Delete the outdated metadata initially created
+            #  Necessarry to respect UUID foreign key rule (present in main table)
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
+
+            next
+          }
+
           HOCRL1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(CalData)) %>%
             mutate(UUID = ObsUUID)
