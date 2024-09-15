@@ -11,6 +11,7 @@ mod_manage_db_ui <- function(id) {
   ns <- NS(id)
   tagList(
     uiOutput(outputId = ns("ObsList")),
+    uiOutput(outputId = ns("ensemble_list")),
     downloadButton(ns("DownloadDB"), "Download DB"),
     uiOutput(outputId = ns("ExportDB"))
   )
@@ -26,6 +27,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     ObsMeta <- reactiveVal({
       tibble(
         UUID = character(),
+        ensemble = numeric(),
         Lat = numeric(),
         Lon = numeric(),
         DistanceRun = numeric(),
@@ -167,6 +169,8 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           lw_sd REAL,
           klu_mean REAL,
           klu_sd REAL,
+          klu_mean_loess REAL,
+          klu_sd_loess REAL,
           klu_luz1_rel_unc REAL,
           lw_luz1_rel_unc REAL,
           rrs_luz1_rel_unc REAL,
@@ -390,16 +394,12 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     #       })
     #     })
 
+
+# Search by UUID ----------------------------------------------------------
+
     output$ObsList <- renderUI({
       req(Con())
       validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
-
-      # selectizeInput(
-      #   ns("ObsList"),
-      #   "ObsList",
-      #   choices = NULL,
-      #   selected = NULL,
-      #   multiple = F)
 
       selectizeInput(
         ns("ObsList"),
@@ -425,6 +425,58 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           "ObsList", choices = c("", ObsMeta()$UUID), server = T
         )
       }
+    )
+
+# Search by ensemble ------------------------------------------------------
+
+    output$ensemble_list <- renderUI({
+      req(Con())
+      validate(need(nrow(ObsMeta()) != 0, message = "Empty DB"))
+
+      selectizeInput(
+        ns("ensemble_list"),
+        "ensemble_list",
+        multiple = FALSE,
+        choices = NULL,
+        selected = NULL,
+        options = list(
+          create = FALSE,
+          placeholder = "Search by ensemble",
+          maxItems = "1",
+          onDropdownOpen = I("function($dropdown) {if (!this.lastQuery.length) {this.close(); this.settings.openOnFocus = false;}}"),
+          onType = I("function (str) {if (str === \"\") {this.close();}}")
+        )
+      )
+    })
+
+  observeEvent(
+    ObsMeta()$ensemble,
+    {
+      updateSelectizeInput(
+        session = getDefaultReactiveDomain(),
+        "ensemble_list", choices = c("", ObsMeta()$ensemble), server = T
+      )
+    }
+  )
+
+  ObsSel <- reactiveVal()
+
+  observeEvent(
+      list(input$ObsList, input$ensemble_list),
+      ignoreInit = T,
+      ignoreNULL = T,
+    {
+
+      if (input$ObsList != "") {
+        ObsSel(input$ObsList)
+      }
+
+      if (input$ensemble_list != "") {
+        ObsSel(
+          ObsMeta()$UUID[which(ObsMeta()$ensemble == input$ensemble_list)]
+          )
+      }
+    }
     )
 
     output$ExportDB <- renderUI({
@@ -473,7 +525,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
 
     list(
       ObsMeta = ObsMeta,
-      ObsSel = reactive(input$ObsList),
+      ObsSel = ObsSel,
       Con = Con
     )
   })

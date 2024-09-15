@@ -82,7 +82,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
               add_lines(
                 x = ~Wavelength,
                 y = ~Channels,
-                name = ~QC,
+                #name = ~QC,
                 showlegend = F,
                 color = ~QC,
                 colors = c("1" = "seagreen", "0" = "red")
@@ -110,12 +110,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
                 font = list(size = 15)
               ) %>%
               layout(
-                shapes = BlackSquare,
-                yaxis = list(
-                  rangemode = "nonnegative"
-                  # title = list(text = ~paste0(unique(.x$Type), unique(.x$Units)))
-                ),
-                xaxis = list(rangemode = "nonnegative")
+                shapes = BlackSquare
               )
           )
         )
@@ -129,7 +124,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
       Es <- Es$Plot
 
-      p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.038) %>%
+      p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.038, shareX = T, shareY = T) %>%
         add_annotations(
           text = ~"Wavelength [nm]",
           x = 0.5,

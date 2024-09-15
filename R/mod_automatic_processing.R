@@ -277,25 +277,24 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             any(Obs$SBE19$L1b$Parameter == "Pressure")
             ) {
             message("Taking z1 from CTD")
+
             pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$Parameter == "Pressure"][[1]]$Value
 
-            z1 <- tibble(
-              z = gsw::gsw_z_from_p(p = pressure, latitude = MetadataL2$Lat),
-              z1 = z + 0.1
-            ) %>%
-              select(z1) %>%
-              summarise(
-                across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}")
-              )
-
-            if (z1$z > 0) {
+            if (any(pressure < 0)) {
               message("CTD in air, taking single z1 from setting")
               z1 <- tibble(
                 z1_median = Settings$HOCR$Z1Depth(),
                 z1_sd = 0
               )
+            } else {
+              z1 <- tibble(
+                z = gsw::gsw_z_from_p(p = pressure, latitude = MetadataL2$Lat),
+                z1 = z
+              ) %>%
+                summarise(
+                  across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}")
+                )
             }
-
 
           } else {
             message("Taking single z1 from setting")
