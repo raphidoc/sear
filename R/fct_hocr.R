@@ -1080,132 +1080,79 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
     rrs <- compute_rrs(lw_samples, es_samples) %>%
       left_join(lw_estimates, by = "wavelength")
 
-    ####### Compute relative contribution of luz1
+    ####### Compute component uncertainty to KLu
 
     compute_rel_unc <- function(base_sd, perturbed_sd) {
       # We compute on variance as it's additive
       return ((base_sd^2 - perturbed_sd^2) / base_sd^2)
     }
 
-    luz1_rel_samples <- purrr::map2(
-      .x = luz1$Channels_median,
-      .y = luz1$Channels_sd,
-      ~ rnorm(
-        n_draws, .x, 0
-      )
-    )
-    luz1_rel_samples <- matrix(unlist(luz1_rel_samples), nrow = n_draws, byrow = FALSE)
+    luz1_rel_samples <- matrix(rep(luz1$Channels_median, n_draws), nrow = n_draws, byrow = T)
 
-    klu_rel <- compute_klu(luz1_rel_samples, luz2_samples, z2z1)
-    klu_rel_estimates <- klu_rel[[1]]
-    klu_rel_samples <- klu_rel[[2]]
+    klu_luz1_rel <- compute_klu(luz1_rel_samples, luz2_samples)
+    klu_luz1_rel_estimates <- klu_luz1_rel[[1]]
+    klu_luz1_rel_samples <- klu_luz1_rel[[2]]
 
-    lw_rel <- compute_lw(luz1_rel_samples, klu_rel_samples, z1_samples)
-    lw_rel_estimates <- lw_rel[[1]]
-    lw_rel_samples <- lw_rel[[2]]
+    luz2_rel_samples <- matrix(rep(luz2$Channels_median, n_draws), nrow = n_draws, byrow = T)
 
-    rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
+    klu_luz2_rel <- compute_klu(luz1_samples, luz2_rel_samples)
+    klu_luz2_rel_estimates <- klu_luz2_rel[[1]]
+    klu_luz2_rel_samples <- klu_luz2_rel[[2]]
 
     rrs <- rrs %>%
       mutate(
-        klu_luz1_rel_unc = compute_rel_unc(klu_sd, klu_rel_estimates$klu_sd),
-        lw_luz1_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
-        rrs_luz1_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
+        klu_luz1_rel_unc = compute_rel_unc(klu_sd, klu_luz1_rel_estimates$klu_sd),
+        klu_luz2_rel_unc = compute_rel_unc(klu_sd, klu_luz2_rel_estimates$klu_sd),
+        klu_rel_unity = klu_luz1_rel_unc + klu_luz2_rel_unc
       )
 
-    ###### Compute relative contribution of luz2
+    ####### Compute component uncertainty to Lw
 
-    luz2_rel_samples<- purrr::map2(
-      .x = luz2$Channels_median,
-      .y = luz2$Channels_sd,
-      ~ rnorm(
-        n_draws, .x, 0
-      )
-    )
-    luz2_rel_samples <- matrix(unlist(luz2_rel_samples), nrow = n_draws, byrow = FALSE)
+    lw_luz1_rel <- compute_lw(luz1_samples, klu_samples, z1_samples)
+    lw_luz1_rel_estimates <- lw_luz1_rel[[1]]
+    lw_luz1_rel_samples <- lw_luz1_rel[[2]]
 
-    klu_rel <- compute_klu(luz1_samples, luz2_rel_samples, z2z1)
-    klu_rel_estimates <- klu_rel[[1]]
-    klu_rel_samples <- klu_rel[[2]]
+    klu_rel_samples <- matrix(rep(klu_estimates$klu_mean_loess, n_draws), nrow = n_draws, byrow = T)
 
-    lw_rel <- compute_lw(luz1_samples, klu_rel_samples, z1_samples)
-    lw_rel_estimates <- lw_rel[[1]]
-    lw_rel_samples <- lw_rel[[2]]
+    lw_klu_rel <- compute_lw(luz1_samples, klu_rel_samples, z1_samples)
+    lw_klu_rel_estimates <- lw_klu_rel[[1]]
+    lw_klu_rel_samples <- lw_klu_rel[[2]]
 
-    rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
+    z1_rel_samples <- matrix(
+      rep(rep(z1$z1_median, length(wavelength)), n_draws),
+      nrow = n_draws, byrow = F)
+
+    lw_z1_rel <- compute_lw(luz1_samples, klu_samples, z1_rel_samples)
+    lw_z1_rel_estimates <- lw_z1_rel[[1]]
+    lw_z1_rel_samples <- lw_z1_rel[[2]]
 
     rrs <- rrs %>%
       mutate(
-        klu_luz2_rel_unc = compute_rel_unc(klu_sd, klu_rel_estimates$klu_sd),
-        lw_luz2_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
-        rrs_luz2_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
+        lw_luz1_rel_unc = compute_rel_unc(lw_sd, lw_luz1_rel_estimates$lw_sd),
+        lw_klu_rel_unc = compute_rel_unc(lw_sd, lw_klu_rel_estimates$lw_sd),
+        lw_z1_rel_unc = compute_rel_unc(lw_sd, lw_z1_rel_estimates$lw_sd),
+        lw_rel_unity = lw_luz1_rel_unc + lw_klu_rel_unc + lw_z1_rel_unc
       )
 
-    ####### Compute relative contribution of z1
+    ####### Compute component uncertainty to Rrs
 
-    lw_rel <- compute_lw(luz1_samples, klu_samples, z1$z1_median)
-    lw_rel_estimates <- lw_rel[[1]]
-    lw_rel_samples <- lw_rel[[2]]
+    lw_rel_samples <- matrix(rep(lw_estimates$lw_mean, n_draws), nrow = n_draws, byrow = T)
 
-    rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
+    rrs_lw_rel <- compute_rrs(lw_rel_samples, es_samples)
+    # rrs_lw_rel_estimates <- rrs_lw_rel[[1]]
+    # rrs_lw_rel_samples <- rrs_lw_rel[[2]]
+
+    es_rel_samples <- matrix(rep(es$Channels_median, n_draws), nrow = n_draws, byrow = T)
+
+    rrs_es_rel <- compute_rrs(lw_samples, es_rel_samples)
+    # rrs_es_rel_estimates <- rrs_es_rel[[1]]
+    # rrs_es_rel_samples <- rrs_es_rel[[2]]
 
     rrs <- rrs %>%
       mutate(
-        lw_z1_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
-        rrs_z1_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
-      )
-
-    ###### Compute relative contribution of es
-
-    es_rel_samples <- purrr::map2(
-      .x = es$Channels_median,
-      .y = es$Channels_sd,
-      ~ rnorm(
-        n_draws, .x, 0
-      )
-    )
-    es_rel_samples <- matrix(unlist(es_rel_samples), nrow = n_draws, byrow = FALSE)
-
-    rrs_rel_estimates <- compute_rrs(lw_samples, es_rel_samples)
-
-    # Different result with Matrix * Matrix and Matrix + Vector ?
-    #rrs_rel_estimates_2 <- compute_rrs(lw_samples, es$Channels_median)
-
-    rrs <- rrs %>%
-      mutate(
-        rrs_es_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
-      )
-
-    ###### Compute relative contribution of KLu
-
-    # klu_rel_samples <- purrr::map2(
-    #   .x = klu_estimates$klu_mean,
-    #   .y = klu_estimates$klu_sd,
-    #   ~ rnorm(
-    #     n_draws, .x, 0
-    #   )
-    # )
-    # klu_rel_samples <- matrix(unlist(klu_rel_samples), nrow = n_draws, byrow = FALSE)
-    #
-    # lw_rel <- compute_lw(luz1_samples, klu_rel_samples, z1_samples)
-    # lw_rel_estimates <- lw_rel[[1]]
-    # lw_rel_samples <- lw_rel[[2]]
-    #
-    # rrs_rel_estimates <- compute_rrs(lw_rel_samples, es_samples)
-    #
-    # rrs <- rrs %>%
-    #   mutate(
-    #     lw_klu_rel_unc = compute_rel_unc(lw_sd, lw_rel_estimates$lw_sd),
-    #     rrs_klu_rel_unc = compute_rel_unc(rrs_sd, rrs_rel_estimates$rrs_sd)
-    #   )
-
-    ####### Check unity of relative contribution
-
-    rrs <- rrs %>%
-      mutate(
-        klu_rel_unity = klu_luz1_rel_unc + klu_luz2_rel_unc,
-        lw_rel_unity = lw_luz1_rel_unc + lw_luz2_rel_unc + lw_z1_rel_unc,
-        rrs_rel_unity = rrs_luz1_rel_unc + rrs_luz2_rel_unc + rrs_z1_rel_unc + rrs_es_rel_unc
+        rrs_lw_rel_unc = compute_rel_unc(rrs_sd, rrs_lw_rel$rrs_sd),
+        rrs_es_rel_unc = compute_rel_unc(rrs_sd, rrs_es_rel$rrs_sd),
+        rrs_rel_unity = rrs_lw_rel_unc + rrs_es_rel_unc
       )
 
     return(rrs)
