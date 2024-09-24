@@ -250,7 +250,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           # Ensemble where the closest radiance value to 800 nm exceeds 0.01 sd
 
           df <- Obs$HOCR$L1b %>%
-            filter(SN %in% c(1413, 1415, 0237)) %>%
+            filter(as.character(SN) %in% c("1413", "1415", "0237")) %>%
             unnest(cols = c(CalData)) %>%
             filter(
               abs(Wavelength - 800) == min(abs(Wavelength - 800))

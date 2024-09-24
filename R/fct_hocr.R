@@ -1161,13 +1161,13 @@ L2_hocr <- function(L1bData, wave_seq, z1, z2z1,
   df_pdf <- hocr_pdf(df)
 
   es <- df_pdf %>%
-    filter(SN %in% c(1397, 1396, 0341))
+    filter(as.character(SN) %in% c("1397", "1396", "0341"))
 
   luz1 <- df_pdf %>%
-    filter(SN %in% c(1415, 1413, 0237))
+    filter(as.character(SN) %in% c("1415", "1413", "0237"))
 
   luz2 <- df_pdf %>%
-    filter(SN %in% c(1416, 1414, 0238))
+    filter(as.character(SN) %in% c("1416", "1414", "0238"))
 
   rrs <- propagate_uncertainty(wave_seq, es, luz1, luz2, z1, z2z1)
 

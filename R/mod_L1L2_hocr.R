@@ -286,49 +286,30 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         plot_ly(x = ~ wavelength) %>%
         add_trace(
           type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~ rrs_sd * rrs_luz1_rel_unc ,
-          name = "unc_luz1",
+          y = ~ rrs_sd * rrs_lw_rel_unc ,
+          name = TeX("\\sigma L_w"),
           line = list(color = 'rgba(105, 159, 245, 0.5)'),
           fillcolor = 'rgba(105, 159, 245, 0.3)',
-          #legendgroup = 1,
+          legendgroup = 1,
           showlegend = T
         ) %>%
         add_trace(
           type = 'scatter', mode = 'lines', fill = 'tonexty',
           y = ~
-            rrs_sd * rrs_luz1_rel_unc +
-            rrs_sd * rrs_luz2_rel_unc ,
-          name = "unc_luz2",
+            rrs_sd * rrs_lw_rel_unc +
+            rrs_sd * rrs_es_rel_unc ,
+          name = TeX("\\sigma E_s"),
           line = list(color = 'rgba(6, 58, 143, 0.5)'),
           fillcolor = 'rgba(6, 33, 143, 0.3)',
-          #legendgroup = 1,
+          legendgroup = 1,
           showlegend = T
         ) %>%
-        add_trace(
-          type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~
-            rrs_sd * rrs_luz1_rel_unc +
-            rrs_sd * rrs_luz2_rel_unc +
-            rrs_sd * rrs_z1_rel_unc,
-          name = "unc_z1",
-          line = list(color = 'rgba(74, 176, 100, 0.5)'),
-          fillcolor = 'rgba(74, 176, 100, 0.3)',
-          #legendgroup = 1,
-          showlegend = T
+        layout(
+          xaxis = list(title=TeX("\\text{Wavelength}")),
+          yaxis = list(title=TeX("R_\\text{rs} [\\text{sr}^{-1}]")),
+          shapes=list(BlackSquare)
         ) %>%
-        add_trace(
-          type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~
-            rrs_sd * rrs_luz1_rel_unc +
-            rrs_sd * rrs_luz2_rel_unc +
-            rrs_sd * rrs_z1_rel_unc +
-            rrs_sd * rrs_es_rel_unc,
-          name = "unc_es",
-          line = list(color = 'rgba(169, 74, 176, 0.5)'),
-          fillcolor = 'rgba(169, 74, 176, 0.3)',
-          #legendgroup = 1,
-          showlegend = T
-        )
+        config(mathjax = "cdn", displayModeBar = F)
 
       # KLuplot <- Obs$HOCR$L2 %>%
       #   plot_ly(x = ~wavelength, y = ~klu_mean) %>%
