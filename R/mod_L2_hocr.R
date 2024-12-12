@@ -1,27 +1,27 @@
-#' L2_hocr UI Function
+#' hocr_l2 UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_L2_hocr_ui <- function(id) {
+mod_hocr_l2_ui <- function(id) {
   ns <- NS(id)
   tagList(
     plotlyOutput(ns("AOPs"), height = 250)
   )
 }
 
-#' L2_hocr Server Functions
+#' hocr_l2 Server Functions
 #'
 #' @noRd
-mod_L2_hocr_server <- function(id, L2) {
+mod_hocr_l2_server <- function(id, L2) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    PlyFont <- list(family = "Times New Roman", size = 18)
+    PlyFont <- list(family = "times New Roman", size = 18)
     BlackSquare <- list(
       type = "rect",
       fillcolor = "transparent",
@@ -35,21 +35,21 @@ mod_L2_hocr_server <- function(id, L2) {
     )
 
     output$AOPs <- renderPlotly({
-      # req(L2Data())
+      # req(l2_data())
 
       validate(need(nrow(L2) != 0, "Process L2 to display AOPs"))
 
       Rrsplot <- L2 %>%
         plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~Rrs, showlegend = F)
+        add_lines(x = ~wavelength, y = ~Rrs, showlegend = F)
 
       KLuplot <- L2 %>%
         plot_ly() %>%
-        add_lines(x = ~Wavelength, y = ~KLu, showlegend = F)
+        add_lines(x = ~wavelength, y = ~KLu, showlegend = F)
 
       subplot(Rrsplot, KLuplot, shareX = T) %>%
         add_annotations(
-          text = ~ TeX("\\text{Wavelength [nm]}"),
+          text = ~ TeX("\\text{wavelength [nm]}"),
           x = 0.4,
           y = -0.1,
           yref = "paper",
@@ -67,7 +67,7 @@ mod_L2_hocr_server <- function(id, L2) {
           yaxis2 = list(title = list(
             text = "Klu" # TeX("\\text{K}_\\text{Lu}")
           )) # ,
-          # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
+          # xaxis3 = list(title = list(text = TeX("\\text{wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T)
     })
@@ -75,7 +75,7 @@ mod_L2_hocr_server <- function(id, L2) {
 }
 
 ## To be copied in the UI
-# mod_L2_hocr_ui("L2_hocr")
+# mod_hocr_l2_ui("hocr_l2")
 
 ## To be copied in the server
-# mod_L2_hocr_server("L2_hocr")
+# mod_hocr_l2_server("hocr_l2")

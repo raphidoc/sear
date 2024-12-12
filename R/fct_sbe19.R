@@ -1,13 +1,13 @@
 #' oxy_sol
 #'
 #' @description oxygen solubility in ml/l from Garcia and Gordon 1992
-#' (taken from sbe43 application note 64, revision june 2013, Appendix A)
+#' (taken from sbe43 application note 64, revision june 2013, Appendix a)
 #'
 #' @return oxygen solubility in ml/l
 #'
 #' @noRd
 
-oxy_sol <- function(Temperature, SP) {
+oxy_sol <- function(temperature, salinity_practical) {
   A0 <- 2.00907
   A1 <- 3.22014
   A2 <- 4.0501
@@ -20,11 +20,11 @@ oxy_sol <- function(Temperature, SP) {
   B3 <- -0.00817083
   C0 <- -0.000000488682
 
-  Ts <- log((298.15 - Temperature) / (273.15 + Temperature))
+  Ts <- log((298.15 - temperature) / (273.15 + temperature))
 
-  OxSol <- exp({
+  oxygen_solubility <- exp({
     A0 + (A1 * Ts) + (A2 * Ts)^2 + (A3 * Ts)^3 + (A4 * Ts)^4 + (A5 * Ts)^5 +
-      SP * (B0 + (B1 * Ts) + (B2 * Ts)^2 + (B3 * Ts)^3) + (C0 * SP)^2
+      salinity_practical * (B0 + (B1 * Ts) + (B2 * Ts)^2 + (B3 * Ts)^3) + (C0 * salinity_practical)^2
   })
 }
 
@@ -36,40 +36,40 @@ oxy_sol <- function(Temperature, SP) {
 #'
 #' @noRd
 
-cal_sbe19 <- function(Data, Lon, Lat) {
+cal_sbe19 <- function(Data, lon, lat) {
   Data %>%
     mutate(
-      DateTime = as.character(DateTime),
+      date_time = as.character(date_time),
       z = gsw::gsw_z_from_p(
-        p = Pressure,
-        lat = Lat
+        p = pressure,
+        latitude = lat
       ),
-      SP = gsw::gsw_SP_from_C( # Salinity Practical in PSU
-        C = Conductivity * 10,
-        t = Temperature,
-        p = Pressure
+      salinity_practical = gsw::gsw_SP_from_C( # Salinity Practical in PSU
+        C = conductivity * 10,
+        t = temperature,
+        p = pressure
       ),
-      SA = gsw::gsw_SA_from_SP( # Salinity Absolute in g/Kg
-        SP = SP,
-        p = Pressure,
-        long = Lon,
-        lat = Lat
+      salinity_absolute = gsw::gsw_SA_from_SP( # Salinity Absolute in g/Kg
+        SP = salinity_practical,
+        p = pressure,
+        long = lon,
+        lat = lat
       ),
-      CT = gsw::gsw_CT_from_t( # Conservative Temperature in deg C
-        SA = SA,
-        t = Temperature,
-        p = Pressure
+      conservative_temperature = gsw::gsw_CT_from_t( # Conservative temperature in deg c
+        SA = salinity_absolute,
+        t = temperature,
+        p = pressure
       ),
-      O2Sol = gsw::gsw_O2sol( # Oxygen solubility in umol/kg
-        SA = SA,
-        CT = CT,
-        p = Pressure,
-        longitude = Lon,
-        latitude = Lat
+      oxygen_solubility = gsw::gsw_O2sol( # oxygen_concentration solubility in umol/kg
+        SA = salinity_absolute,
+        CT = conservative_temperature,
+        p = pressure,
+        longitude = lon,
+        latitude = lat
       ),
-      OxSol = oxy_sol( # oxygen solubility in ml/l from Garcia and Gordon 1992
-        Temperature = Temperature,
-        SP = SP
+      oxygen_solubility_g92 = oxy_sol( # oxygen solubility in ml/l from Garcia and Gordon 1992
+        temperature = temperature,
+        salinity_practical = salinity_practical
       )
     )
 }
@@ -78,21 +78,21 @@ cal_sbe19 <- function(Data, Lon, Lat) {
 #'
 #' @description compute oxygen
 #'
-#' @return Oxygen in ml/l multiply by 1.42903 to get mg/l
+#' @return oxygen_concentration in ml/l multiply by 1.42903 to get mg/l
 #'
 #' @noRd
 
-cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, CalData) {
-  Soc <- CalData$SOC
-  Voffset <- CalData$VOFFSET
-  A <- CalData$A
-  B <- CalData$B
-  C <- CalData$C
-  E <- CalData$E
+cal_sbe43 <- function(Volt, Tcelsius, pressure, oxygen_solubility, cal_data) {
+  soc <- cal_data$soc
+  voffset <- cal_data$voffset
+  a <- cal_data$a
+  b <- cal_data$b
+  c <- cal_data$c
+  e <- cal_data$e
 
   Tkelvin <- Tcelsius + 273.15
 
-  Oxygen <- (Soc * (Volt + Voffset)) * OxSol * (1.0 + A * Tcelsius + B * Tcelsius^2 + C * Tcelsius^3) * exp(1)^(E * Pressure / Tkelvin)
+  oxygen_concentration <- (soc * (Volt + voffset)) * oxygen_solubility * (1.0 + a * Tcelsius + b * Tcelsius^2 + c * Tcelsius^3) * exp(1)^(e * pressure / Tkelvin)
 }
 
 #' cal_sbe18
@@ -103,11 +103,11 @@ cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, CalData) {
 #'
 #' @noRd
 
-cal_sbe18 <- function(Volt, Tcelsius, CalData) {
-  Voffset <- CalData$OFFSET
-  Slope <- CalData$SLOPE
+cal_sbe18 <- function(Volt, Tcelsius, cal_data) {
+  voffset <- cal_data$offset
+  slope <- cal_data$slope
 
   Tkelvin <- Tcelsius + 273.15
 
-  pH <- 7.0 + (Volt - Voffset) / (Slope * Tkelvin * 1.98416e-4)
+  pH <- 7.0 + (Volt - voffset) / (slope * Tkelvin * 1.98416e-4)
 }

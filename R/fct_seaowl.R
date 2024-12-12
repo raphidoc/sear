@@ -1,6 +1,6 @@
 #' cal_seaowl
 #'
-#' @description A fct function
+#' @description a fct function
 #'
 #' @return The return value, if any, from executing the function.
 #'
@@ -8,19 +8,19 @@
 cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
   # Test that calibration and data have the same serial number
   # Should be stop
-  SN <- stringr::str_extract(SeaOWLData$SN, "(?<=-).*")
-  SN <- unique(SN[!is.na(SN)])
-  if (!SeaOWLCal$SERIALNO == SN) {
+  sn <- stringr::str_extract(SeaOWLData$sn, "(?<=-).*")
+  sn <- unique(sn[!is.na(sn)])
+  if (!SeaOWLCal$SERIALNO == sn) {
     warning("Calibration and SeaOWL have different serial number")
   }
 
   SeaOWLData %>%
     mutate(
-      DateTime = as.character(DateTime),
-      VSF_700 = SeaOWLCal$VSFScaleFactor * (VSF700Output - SeaOWLCal$VSFDarkCounts),
-      Chl = SeaOWLCal$ChlScaleFactor * (ChlOutput - SeaOWLCal$ChlDarkCounts),
-      FDOM = SeaOWLCal$FDOMScaleFactor * (FDOMOutput - SeaOWLCal$FDOMDarkCounts),
-      .after = SN
+      date_time = as.character(date_time),
+      vsf_700 = SeaOWLCal$vsf_scale_factor * (vsf_700_channel - SeaOWLCal$vsf_dark_count),
+      chl = SeaOWLCal$chl_scale_factor * (chl_channel - SeaOWLCal$chl_dark_count),
+      fdom = SeaOWLCal$fdom_scale_factor * (fdom_output - SeaOWLCal$fdom_dark_counts),
+      .after = sn
     ) %>%
-    select(DateTime, SN, VSF_700, Chl, FDOM)
+    select(date_time, sn, vsf_700, chl, fdom)
 }

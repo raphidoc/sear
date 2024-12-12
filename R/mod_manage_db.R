@@ -1,6 +1,6 @@
 #' manage_db UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -26,13 +26,13 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
 
     ObsMeta <- reactiveVal({
       tibble(
-        UUID = character(),
+        uuid_l2 = character(),
         ensemble = numeric(),
-        Lat = numeric(),
-        Lon = numeric(),
-        DistanceRun = numeric(),
-        DateTime = character(),
-        TimeElapsed = character()
+        lat = numeric(),
+        lon = numeric(),
+        distance_run = numeric(),
+        date_time = character(),
+        timeElapsed = character()
       )
     })
 
@@ -56,112 +56,112 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
 
         # Create DB schema
-        # MetadataL2
+        # metadata_l2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS MetadataL2 (
+          "CREATE TABLE IF NOT EXISTS metadata_l2 (
           ensemble DOUBLE NOT NULL,
-          DateTime TEXT NOT NULL,
-          DateTimeMin TEXT NOT NULL,
-          DateTimeMax TEXT NOT NULL,
-          TimeElapsed DOUBLE NOT NULL,
+          date_time TEXT NOT NULL,
+          date_timeMin TEXT NOT NULL,
+          date_timeMax TEXT NOT NULL,
+          timeElapsed DOUBLE NOT NULL,
           Speed DOUBLE NOT NULL,
-          Lon DOUBLE NOT NULL,
-          Lat DOUBLE NOT NULL,
-          LonMin DOUBLE NOT NULL,
-          LonMax DOUBLE NOT NULL,
-          LatMin DOUBLE NOT NULL,
-          LatMax DOUBLE NOT NULL,
-          DistanceRun DOUBLE NOT NULL,
-          Altitude DOUBLE NOT NULL,
-          SolZen DOUBLE,
-          SolAzm DOUBLE,
-          BoatSolAzm DOUBLE,
-          Roll DOUBLE,
-          Pitch DOUBLE,
-          Heading DOUBLE,
-          ScoreQWIP DOUBLE,
-          VesselXx DOUBLE,
-          VesselXy DOUBLE,
-          VesselXz DOUBLE,
-          VesselYx DOUBLE,
-          VesselYy DOUBLE,
-          VesselYz DOUBLE,
-          VesselZx DOUBLE,
-          VesselZy DOUBLE,
-          VesselZz DOUBLE,
-          Comment TEXT,
-          UUID TEXT PRIMARY KEY,
-          ProTime TEXT NOT NULL,
-          Analyst TEXT NOT NULL,
-          Mail TEXT NOT NULL
+          lon DOUBLE NOT NULL,
+          lat DOUBLE NOT NULL,
+          lon_min DOUBLE NOT NULL,
+          lon_max DOUBLE NOT NULL,
+          lat_min DOUBLE NOT NULL,
+          lat_max DOUBLE NOT NULL,
+          distance_run DOUBLE NOT NULL,
+          altitude DOUBLE NOT NULL,
+          sol_zen DOUBLE,
+          sol_azi DOUBLE,
+          boat_raa DOUBLE,
+          roll DOUBLE,
+          pitch DOUBLE,
+          heading DOUBLE,
+          qwip_score DOUBLE,
+          boat_xx DOUBLE,
+          boat_xy DOUBLE,
+          boat_xz DOUBLE,
+          boat_yx DOUBLE,
+          boat_yy DOUBLE,
+          boat_yz DOUBLE,
+          boat_zx DOUBLE,
+          boat_zy DOUBLE,
+          boat_zz DOUBLE,
+          comment TEXT,
+          uuid_l2 TEXT PRIMARY KEY,
+          date_time_processing TEXT NOT NULL,
+          analyst TEXT NOT NULL,
+          mail TEXT NOT NULL
           );"
         )
 
-        # MetadataL1b
+        # metadata_l1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS MetadataL1b (
+          "CREATE TABLE IF NOT EXISTS metadata_l1b (
           ensemble DOUBLE,
-          DateTime DOUBLE,
+          date_time DOUBLE,
           Speed DOUBLE,
-          Lon DOUBLE,
-          Lat DOUBLE,
-          Altitude DOUBLE,
-          SolZen DOUBLE,
-          SolAzm DOUBLE,
-          BoatSolAzm DOUBLE,
-          Roll DOUBLE,
-          Pitch DOUBLE,
-          Heading DOUBLE,
-          VesselXx DOUBLE,
-          VesselXy DOUBLE,
-          VesselXz DOUBLE,
-          VesselYx DOUBLE,
-          VesselYy DOUBLE,
-          VesselYz DOUBLE,
-          VesselZx DOUBLE,
-          VesselZy DOUBLE,
-          VesselZz DOUBLE,
-          UUID TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          lon DOUBLE,
+          lat DOUBLE,
+          altitude DOUBLE,
+          sol_zen DOUBLE,
+          sol_azi DOUBLE,
+          boat_raa DOUBLE,
+          roll DOUBLE,
+          pitch DOUBLE,
+          heading DOUBLE,
+          boat_xx DOUBLE,
+          boat_xy DOUBLE,
+          boat_xz DOUBLE,
+          boat_yx DOUBLE,
+          boat_yy DOUBLE,
+          boat_yz DOUBLE,
+          boat_zx DOUBLE,
+          boat_zy DOUBLE,
+          boat_zz DOUBLE,
+          uuid_l2 TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           );"
         )
 
-        # HOCRL1b
+        # hocr_l1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `HOCRL1b` (
-          `Instrument` TEXT,
-          `SN` TEXT,
-          ID,
-          QC,
-          DateTime,
-          IntTime,
-          SampleDelay,
-          DarkSample,
-          DarkAverage,
-          SpecTemp,
-          Frame,
-          Timer,
-          CheckSum,
-          Type,
-          Wavelength,
-          Channels,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `hocr_l1b` (
+          `instrument` TEXT,
+          `sn` TEXT,
+          id,
+          qc,
+          date_time,
+          integration_time,
+          sample_delay,
+          dark_sample,
+          dark_average,
+          spectrometer_temperature,
+          frame,
+          timer,
+          checksum,
+          type,
+          wavelength,
+          channel,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
 
-        # HOCRL2
-        # cat(paste(names(HOCRL2), collapse = ",\n"))
+        # hocr_l2
+        # cat(paste(names(hocr_l2), collapse = ",\n"))
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `HOCRL2` (
+          "CREATE TABLE IF NOT EXISTS `hocr_l2` (
           wavelength REAL,
           rrs_mean REAL,
           rrs_sd REAL,
@@ -181,33 +181,110 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           rrs_lw_rel_unc REAL,
           rrs_es_rel_unc REAL,
           rrs_rel_unity REAL,
-          UUID TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          uuid_l2 TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
 
-        # `Wavelength` REAL,
+        # hocr OPTIC3 cal
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `OPTIC3` (
+          instrument,
+          sn,
+          type,
+          wavelength,
+          units,
+          field_length,
+          data_type,
+          cal_lines,
+          fit_type,
+          a0,
+          a1,
+          im,
+          cint
+          )"
+        )
+
+        # hocr THERM1 cal
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `THERM1` (
+          instrument,
+          sn,
+          type,
+          id,
+          units,
+          field_length,
+          data_type,
+          cal_lines,
+          fit_type,
+          m0,
+          m1,
+          m2,
+          m3,
+          Tr
+          )"
+        )
+
+        # hocr INTTIME cal
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `INTTIME` (
+          instrument,
+          sn,
+          type,
+          id,
+          units,
+          field_length,
+          data_type,
+          cal_lines,
+          fit_type,
+          a0,
+          a1
+          )"
+        )
+
+        # hocr SAMPLE cal
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS `SAMPLE` (
+          instrument,
+          sn,
+          type,
+          id,
+          units,
+          field_length,
+          data_type,
+          cal_lines,
+          fit_type,
+          a0,
+          a1
+          )"
+        )
+
+        # `wavelength` REAL,
         # `Rrs` REAL,
         # `Rrs_loess` REAL,
         # `KLu` REAL,
         # `KLu_loess` REAL,
         # `RbI` REAL,
-        # `UUID` TEXT,
+        # `uuid_l2` TEXT,
 
         # SBE19 L1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `SBE19L1b` (
-          `Parameter` TEXT,
-          `DateTime` TEXT,
-          `ID` INTEGER,
-          `QC` TEXT,
-          `Value` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `sbe19_l1b` (
+          `parameter` TEXT,
+          `date_time` TEXT,
+          `id` INTEGER,
+          `qc` TEXT,
+          `value` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -215,17 +292,17 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # SBE19 L2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `SBE19L2` (
-          `OxSol` REAL,
-          `Oxygen` REAL,
+          "CREATE TABLE IF NOT EXISTS `sbe19_l2` (
+          `oxygen_solubility` REAL,
+          `oxygen_concentration` REAL,
           `pH` REAL,
-          `Pressure` REAL,
-          `SA` REAL,
-          `SP` REAL,
-          `Temperature` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          `pressure` REAL,
+          `salinity_absolute` REAL,
+          `salinity_practical` REAL,
+          `temperature` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -233,15 +310,15 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # SeaOWL L1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `SeaOWLL1b` (
-          `Parameter` TEXT,
-          `DateTime` TEXT,
-          `ID` INTEGER,
-          `QC` TEXT,
-          `Value` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `seaowl_l1b` (
+          `parameter` TEXT,
+          `date_time` TEXT,
+          `id` INTEGER,
+          `qc` TEXT,
+          `value` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -249,13 +326,13 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # SeaOWL L2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `SeaOWLL2` (
-          `VSF_700` REAL,
-          `Chl` REAL,
-          `FDOM` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `seaowl_l2` (
+          `vsf_700` REAL,
+          `chl` REAL,
+          `fdom` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -263,15 +340,15 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # BBFL2 L1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `BBFL2L1b` (
-          `Parameter` TEXT,
-          `DateTime` TEXT,
-          `ID` INTEGER,
-          `QC` TEXT,
-          `Value` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `bbfl2_l1b` (
+          `parameter` TEXT,
+          `date_time` TEXT,
+          `id` INTEGER,
+          `qc` TEXT,
+          `value` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -279,13 +356,13 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # BBFL2 L2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `BBFL2L2` (
+          "CREATE TABLE IF NOT EXISTS `bbfl2_l2` (
           `NTU` REAL,
           `PC` REAL,
           `PE` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -293,17 +370,17 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # BioSonic L1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `BioSonicL1b` (
-          `Lon` REAL,
-          `Lat` REAL,
-          `DateTime` REAL,
-          `Altitude_mReMsl` REAL,
-          `BottomElevation_m` REAL,
-          `PlantHeight_m` REAL,
-          `PercentCoverage` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `biosonic_l1b` (
+          `lon` REAL,
+          `lat` REAL,
+          `date_time` REAL,
+          `altitude_mReMsl` REAL,
+          `bottom_elevation_m` REAL,
+          `plant_height_m` REAL,
+          `percent_coverage` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -311,17 +388,17 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # BioSonic L2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `BioSonicL2` (
-          `Lon` REAL,
-          `Lat` REAL,
-          `DateTime` REAL,
-          `Altitude_mReMsl` REAL,
-          `BottomElevation_m` REAL,
-          `PlantHeight_m` REAL,
-          `PercentCoverage` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `biosonic_l2` (
+          `lon` REAL,
+          `lat` REAL,
+          `date_time` REAL,
+          `altitude_mReMsl` REAL,
+          `bottom_elevation_m` REAL,
+          `plant_height_m` REAL,
+          `percent_coverage` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -329,15 +406,15 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # BioSonic L1b
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `HydroBallL1b` (
-          `Lon` REAL,
-          `Lat` REAL,
-          `DateTime` REAL,
-          `Altitude` REAL,
-          `H` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `hydroball_l1b` (
+          `lon` REAL,
+          `lat` REAL,
+          `date_time` REAL,
+          `altitude` REAL,
+          `height_watercolumn` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
@@ -345,20 +422,20 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # BioSonic L2
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS `HydroBallL2` (
-          `Lon` REAL,
-          `Lat` REAL,
-          `DateTime` REAL,
-          `Altitude` REAL,
-          `H` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          "CREATE TABLE IF NOT EXISTS `hydroball_l2` (
+          `lon` REAL,
+          `lat` REAL,
+          `date_time` REAL,
+          `altitude` REAL,
+          `height_watercolumn` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
 
-        ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM MetadataL2")))
+        ObsMeta(tibble(DBI::dbGetQuery(Con, "SELECT * FROM metadata_l2")))
 
         # Return Con
         Con
@@ -372,7 +449,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     #       reactive({
     #         req(Con())
     #
-    #         # if DB is not empty list UUID and get current index
+    #         # if DB is not empty list uuid_l2 and get current index
     #         if (
     #           !identical(DBI::dbListTables(Con()), character(0)) #&
     #           #str_detect(DBI::dbListTables(Con), "ObsMeta")
@@ -383,17 +460,17 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     #
     #         } else {
     #           tibble(
-    #             UUID = character(),
-    #             Lat = numeric(),
-    #             Lon = numeric(),
-    #             DateTime = character(),
+    #             uuid_l2 = character(),
+    #             lat = numeric(),
+    #             lon = numeric(),
+    #             date_time = character(),
     #           )
     #         }
     #       })
     #     })
 
 
-# Search by UUID ----------------------------------------------------------
+# Search by uuid_l2 ----------------------------------------------------------
 
     output$ObsList <- renderUI({
       req(Con())
@@ -407,7 +484,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         selected = NULL,
         options = list(
           create = FALSE,
-          placeholder = "Search My UUID",
+          placeholder = "Search My uuid_l2",
           maxItems = "1",
           onDropdownOpen = I("function($dropdown) {if (!this.lastQuery.length) {this.close(); this.settings.openOnFocus = false;}}"),
           onType = I("function (str) {if (str === \"\") {this.close();}}")
@@ -416,11 +493,11 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
     })
 
     observeEvent(
-      ObsMeta()$UUID,
+      ObsMeta()$uuid_l2,
       {
         updateSelectizeInput(
           session = getDefaultReactiveDomain(),
-          "ObsList", choices = c("", ObsMeta()$UUID), server = T
+          "ObsList", choices = c("", ObsMeta()$uuid_l2), server = T
         )
       }
     )
@@ -471,7 +548,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
 
       if (input$ensemble_list != "") {
         ObsSel(
-          ObsMeta()$UUID[which(ObsMeta()$ensemble == input$ensemble_list)]
+          ObsMeta()$uuid_l2[which(ObsMeta()$ensemble == input$ensemble_list)]
           )
       }
     }
@@ -501,20 +578,20 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
       {
         browser()
 
-        #         "SELECT DateTime, Lat, Lon, Wavelength, Rrs FROM Metadata
-        #           LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID;"
+        #         "SELECT date_time, lat, lon, wavelength, Rrs FROM Metadata
+        #           LEFT JOIN hocr_l2 ON Metadata.uuid_l2 = hocr_l2.uuid_l2;"
         #
-        #         "SELECT Metadata.DateTime, Metadata.Lat, Metadata.Lon, Speed, TimeElapsed, Altitude, DistanceRun, BoatSolAzm, ScoreQWIP, Wavelength, Rrs, KLu, Altitude_mReMsl, BottomElevation_m, PlantHeight_m, PercentCoverage, Oxygen, pH, SA, SP, Temperature, VSF_700, Chl, FDOM FROM Metadata
-        # LEFT JOIN HOCRL2 ON Metadata.UUID = HOCRL2.UUID
-        # LEFT JOIN BioSonicL2 ON Metadata.UUID = BioSonicL2.UUID
-        # LEFT JOIN SBE19L2 ON Metadata.UUID = SBE19L2.UUID
-        # LEFT JOIN SeaOWLL2 ON Metadata.UUID = SeaOWLL2.UUID;"
+        #         "SELECT Metadata.date_time, Metadata.lat, Metadata.lon, Speed, timeElapsed, altitude, distance_run, boat_raa, qwip_score, wavelength, Rrs, KLu, altitude_mReMsl, bottom_elevation_m, plant_height_m, percent_coverage, oxygen_concentration, pH, salinity_absolute, salinity_practical, temperature, vsf_700, chl, fdom FROM Metadata
+        # LEFT JOIN hocr_l2 ON Metadata.uuid_l2 = hocr_l2.uuid_l2
+        # LEFT JOIN biosonic_l2 ON Metadata.uuid_l2 = biosonic_l2.uuid_l2
+        # LEFT JOIN sbe19_l2 ON Metadata.uuid_l2 = sbe19_l2.uuid_l2
+        # LEFT JOIN seaowl_l2 ON Metadata.uuid_l2 = seaowl_l2.uuid_l2;"
         #
-        #         Long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
-        #         Wide <- Long %>%
+        #         long <- read_csv("/D/Documents/Algae-WISE_jet-ski_Rrs.csv")
+        #         Wide <- long %>%
         #           pivot_wider(
         #             names_prefix = "Rrs_",
-        #             names_from = Wavelength,
+        #             names_from = wavelength,
         #             values_from = Rrs
         #           )
         #         write_csv(Wide, "/D/Documents/Algae-WISE_jet-ski_Rrs_wide.csv")

@@ -1,6 +1,6 @@
 #' obs_bb3 UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -26,7 +26,7 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
     output$L1b <- renderPlotly({
       validate(need(nrow(Obs$BBFL2$L1b) != 0, "No L1b data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
+      PlyFont <- list(family = "times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -43,17 +43,17 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
         mutate(
           Plot = purrr::map2(
             .x = Data,
-            .y = Parameter,
+            .y = parameter,
             ~ plot_ly(
               .x,
-              text = ~ID,
-              customdata = ~ paste0(.y, "_", ID)
+              text = ~id,
+              customdata = ~ paste0(.y, "_", id)
             ) %>%
               add_markers(
-                x = ~ ymd_hms(DateTime),
-                y = ~Value,
+                x = ~ ymd_hms(date_time),
+                y = ~value,
                 showlegend = F,
-                color = ~QC,
+                color = ~qc,
                 colors = c("1" = "seagreen", "0" = "red")
               ) %>%
               layout(
@@ -67,19 +67,19 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
         event_register("plotly_click")
 
       # Set source for selection event
-      p$x$source <- "BBFL2L1b"
+      p$x$source <- "bbfl2_l1b"
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
     })
 
     observeEvent(
-      event_data("plotly_click", source = "BBFL2L1b"),
-      label = "QC BBFL2",
+      event_data("plotly_click", source = "bbfl2_l1b"),
+      label = "qc BBFL2",
       ignoreInit = TRUE,
       {
         Selected <- stringr::str_split_fixed(
-          event_data("plotly_click", source = "BBFL2L1b")$customdata,
+          event_data("plotly_click", source = "bbfl2_l1b")$customdata,
           "_(?=[:digit:]{1,}?$)",
           n = 2
         )
@@ -90,7 +90,7 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
         Obs$BBFL2$L1b <- Obs$BBFL2$L1b %>%
           mutate(
             Data = purrr::map2(
-              .x = Parameter,
+              .x = parameter,
               .y = Data,
               ~ if (.x == SelParam) {
                 qc_shift(.y, SelID)

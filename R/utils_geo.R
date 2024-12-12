@@ -1,6 +1,6 @@
 #' geo
 #'
-#' @description A utils function
+#' @description a utils function
 #'
 #' @return The return value, if any, from executing the utility.
 #'
@@ -11,8 +11,8 @@
 # Get Zoom level and map center from lat lon, adapted from:
 # https://community.plotly.com/t/dynamic-zoom-for-mapbox/32658/11
 
-# lat <- GGA$Lat_DD
-# lon <- GGA$Lon_DD
+# lat <- GGA$lat_dd
+# lon <- GGA$lon_dd
 
 zoom_center <- function(lat = NULL, lon = NULL) {
   # Return default
@@ -51,7 +51,7 @@ zoom_center <- function(lat = NULL, lon = NULL) {
 }
 
 
-# MinMaxLatLon ------------------------------------------------------------
+# MinMaxlatlon ------------------------------------------------------------
 # What if we cross the Equator or Greenwich ?
 min_geo <- function(coor, ...) {
   if (any(stringr::str_detect(as.character(coor), "-"))) {

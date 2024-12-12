@@ -2,8 +2,8 @@
 % Please edit documentation in R/utils_metadata.R
 \name{qc_qwip}
 \alias{qc_qwip}
-\title{QWIP: A Quantitative Metric for Quality Control of Aquatic Reflectance
-Spectral Shape Using the Apparent Visible Wavelength (Dierssen et al., FRS, 2022)}
+\title{QWIP: a Quantitative Metric for Quality Control of Aquatic Reflectance
+Spectral Shape Using the Apparent Visible wavelength (Dierssen et al., FRS, 2022)}
 \usage{
 qc_qwip(Waves, Rrs)
 }
@@ -20,5 +20,5 @@ This function calculates the Quality Water Index Polynomial (QWIP)
 based on Diesrssen et al 2022 paper.
 }
 \author{
-Simon Bélanger, Raphael Mabit
+Simon bélanger, Raphael Mabit
 }

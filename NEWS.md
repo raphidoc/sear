@@ -16,13 +16,13 @@
 
 * Violating Satlantinc standards, sensor HSL and HLD should NOT be $L_u$. Case in WISEMan 2019.
 
-* Adding vessel frame rotation from Tait-Bryan angles heading, pitch, roll in MetadataL1b and L2
+* Adding vessel frame rotation from Tait-Bryan angles heading, pitch, roll in metadata_l1b and L2
 
 # sear 0.3.0
 
 # sear 0.2.0
 
-* Added `Rrs_loess` and `RbI` computation and storage in SQLite `HOCRL2` table with DB migration script in `sear_dev`.
+* Added `Rrs_loess` and `RbI` computation and storage in SQLite `hocr_l2` table with DB migration script in `sear_dev`.
 
 * Lowered computation time of `data_synthesis` by passing time vector unique to the second.
 
@@ -42,7 +42,7 @@
 
 * `parse_data` raw data from MTE data logger and processed data from BioSonic. Also load and parse calibration data.
 
-* `L1a_select` added support for filtering based on instrument data synthesis, `Date` and `Time`.
+* `L1a_select` added support for filtering based on instrument data synthesis, `date` and `time`.
 
 * `L1bL2` working module but struggle to manage reactivity like dynamic tab creation depending on available instrument data.
 
@@ -52,9 +52,9 @@
 
 # sear 0.0.0.9002
 
-* Add dark correction to HOCR L1b. The function `cal_dark` is almost a duplicate of `cal_hocr` with the exception of interpolation time interval set to 60 sec and returning a wide data frame of calibrated dark. Could improve the workflow by avoiding duplication of code ...
+* Add dark correction to HOCR L1b. The function `cal_dark` is almost a duplicate of `hocr_l1b` with the exception of interpolation time interval set to 60 sec and returning a wide data frame of calibrated dark. Could improve the workflow by avoiding duplication of code ...
 
-* Fix map display bug when saving new data without UUID. In that case Obs$Metadata is updated after the Center and Zoom values are updated which was creating a bug. Remove the constraint of having a valid UUID. Does not seem to be a problem since a valid UUID is created when `save` is hit.
+* Fix map display bug when saving new data without uuid_l2. In that case Obs$Metadata is updated after the Center and Zoom values are updated which was creating a bug. Remove the constraint of having a valid uuid_l2. Does not seem to be a problem since a valid uuid_l2 is created when `save` is hit.
 
 # sear 0.0.0.9001
 

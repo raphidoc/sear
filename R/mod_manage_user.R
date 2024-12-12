@@ -1,6 +1,6 @@
 #' #' manage_user UI Function
 #' #'
-#' #' @description A shiny Module.
+#' #' @description a shiny Module.
 #' #'
 #' #' @param id,input,output,session Internal parameters for {shiny}.
 #' #'

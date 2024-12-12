@@ -1,6 +1,6 @@
 #' parse_mtelog UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -19,7 +19,7 @@ mod_parse_mtelog_ui <- function(id) {
 #' parse_mtelog Server Functions
 #'
 #' @noRd
-mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
+mod_parse_mtelog_server <- function(id, SearProj, cal_data, ParsedFiles) {
   stopifnot(is.reactive(SearProj))
 
   moduleServer(id, function(input, output, session) {
@@ -30,7 +30,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
     output$Load <- renderUI({
       req(SearProj())
 
-      validate(need(CalData$CalHOCR(), message = "Need HOCR calibration data"))
+      validate(need(cal_data$hocr_cal(), message = "Need HOCR calibration data"))
 
       fluidRow(
         column(
@@ -76,9 +76,9 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
 
         MTELog <- read_mtelog(str_subset(Files$rawpath, "\\.txt$"))
 
-        InstList <- unique(MTELog$Instrument)
+        InstList <- unique(MTELog$instrument)
 
-        DateTime <- str_extract(str_subset(Files$name, "\\.txt$"), "[:digit:]{8}_[:digit:]{6}")
+        date_time <- str_extract(str_subset(Files$name, "\\.txt$"), "[:digit:]{8}_[:digit:]{6}")
 
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
@@ -88,7 +88,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
 
         progress$set(value = 0.2, detail = "Applanix")
 
-        PotApla <- file.path(ParsedDir, paste0("apla_", DateTime, ".csv"))
+        PotApla <- file.path(ParsedDir, paste0("apla_", date_time, ".csv"))
 
         if (any(str_detect(InstList, "APLA")) & !file.exists(PotApla)) {
 
@@ -100,21 +100,21 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
         # HOCR
 
         # Chech that all three HOCR are present
-        # OCRList <- InstrumentList[str_detect(InstrumentList, "OCR")]
+        # OCRList <- instrumentList[str_detect(instrumentList, "OCR")]
         #
         # if (any(OCRList %in% c("OCR1", "OCR2", "OCR3")) & any(!OCRList %in% c("OCR1", "OCR2", "OCR3"))) {
-        #   MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% InstrumentList)]
+        #   MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% instrumentList)]
         #
         #   warning("HOCR on port ", MissingOCR, "is missing from MainLog. Cannot process HOCR data.")
         #
-        #   InstrumentList <- str_remove(InstrumentList, "OCR1|OCR2|OCR3")
+        #   instrumentList <- str_remove(instrumentList, "OCR1|OCR2|OCR3")
         # }
 
         progress$set(value = 0.3, detail = "HOCR")
 
-        PotHOCR <- file.path(ParsedDir, paste0("hocr_", DateTime, ".rds"))
-        PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_", DateTime, ".rds"))
-        PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_", DateTime, ".rds"))
+        PotHOCR <- file.path(ParsedDir, paste0("hocr_", date_time, ".rds"))
+        PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_", date_time, ".rds"))
+        PotHOCRtimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_", date_time, ".rds"))
 
         if (any(str_detect(InstList, "OCR"), na.rm = T) & !file.exists(PotHOCR)) {
           PrimHOCR <- read_mte_hocr(str_subset(Files$rawpath, "\\.bin"))
@@ -122,29 +122,29 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
           PrimHocrDarkRaw <- PrimHOCR[purrr::map_lgl(PrimHOCR, ~ str_detect(.$instrument, "HED|PLD"))]
 
           # Dont know the logger date format so quick fix with Apla date
-          AplaDate <- unique(date(PrimApla$DateTime))
+          Apladate <- unique(date(PrimApla$date_time))
 
           progress$set(value = 0.4, message = "Calibrate HOCR dark")
 
-          PrimHOCRDark <- cal_dark(PrimHocrDarkRaw, CalHOCR = CalData$CalHOCR(), AplaDate)
+          PrimHOCRDark <- cal_dark(PrimHocrDarkRaw, hocr_cal = cal_data$hocr_cal(), Apladate)
 
           progress$set(value = 0.5, message = "Creating HOCR time index")
 
-          # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
+          # Posixct object appear to be heavy, same length list of date_time is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
-          TimeIndex <- purrr::map(
+          timeIndex <- purrr::map(
             .x = PrimHOCR,
             ~ as.numeric(clock::date_time_parse(
-              paste0(AplaDate, " ", hms::as_hms(.x$time / 1000)),
+              paste0(Apladate, " ", hms::as_hms(.x$time / 1000)),
               zone = "UTC"
             ))
           )
 
-          if (length(TimeIndex) != length(PrimHOCR)) {
-            stop("HOCRTimeIndex not the same length as HOCR !")
+          if (length(timeIndex) != length(PrimHOCR)) {
+            stop("HOCRtimeIndex not the same length as HOCR !")
           }
 
-          PrimHOCRTimeIndex <- as.POSIXct(unlist(TimeIndex), tz = "UTC")
+          PrimHOCRtimeIndex <- as.POSIXct(unlist(timeIndex), tz = "utc")
 
           progress$set(value = 0.6, message = "Writing HOCR data")
 
@@ -152,7 +152,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
 
           write_rds(PrimHOCRDark, PotHOCRDark)
 
-          write_rds(PrimHOCRTimeIndex, PotHOCRTimeIndex)
+          write_rds(PrimHOCRtimeIndex, PotHOCRtimeIndex)
         }
 
         progress$set(message = "Parsing MTE: ", value = 0.6)
@@ -161,7 +161,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
 
         progress$set(value = 0.7, detail = "SBE19")
 
-        PotSBE19 <- file.path(ParsedDir, paste0("sbe19_", DateTime, ".csv"))
+        PotSBE19 <- file.path(ParsedDir, paste0("sbe19_", date_time, ".csv"))
 
         if (any(str_detect(InstList, "CTD")) & !file.exists(PotSBE19)) {
           PrimSBE19 <- read_sbe19(MTELog)
@@ -173,7 +173,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
 
         progress$set(value = 0.8, detail = "SeaOWL")
 
-        PotSeaOWL <- file.path(ParsedDir, paste0("seaowl_", DateTime, ".csv"))
+        PotSeaOWL <- file.path(ParsedDir, paste0("seaowl_", date_time, ".csv"))
 
         if (any(str_detect(InstList, "OWL")) & !file.exists(PotSeaOWL)) {
           PrimSeaOWL <- read_seaowl(MTELog)
@@ -185,7 +185,7 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
 
         progress$set(value = 0.9, detail = "BBFL2")
 
-        PotBBFL2 <- file.path(ParsedDir, paste0("bbfl2_", DateTime, ".csv"))
+        PotBBFL2 <- file.path(ParsedDir, paste0("bbfl2_", date_time, ".csv"))
 
         if (any(str_detect(InstList, "ECO")) & !file.exists(PotBBFL2)) {
           PrimBBFL2 <- read_bbfl2(MTELog)
@@ -262,18 +262,18 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
     #           test <- purrr::map(
     #             .x = temp,
     #             ~ tibble(
-    #               Instrument = .x$Instrument,
-    #               SN = .x$SN,
+    #               instrument = .x$instrument,
+    #               sn = .x$sn,
     #               AproxData = purrr::map(
     #                 .x = ..1$AproxData,
     #                 ~ pivot_longer(
     #                   .x,
     #                   cols = matches("[[:alpha:]]{2}_[[:digit:]]{3}(.[[:digit:]]{1,2})?"),
-    #                   values_to = "Channels",
-    #                   names_to = c("Type", "Wavelength"),
+    #                   values_to = "channel",
+    #                   names_to = c("type", "wavelength"),
     #                   names_sep = "_",
     #                   # names_prefix = "[[:alpha:]]{2}_",
-    #                   names_transform = list(Wavelength = as.numeric)
+    #                   names_transform = list(wavelength = as.numeric)
     #                 )
     #               )
     #             )
@@ -282,16 +282,16 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
     #           test2 <- purrr::map(.x = test, ~ unnest(.x, cols = c(AproxData)))
     #
     #           test3 <- purrr::map_df(.x = test2, ~ .x) %>%
-    #             group_by(Instrument, SN) %>%
-    #             nest(AproxData = !matches("Instrument|SN")) %>%
+    #             group_by(instrument, sn) %>%
+    #             nest(AproxData = !matches("instrument|sn")) %>%
     #             mutate(
     #               AproxData = purrr::map(
     #                 AproxData,
     #                 ~ pivot_wider(
     #                   .x,
-    #                   names_from = all_of(c("Type", "Wavelength")),
+    #                   names_from = all_of(c("type", "wavelength")),
     #                   names_sep = "_",
-    #                   values_from = Channels
+    #                   values_from = channel
     #                 )
     #               )
     #               )
@@ -302,24 +302,24 @@ mod_parse_mtelog_server <- function(id, SearProj, CalData, ParsedFiles) {
     #
     #         progress$set(value = 0.4, detail = "HOCR time index")
     #
-    #         NameHOCRTimeIndex <- c("hocr_time_index_[:digit:]{8}_[:digit:]{6}\\.rds")
+    #         NameHOCRtimeIndex <- c("hocr_time_index_[:digit:]{8}_[:digit:]{6}\\.rds")
     #
-    #         if (any(str_detect(ParsedFiles(), NameHOCRTimeIndex))) {
+    #         if (any(str_detect(ParsedFiles(), NameHOCRtimeIndex))) {
     #
-    #           PotHOCRTimeIndex <- str_subset(ParsedFiles(), NameHOCRTimeIndex)
+    #           PotHOCRtimeIndex <- str_subset(ParsedFiles(), NameHOCRtimeIndex)
     #
-    #           # unlist convert posixct DateTime representation back to number of seconds
+    #           # unlist convert posixct date_time representation back to number of seconds
     #           # temp <- as.POSIXct(
     #           #   unlist(
-    #           #     purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
+    #           #     purrr::map(.x = PotHOCRtimeIndex, ~ read_rds(.x)),
     #           #     recursive = T),
-    #           #   tz = "UTC")
+    #           #   tz = "utc")
     #
     #           temp <- unlist(
-    #             purrr::map(.x = PotHOCRTimeIndex, ~ read_rds(.x)),
+    #             purrr::map(.x = PotHOCRtimeIndex, ~ read_rds(.x)),
     #             recursive = T)
     #
-    #           HOCRTimeIndex(temp)
+    #           HOCRtimeIndex(temp)
     #
     #         }
     #

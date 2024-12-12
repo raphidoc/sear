@@ -1,16 +1,16 @@
 #' obs_hocr UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_L1L2_hocr_ui <- function(id) {
+mod_L1hocr_l2_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    plotlyOutput(ns("HOCRL1b"), height = 350),
+    plotlyOutput(ns("hocr_l1b"), height = 350),
     uiOutput(ns("ProL2")),
     checkboxInput(ns("Loess"), "Loess", value = TRUE, width = NULL),
     numericInput(ns("Span"), "span", 0.1, step = 0.01),
@@ -21,10 +21,10 @@ mod_L1L2_hocr_ui <- function(id) {
 #' obs_hocr Server Functions
 #'
 #' @noRd
-mod_L1L2_hocr_server <- function(id, Obs, Settings) {
+mod_L1hocr_l2_server <- function(id, Obs, Settings) {
   # stopifnot(is.reactive(L1bData))
 
-  PlyFont <- list(family = "Times New Roman", size = 14)
+  PlyFont <- list(family = "times New Roman", size = 14)
   BlackSquare <- list(
     type = "rect",
     fillcolor = "transparent",
@@ -41,54 +41,54 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
     ns <- session$ns
 
     # HOCR Es and Lu plot
-    output$HOCRL1b <- renderPlotly({
+    output$hocr_l1b <- renderPlotly({
       validate(need(nrow(Obs$HOCR$L1b) != 0, "No L1b data"))
 
-      Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime)))
+      Obs$metadata_l1b %>% mutate(date_time = as.numeric(ymd_hms(date_time)))
 
-      # Add Pitch and Roll metadata
+      # Add pitch and roll metadata
       # TODO make this code clearer ... possibly with purrr::map ?
       # Enhanced <- Obs$HOCR$L1b %>%
-      #   unnest(cols = c(CalData)) %>%
-      #   mutate(DateTime = as.numeric(DateTime)) %>%
+      #   unnest(cols = c(cal_data)) %>%
+      #   mutate(date_time = as.numeric(date_time)) %>%
       #   fuzzyjoin::difference_left_join(
-      #     Obs$MetadataL1b %>% mutate(DateTime = as.numeric(ymd_hms(DateTime))),
-      #     by = c("DateTime"),
+      #     Obs$metadata_l1b %>% mutate(date_time = as.numeric(ymd_hms(date_time))),
+      #     by = c("date_time"),
       #     max_dist = 1,
       #     distance_col = "Distance"
       #   ) %>%
-      #   group_by(ID, Distance) %>%
+      #   group_by(id, Distance) %>%
       #   nest() %>%
-      #   group_by(ID) %>%
+      #   group_by(id) %>%
       #   slice(which.min(Distance)) %>%
       #   unnest(cols = c(data)) %>%
-      #   group_by(Instrument, SN) %>%
-      #   nest(.key = "CalData")
+      #   group_by(instrument, sn) %>%
+      #   nest(.key = "cal_data")
 
       ply <- Obs$HOCR$L1b %>%
-        arrange(SN) %>%
-        # filter(str_detect(Instrument, "HPL")) %>%
+        arrange(sn) %>%
+        # filter(str_detect(instrument, "HPL")) %>%
         mutate(
           Plot = purrr::map2(
-            .x = CalData,
-            .y = SN,
+            .x = cal_data,
+            .y = sn,
             ~ plot_ly(
-              .x %>% group_by(ID),
+              .x %>% group_by(id),
               text = ~ paste0(
-                "<b>ID</b>: ", ID, "<br>"
+                "<b>id</b>: ", id, "<br>"
               ),
-              customdata = ~ID
+              customdata = ~id
             ) %>%
               add_lines(
-                x = ~Wavelength,
-                y = ~Channels,
-                #name = ~QC,
+                x = ~wavelength,
+                y = ~channel,
+                #name = ~qc,
                 showlegend = F,
-                color = ~QC,
+                color = ~qc,
                 colors = c("1" = "seagreen", "0" = "red")
               ) %>%
               add_annotations(
-                text = ~paste0("N = ", length(unique(ID))),
+                text = ~paste0("N = ", length(unique(id))),
                 x = 0.8,
                 y = 1,
                 yref = "paper",
@@ -116,17 +116,17 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         )
 
       Lu <- ply %>%
-        filter(str_detect(Instrument, "HPL|HSL")) %>% # HSL is not supposed to be Lu ...
+        filter(str_detect(instrument, "HPL|HSL")) %>% # HSL is not supposed to be Lu ...
         subplot(shareX = T, shareY = T)
 
       Es <- ply %>%
-        filter(str_detect(Instrument, "HSE"))
+        filter(str_detect(instrument, "HSE"))
 
       Es <- Es$Plot
 
       p <- subplot(Es[[1]], Lu, nrows = 2, margin = 0.038, shareX = T, shareY = T) %>%
         add_annotations(
-          text = ~"Wavelength [nm]",
+          text = ~"wavelength [nm]",
           x = 0.5,
           y = -0.14,
           yref = "paper",
@@ -139,18 +139,18 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         layout(
           font = PlyFont,
           yaxis = list(title = list(
-            text = "Es [uW.cm-2.nm-1]" # TeX("\\text{E}_\\text{s}")
+            text = "Es [uW.cm-2.nm-1]" # TeX("\\text{e}_\\text{s}")
           )),
           yaxis2 = list(title = list(
             text = "Lu [uW.cm-2.nm-1.sr-1]" # TeX("\\text{L}_\\text{u}")
           )) # ,
-          # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
+          # xaxis3 = list(title = list(text = TeX("\\text{wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T) %>%
         event_register("plotly_click")
 
       # Set source for selection event
-      p$x$source <- "HOCRL1b"
+      p$x$source <- "hocr_l1b"
 
       # Save graph
       # save_image(p, file=file.path(path.expand("~"), "sear_figure", "L1b.svg"), scale = 3, height = 720, width = 1280)
@@ -159,15 +159,15 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       widgetframe::frameableWidget(p)
     })
 
-    # Get the ID of HOCR spectra selected in: selected()$customdata
+    # Get the id of HOCR spectra selected in: selected()$customdata
     observeEvent(
-      event_data("plotly_click", source = "HOCRL1b"),
-      label = "QC HOCR",
+      event_data("plotly_click", source = "hocr_l1b"),
+      label = "qc HOCR",
       ignoreInit = TRUE,
       {
-        Selected <- event_data("plotly_click", source = "HOCRL1b")$customdata
+        Selected <- event_data("plotly_click", source = "hocr_l1b")$customdata
 
-        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(CalData = purrr::map(CalData, ~ qc_shift(., Selected)))
+        Obs$HOCR$L1b <- Obs$HOCR$L1b %>% mutate(cal_data = purrr::map(cal_data, ~ qc_shift(., Selected)))
       }
     )
 
@@ -197,12 +197,12 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           Settings$HOCR$WaveStep()
         )
 
-        if (any(Obs$SBE19$L1b$Parameter == "Pressure")) {
+        if (any(Obs$SBE19$L1b$parameter == "pressure")) {
           message("Taking z1 from CTD")
-          pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$Parameter == "Pressure"][[1]]$Value
+          pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$parameter == "pressure"][[1]]$value
 
           z1 <- tibble(
-            z = gsw::gsw_z_from_p(p = pressure, latitude = Obs$MetadataL2$Lat),
+            z = gsw::gsw_z_from_p(p = pressure, latitude = Obs$metadata_l2$lat),
             z1 = z + 0.1
           ) %>%
             select(z1) %>%
@@ -221,7 +221,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 
         z2z1 <- Settings$HOCR$Z1Z2Depth()
 
-        Obs$HOCR$L2 <- L2_hocr(
+        Obs$HOCR$L2 <- hocr_l2(
           Obs$HOCR$L1b, wave_seq, z1, z2z1,
           input$Loess, input$Span, Obs
         )
@@ -229,7 +229,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
     )
 
     output$AOPs <- renderPlotly({
-      # req(L2Data())
+      # req(l2_data())
 
       validate(need(nrow(Obs$HOCR$L2) != 0, "Process L2 to display AOPs"))
 
@@ -255,10 +255,10 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         ) %>%
         layout(shapes = BlackSquare)
 
-      if (any(str_detect(names(Obs$HOCR$L2), "ScoreQWIP"))) {
+      if (any(str_detect(names(Obs$HOCR$L2), "qwip_score"))) {
         Rrsplot <- Rrsplot %>%
           add_annotations(
-            text = ~ paste("QWIP:", unique(Obs$MetadataL2$ScoreQWIP)),
+            text = ~ paste("QWIP:", unique(Obs$metadata_l2$qwip_score)),
             x = 0.01,
             y = 1,
             yref = "paper",
@@ -274,7 +274,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       if (any(str_detect(names(Obs$HOCR$L2), "Rrs_loess"))) {
         Rrsplot <- Rrsplot %>%
           add_trace(
-            x = ~Wavelength,
+            x = ~wavelength,
             y = ~Rrs_loess,
             type = "scatter",
             mode = "lines",
@@ -305,7 +305,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           showlegend = T
         ) %>%
         layout(
-          xaxis = list(title=TeX("\\text{Wavelength}")),
+          xaxis = list(title=TeX("\\text{wavelength}")),
           yaxis = list(title=TeX("R_\\text{rs} [\\text{sr}^{-1}]")),
           shapes=list(BlackSquare)
         ) %>%
@@ -318,7 +318,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
       #
       # if (any(str_detect(names(Obs$HOCR$L2), "KLu_loess"))) {
       #   KLuplot <- KLuplot %>%
-      #     add_trace(x = ~Wavelength, y = ~KLu_loess, type = "scatter", mode = "lines", line = list(dash = "dash", color = "red"))
+      #     add_trace(x = ~wavelength, y = ~KLu_loess, type = "scatter", mode = "lines", line = list(dash = "dash", color = "red"))
       # }
 
       ply <- subplot(
@@ -329,7 +329,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
         margin = 0.05
         ) %>%
         add_annotations(
-          text = ~"Wavelength [nm]", # TeX("\\text{Wavelength [nm]}"),
+          text = ~"wavelength [nm]", # TeX("\\text{wavelength [nm]}"),
           x = 0.5,
           y = -0.15,
           yref = "paper",
@@ -347,7 +347,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
           yaxis2 = list(title = list(
             text = "Rrs uncertainty [sr-1]" # TeX("\\text{K}_\\text{Lu}")
           )) # ,
-          # xaxis3 = list(title = list(text = TeX("\\text{Wavelength}")))
+          # xaxis3 = list(title = list(text = TeX("\\text{wavelength}")))
         ) %>%
         config(mathjax = "cdn", displayModeBar = T)
 
@@ -380,7 +380,7 @@ mod_L1L2_hocr_server <- function(id, Obs, Settings) {
 }
 
 ## To be copied in the UI
-# mod_L1L2_hocr_ui("L1L2_hocr")
+# mod_L1hocr_l2_ui("L1hocr_l2")
 
 ## To be copied in the server
-# mod_L1L2_hocr_server("L1L2_hocr")
+# mod_L1hocr_l2_server("L1hocr_l2")

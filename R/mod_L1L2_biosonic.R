@@ -1,6 +1,6 @@
 #' L1L2_biosonic UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -26,7 +26,7 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
     output$L1b <- renderPlotly({
       validate(need(nrow(Obs$BioSonic$L1b) != 0, "No L1b data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
+      PlyFont <- list(family = "times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -43,29 +43,29 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
 
       ply <- Obs$BioSonic$L1b %>%
         mutate(
-          Distance = seq(from = 0, to = Obs$MetadataL2$DistanceRun, along.with = DateTime)
+          Distance = seq(from = 0, to = Obs$metadata_l2$distance_run, along.with = date_time)
         ) %>%
         plot_ly(
-          text = ~DateTime,
+          text = ~date_time,
           x = ~Distance,
           colors = pal
         ) %>%
         add_lines(
-          y = ~Altitude_mReMsl,
+          y = ~altitude_mReMsl,
           color = "Watercraft"
         ) %>%
         add_lines(
-          y = ~ BottomElevation_m + PlantHeight_m,
+          y = ~ bottom_elevation_m + plant_height_m,
           color = "Canopy"
         ) %>%
         add_lines(
-          y = ~BottomElevation_m,
+          y = ~bottom_elevation_m,
           color = "Bottom"
         ) %>%
         layout(
           shapes = BlackSquare,
           xaxis = list(title = list(text = "Distance [m]"))
-          # yaxis = list(range = list(~min(BottomElevation_m, na.rm = TRUE), 0))
+          # yaxis = list(range = list(~min(bottom_elevation_m, na.rm = TRUE), 0))
         )
 
       # Save graph
@@ -79,13 +79,13 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
       input$ProcessL2,
       {
         test <- Obs$BioSonic$L1b %>% summarise(
-          Lon = mean(Lon),
-          Lat = mean(Lat),
-          DateTime = mean(DateTime),
-          Altitude_mReMsl = mean(Altitude_mReMsl),
-          BottomElevation_m = mean(BottomElevation_m),
-          PlantHeight_m = mean(PlantHeight_m),
-          PercentCoverage = mean(PercentCoverage)
+          lon = mean(lon),
+          lat = mean(lat),
+          date_time = mean(date_time),
+          altitude_mReMsl = mean(altitude_mReMsl),
+          bottom_elevation_m = mean(bottom_elevation_m),
+          plant_height_m = mean(plant_height_m),
+          percent_coverage = mean(percent_coverage)
         )
 
         Obs$BioSonic$L2 <- test
@@ -120,8 +120,8 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
           selection = "none",
           editable = F
         ) %>%
-          DT::formatRound(c("Lat", "Lon"), digits = 6) %>%
-          DT::formatRound(c("Altitude_mReMsl", "BottomElevation_m", "PlantHeight_m"), digits = 3)
+          DT::formatRound(c("lat", "lon"), digits = 6) %>%
+          DT::formatRound(c("altitude_mReMsl", "bottom_elevation_m", "plant_height_m"), digits = 3)
       },
       server = FALSE,
       editable = F

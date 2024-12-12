@@ -157,7 +157,7 @@ window.buildTabsets = function(tocID) {
         activeTab = i;
 
       // remove any table of contents entries associated with
-      // this ID (since we'll be removing the heading element)
+      // this id (since we'll be removing the heading element)
       $("div#" + tocID + " li a[href='#" + id + "']").parent().remove();
 
       // sanitize the id for use with bootstrap tabs
@@ -242,7 +242,7 @@ if (window.hljs) {
   hljs.configure({languages: []});
   hljs.initHighlightingOnLoad();
   if (document.readyState && document.readyState === "complete") {
-    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+    window.settimeout(function() { hljs.initHighlighting(); }, 0);
   }
 }
 </script>
@@ -863,7 +863,7 @@ Session Info
 <thead>
 <tr class="header">
 <th align="left">Field</th>
-<th align="left">Value</th>
+<th align="left">value</th>
 </tr>
 </thead>
 <tbody>
@@ -884,7 +884,7 @@ Session Info
 <td align="left">en_US</td>
 </tr>
 <tr class="odd">
-<td align="left">Timezone</td>
+<td align="left">timezone</td>
 <td align="left">America/New_York</td>
 </tr>
 </tbody>

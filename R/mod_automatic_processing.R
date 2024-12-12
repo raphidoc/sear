@@ -1,6 +1,6 @@
 #' automatic_processing UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -17,7 +17,7 @@ mod_automatic_processing_ui <- function(id) {
 #' automatic_processing Server Functions
 #'
 #' @noRd
-mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB) {
+mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, Settings, MainLog, DB) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -30,7 +30,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     })
 
     Trigger <- reactiveVal(NULL)
-    TimeInt <- reactiveVal()
+    timeInt <- reactiveVal()
 
     observeEvent(
       input$AutoProcess,
@@ -41,27 +41,27 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
         # Close the progress when this reactive exits (even if there's an error)
         on.exit(progress$close())
 
-        # discretize_time(L1a$Apla()$DateTime)
+        # discretize_time(L1a$Apla()$date_time)
 
-        MainTime <- L1aSelect$SubMainLog()$DateTime
+        Maintime <- L1aSelect$SubMainLog()$date_time
 
 # Create ensemble of 10 seconds -------------------------------------------
 
-        ensemble_main <- unique(make_ensemble(MainTime))
+        ensemble_main <- unique(make_ensemble(Maintime))
 
-        ensemble_metadata <- make_ensemble(MainLog()$DateTime)
+        ensemble_metadata <- make_ensemble(MainLog()$date_time)
 
-        ensemble_sbe19 <- make_ensemble(L1a$SBE19()$DateTime)
+        ensemble_sbe19 <- make_ensemble(L1a$SBE19()$date_time)
 
-        ensemble_seaowl <- make_ensemble(L1a$SeaOWL()$DateTime)
+        ensemble_seaowl <- make_ensemble(L1a$SeaOWL()$date_time)
 
-        ensemble_bbfl2 <- make_ensemble(L1a$BBFL2()$DateTime)
+        ensemble_bbfl2 <- make_ensemble(L1a$BBFL2()$date_time)
 
-        ensemble_biosonic <- make_ensemble(L1a$BioSonic()$DateTime)
+        ensemble_biosonic <- make_ensemble(L1a$BioSonic()$date_time)
 
-        ensemble_hbdevices <- make_ensemble(L1a$HBDevices()$DateTime)
+        ensemble_hbdevices <- make_ensemble(L1a$HBDevices()$date_time)
 
-        ensemble_hocr <- make_ensemble(L1a$HOCRTimeIndex())
+        ensemble_hocr <- make_ensemble(L1a$HOCRtimeIndex())
 
 
 # Process each ensemble ---------------------------------------------------
@@ -76,30 +76,30 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           metadata <- MainLog()[which(ensemble_metadata %in% ensemble), ]
 
           # Create metadata for the selected L1a points
-          ObsUUID <- uuid::UUIDgenerate(
+          Obsuuid_l2 <- uuid::UUIDgenerate(
             use.time = T,
             output = "string"
           )
 
-          # First have to write MetadataL2 in which UUID primary key
-          # is the reference for UUID foreign key in all the other tables
+          # First have to write metadata_l2 in which uuid_l2 primary key
+          # is the reference for uuid_l2 foreign key in all the other tables
           # Otherwise it is a FOREIGN KEY constraint violation
-          Obs$MetadataL2 <- gen_metadataL2(metadata, ensemble)
-          MetadataL2 <- Obs$MetadataL2 %>%
+          Obs$metadata_l2 <- gen_metadataL2(metadata, ensemble)
+          metadata_l2 <- Obs$metadata_l2 %>%
             mutate(
-              UUID = ObsUUID,
-              ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-              Analyst = "Raphael Mabit",
-              Mail = "raphael.mabit@gmail.com"
+              uuid_l2 = Obsuuid_l2,
+              date_time_processing = as.character(as.POSIXlt(Sys.time(), tz = "utc")),
+              analyst = "Raphael Mabit",
+              mail = "raphael.mabit@gmail.com"
             )
-          DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "metadata_l2", metadata_l2, append = TRUE)
 
-          Obs$MetadataL1b <- gen_metadataL1b(metadata, ensemble)
-          MetadataL1b <- Obs$MetadataL1b %>%
+          Obs$metadata_l1b <- gen_metadataL1b(metadata, ensemble)
+          metadata_l1b <- Obs$metadata_l1b %>%
             mutate(
-              UUID = ObsUUID
+              uuid_l2 = Obsuuid_l2
             )
-          DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "metadata_l1b", metadata_l1b, append = TRUE)
 
           # Empty L1b and L2 on new processing to avoid confusion
           Obs$HOCR$L1b <- tibble()
@@ -116,13 +116,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
           # CTD processing ----------------------------------------------------------
 
-          if (any(str_detect(L1a$InstrumentList(), "SBE19"))) {
+          if (any(str_detect(L1a$instrumentList(), "SBE19"))) {
             progress$set(message = "Processing L1b: ", value = progress$getValue())
 
             progress$set(value = 0.3, detail = "SBE19")
 
-            Lon <- mean(metadata$Lon)
-            Lat <- mean(metadata$Lat)
+            lon <- mean(metadata$lon)
+            lat <- mean(metadata$lat)
 
             sbe19 <- L1a$SBE19()[which(ensemble_sbe19 %in% ensemble), ]
 
@@ -130,69 +130,69 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               warning(
                 paste0("SBE19 data not found at time interval: ", ensemble)
               )
-            } else if (is.null(CalData$CalSBE19()) | is.null(CalData$CalSBE18()) | is.null(CalData$CalSBE43())) {
+            } else if (is.null(cal_data$CalSBE19()) | is.null(cal_data$CalSBE18()) | is.null(cal_data$CalSBE43())) {
               warning(
                 "SBE19 | SBE18 | SBE43 calibration data not loaded"
               )
             } else {
-              sbe19 <- cal_sbe19(sbe19, Lon, Lat) %>%
+              sbe19 <- cal_sbe19(sbe19, lon, lat) %>%
                 mutate(
-                  Oxygen = cal_sbe43( # Oxygen in ml/l multiply by 1.42903 to get mg/l
-                    Volt = Volt0,
-                    Tcelsius = Temperature,
-                    Pressure = Pressure,
-                    OxSol = OxSol,
-                    CalData = CalData$CalSBE43()
+                  oxygen_concentration = cal_sbe43( # oxygen_concentration in ml/l multiply by 1.42903 to get mg/l
+                    Volt = volt0,
+                    Tcelsius = temperature,
+                    pressure = pressure,
+                    oxygen_solubility = oxygen_solubility,
+                    cal_data = cal_data$CalSBE43()
                   )
                 ) %>%
                 mutate(
                   pH = cal_sbe18(
                     Volt = Volt2,
-                    Tcelsius = Temperature,
-                    CalData = CalData$CalSBE18()
+                    Tcelsius = temperature,
+                    cal_data = cal_data$CalSBE18()
                   )
                 ) %>%
                 select(
-                  DateTime,
-                  Temperature,
-                  Conductivity,
-                  Pressure,
-                  SP,
-                  SA,
-                  CT,
-                  O2Sol,
-                  OxSol,
-                  Oxygen,
+                  date_time,
+                  temperature,
+                  conductivity,
+                  pressure,
+                  salinity_practical,
+                  salinity_absolute,
+                  conservative_temperature,
+                  oxygen_solubility,
+                  oxygen_solubility,
+                  oxygen_concentration,
                   pH
                 ) %>%
                 mutate(
-                  ID = seq_along(rownames(sbe19)),
-                  QC = "1"
+                  id = seq_along(rownames(sbe19)),
+                  qc = "1"
                 )
 
               Obs$SBE19$L1b <- sbe19 %>%
-                select(!any_of(c("Conductivity", "CT", "O2Sol"))) %>%
+                select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
                 pivot_longer(
-                  cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
-                  names_to = "Parameter",
-                  values_to = "Value"
+                  cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+                  names_to = "parameter",
+                  values_to = "value"
                 ) %>%
-                group_by(Parameter) %>%
-                nest(Data = !matches("Parameter"))
+                group_by(parameter) %>%
+                nest(Data = !matches("parameter"))
 
               Obs$SBE19$L2 <- L2_param_val(Obs$SBE19$L1b)
 
               # Save to DB
 
-              SBE19L1b <- Obs$SBE19$L1b %>%
+              sbe19_l1b <- Obs$SBE19$L1b %>%
                 unnest(c(Data)) %>%
-                mutate(UUID = ObsUUID)
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              SBE19L2 <- Obs$SBE19$L2 %>%
-                mutate(UUID = ObsUUID)
+              sbe19_l2 <- Obs$SBE19$L2 %>%
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
-              DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "sbe19_l1b", sbe19_l1b, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "sbe19_l2", sbe19_l2, append = TRUE)
             }
           }
 
@@ -202,13 +202,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
           hocr_dark <- L1a$HOCRDark() %>%
             mutate(
-              DarkCalData = purrr::map(
-                CalData,
-                ~ .x[which.min(abs(as.numeric(ymd_hms(.x$DateTime)) - ensemble)), ]
+              dark_cal_data = purrr::map(
+                cal_data,
+                ~ .x[which.min(abs(as.numeric(ymd_hms(.x$date_time)) - ensemble)), ]
               )
             ) %>%
             ungroup() %>%
-            select(SN, DarkCalData)
+            select(sn, dark_cal_data)
 
           wave_seq <- seq(
             Settings$HOCR$WaveMin(),
@@ -224,12 +224,23 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           #   progress$set(value = value, message = message, detail = detail)
           # }
 
+          Obs$HOCR$L1a <- spsComps::shinyCatch(
+            hocr_l1a(
+              hocr_raw = hocr,
+              hocr_cal = cal_data$hocr_cal(),
+              metadata_l2 = Obs$metadata_l2,
+              UpdateProgress = NULL,
+            ),
+            shiny = T,
+            trace_back = TRUE
+          )
+
+          # Save L1a data to table
+
           Obs$HOCR$L1b <- spsComps::shinyCatch(
-            cal_hocr(
-              RawHOCR = hocr,
-              CalHOCR = CalData$CalHOCR(),
+            hocr_l1b(
+              hocr_l1a = Obs$HOCR$L1a,
               HOCRDark = hocr_dark,
-              MetadataL2 = Obs$MetadataL2,
               UpdateProgress = NULL,
               wave_seq
             ),
@@ -239,9 +250,9 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
           if (is.null(Obs$HOCR$L1b)) {
             # Delete the outdated metadata initially created
-            #  Necessarry to respect UUID foreign key rule (present in main table)
-            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
-            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
+            #  Necessarry to respect uuid_l2 foreign key rule (present in main table)
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l1b WHERE uuid_l2 = "', Obsuuid_l2, '";'))
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l2 WHERE uuid_l2 = "', Obsuuid_l2,'";'))
 
             next
           }
@@ -250,22 +261,22 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           # Ensemble where the closest radiance value to 800 nm exceeds 0.01 sd
 
           df <- Obs$HOCR$L1b %>%
-            filter(as.character(SN) %in% c("1413", "1415", "0237")) %>%
-            unnest(cols = c(CalData)) %>%
+            filter(as.character(sn) %in% c("1413", "1415", "0237")) %>%
+            unnest(cols = c(cal_data)) %>%
             filter(
-              abs(Wavelength - 800) == min(abs(Wavelength - 800))
+              abs(wavelength - 800) == min(abs(wavelength - 800))
             ) %>%
             summarize(
-              sd_800 = sd(Channels, na.rm = T)
+              sd_800 = sd(channel, na.rm = T)
             )
 
           if (df$sd_800 > 0.01) {
             message("sd Lu(z1, 800) > 0.01, skipping out of water ensemble")
 
             # Delete the outdated metadata initially created
-            #  Necessarry to respect UUID foreign key rule (present in main table)
-            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
-            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
+            #  Necessarry to respect uuid_l2 foreign key rule (present in main table)
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l1b WHERE uuid_l2 = "', Obsuuid_l2, '";'))
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l2 WHERE uuid_l2 = "', Obsuuid_l2,'";'))
 
             next
           }
@@ -273,12 +284,12 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
           # HOCR L2 processing ------------------------------------------------------
 
           if (
-            any(str_detect(L1a$InstrumentList(), "SBE19")) &&
-            any(Obs$SBE19$L1b$Parameter == "Pressure")
+            any(str_detect(L1a$instrumentList(), "SBE19")) &&
+            any(Obs$SBE19$L1b$parameter == "pressure")
             ) {
             message("Taking z1 from CTD")
 
-            pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$Parameter == "Pressure"][[1]]$Value
+            pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$parameter == "pressure"][[1]]$value
 
             if (any(pressure < 0)) {
               message("CTD in air, taking single z1 from setting")
@@ -288,7 +299,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               )
             } else {
               z1 <- tibble(
-                z = gsw::gsw_z_from_p(p = pressure, latitude = MetadataL2$Lat),
+                z = gsw::gsw_z_from_p(p = pressure, latitude = metadata_l2$lat),
                 z1 = z
               ) %>%
                 summarise(
@@ -308,7 +319,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
 
           Obs$HOCR$L2 <- tryCatch(
             {
-              L2_hocr(
+              hocr_l2(
                 Obs$HOCR$L1b, wave_seq, z1, z2z1,
                 T, 0.1, Obs
               )
@@ -322,27 +333,27 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
             #message(Obs$HOCR$L2)
 
             # Delete the outdated metadata initially created
-            #  Necessarry to respect UUID foreign key rule (present in main table)
-            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
-            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
+            #  Necessarry to respect uuid_l2 foreign key rule (present in main table)
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l1b WHERE uuid_l2 = "', Obsuuid_l2, '";'))
+            DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l2 WHERE uuid_l2 = "', Obsuuid_l2,'";'))
 
             next
           }
 
-          HOCRL1b <- Obs$HOCR$L1b %>%
-            unnest(cols = c(CalData)) %>%
-            mutate(UUID = ObsUUID)
+          hocr_l1b <- Obs$HOCR$L1b %>%
+            unnest(cols = c(cal_data)) %>%
+            mutate(uuid_l2 = Obsuuid_l2)
 
-          HOCRL2 <- Obs$HOCR$L2 %>%
-            mutate(UUID = ObsUUID)
+          hocr_l2 <- Obs$HOCR$L2 %>%
+            mutate(uuid_l2 = Obsuuid_l2)
 
-          DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
 
 
           # SeaOWL L1b --------------------------------------------------------------
 
-          if (any(str_detect(L1a$InstrumentList(), "SeaOWL"))) {
+          if (any(str_detect(L1a$instrumentList(), "SeaOWL"))) {
             progress$set(value = 0.4, detail = "SeaOWL")
 
             SeaOWL <- L1a$SeaOWL()[which(ensemble_seaowl %in% ensemble), ]
@@ -351,44 +362,44 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               warning(
                 paste0("SeaOWL data not found at time interval: ", ensemble)
               )
-            } else if (is.null(CalData$CalSeaOWL())) {
+            } else if (is.null(cal_data$CalSeaOWL())) {
               warning(
                 "SeaOWL calibration data not loaded"
               )
             } else {
-              SeaOWLL1b <- cal_seaowl(SeaOWL, CalData$CalSeaOWL()) %>%
+              seaowl_l1b <- cal_seaowl(SeaOWL, cal_data$CalSeaOWL()) %>%
                 mutate(
-                  ID = seq_along(rownames(SeaOWL)),
-                  QC = "1"
+                  id = seq_along(rownames(SeaOWL)),
+                  qc = "1"
                 )
 
-              Obs$SeaOWL$L1b <- SeaOWLL1b %>%
-                select(!any_of(c("SN"))) %>%
+              Obs$SeaOWL$L1b <- seaowl_l1b %>%
+                select(!any_of(c("sn"))) %>%
                 pivot_longer(
-                  cols = any_of(c("VSF_700", "Chl", "FDOM")),
-                  names_to = "Parameter",
-                  values_to = "Value"
+                  cols = any_of(c("vsf_700", "chl", "fdom")),
+                  names_to = "parameter",
+                  values_to = "value"
                 ) %>%
-                group_by(Parameter) %>%
-                nest(Data = !matches("Parameter"))
+                group_by(parameter) %>%
+                nest(Data = !matches("parameter"))
 
               Obs$SeaOWL$L2 <- L2_param_val(Obs$SeaOWL$L1b)
 
-              SeaOWLL1b <- Obs$SeaOWL$L1b %>%
+              seaowl_l1b <- Obs$SeaOWL$L1b %>%
                 unnest(c(Data)) %>%
-                mutate(UUID = ObsUUID)
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              SeaOWLL2 <- Obs$SeaOWL$L2 %>%
-                mutate(UUID = ObsUUID)
+              seaowl_l2 <- Obs$SeaOWL$L2 %>%
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
-              DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "seaowl_l1b", seaowl_l1b, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "seaowl_l2", seaowl_l2, append = TRUE)
             }
           }
 
           # BBFL2 L1b ---------------------------------------------------------------
 
-          if (any(str_detect(L1a$InstrumentList(), "BBFL2"))) {
+          if (any(str_detect(L1a$instrumentList(), "BBFL2"))) {
             progress$set(value = 0.5, detail = "BBFL2")
 
             BBFL2 <- L1a$BBFL2()[which(ensemble_bbfl2 %in% ensemble), ]
@@ -397,137 +408,137 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
               warning(
                 paste0("BBFL2 data not found at time interval: ", ensemble)
               )
-            } else if (is.null(CalData$CalBBFL2())) {
+            } else if (is.null(cal_data$CalBBFL2())) {
               warning(
                 "BBFL2 calibration data not loaded"
               )
             } else {
-              BBFL2L1b <- cal_bbfl2(BBFL2, CalData$CalBBFL2()) %>%
+              bbfl2_l1b <- cal_bbfl2(BBFL2, cal_data$CalBBFL2()) %>%
                 mutate(
-                  ID = seq_along(rownames(BBFL2)),
-                  QC = "1"
+                  id = seq_along(rownames(BBFL2)),
+                  qc = "1"
                 )
 
-              Obs$BBFL2$L1b <- BBFL2L1b %>%
+              Obs$BBFL2$L1b <- bbfl2_l1b %>%
                 pivot_longer(
                   cols = any_of(c("NTU", "PE", "PC")),
-                  names_to = "Parameter",
-                  values_to = "Value"
+                  names_to = "parameter",
+                  values_to = "value"
                 ) %>%
-                group_by(Parameter) %>%
-                nest(Data = !matches("Parameter"))
+                group_by(parameter) %>%
+                nest(Data = !matches("parameter"))
 
               Obs$BBFL2$L2 <- L2_param_val(Obs$BBFL2$L1b)
 
-              BBFL2L1b <- Obs$BBFL2$L1b %>%
+              bbfl2_l1b <- Obs$BBFL2$L1b %>%
                 unnest(c(Data)) %>%
-                mutate(UUID = ObsUUID)
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              BBFL2L2 <- Obs$BBFL2$L2 %>%
-                mutate(UUID = ObsUUID)
+              bbfl2_l2 <- Obs$BBFL2$L2 %>%
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
-              DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "bbfl2_l1b", bbfl2_l1b, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "bbfl2_l2", bbfl2_l2, append = TRUE)
             }
           }
 
           # BioSonic L1b ---------------------------------------------------------------
 
-          if (any(str_detect(L1a$InstrumentList(), "BioSonic"))) {
+          if (any(str_detect(L1a$instrumentList(), "BioSonic"))) {
             progress$set(value = 0.6, detail = "BioSonic")
 
-            BioSonicL1b <- L1a$BioSonic()[which(ensemble_biosonic %in% ensemble), ]
+            biosonic_l1b <- L1a$BioSonic()[which(ensemble_biosonic %in% ensemble), ]
 
-            if (nrow(BioSonicL1b) == 0) {
+            if (nrow(biosonic_l1b) == 0) {
               warning(
                 paste0("BioSonic data not found at ensemble: ", ensemble)
               )
             } else {
-              Obs$BioSonic$L1b <- BioSonicL1b %>%
-                rename(Lon = Longitude_deg, Lat = Latitude_deg) %>%
+              Obs$BioSonic$L1b <- biosonic_l1b %>%
+                rename(lon = longitude_deg, lat = latitude_deg) %>%
                 select(
-                  Lon,
-                  Lat,
-                  DateTime,
-                  Altitude_mReMsl,
-                  BottomElevation_m,
-                  PlantHeight_m,
-                  PercentCoverage
+                  lon,
+                  lat,
+                  date_time,
+                  altitude_mReMsl,
+                  bottom_elevation_m,
+                  plant_height_m,
+                  percent_coverage
                 )
               # mutate(
-              #   ID = seq_along(rownames(BioSonicL1b)),
-              #   QC = "1"
+              #   id = seq_along(rownames(biosonic_l1b)),
+              #   qc = "1"
               # )
 
               test <- Obs$BioSonic$L1b %>% summarise(
-                Lon = mean(Lon),
-                Lat = mean(Lat),
-                DateTime = mean(DateTime),
-                Altitude_mReMsl = mean(Altitude_mReMsl),
-                BottomElevation_m = mean(BottomElevation_m),
-                PlantHeight_m = mean(PlantHeight_m),
-                PercentCoverage = mean(PercentCoverage)
+                lon = mean(lon),
+                lat = mean(lat),
+                date_time = mean(date_time),
+                altitude_mReMsl = mean(altitude_mReMsl),
+                bottom_elevation_m = mean(bottom_elevation_m),
+                plant_height_m = mean(plant_height_m),
+                percent_coverage = mean(percent_coverage)
               )
 
               Obs$BioSonic$L2 <- test
 
-              BioSonicL1b <- Obs$BioSonic$L1b %>%
-                mutate(UUID = ObsUUID)
+              biosonic_l1b <- Obs$BioSonic$L1b %>%
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              BioSonicL2 <- Obs$BioSonic$L2 %>%
-                mutate(UUID = ObsUUID)
+              biosonic_l2 <- Obs$BioSonic$L2 %>%
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
-              DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "biosonic_l1b", biosonic_l1b, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "biosonic_l2", biosonic_l2, append = TRUE)
             }
           }
 
           # HydroBall L1b -----------------------------------------------------------
 
-          if (any(str_detect(L1a$InstrumentList(), "HydroBall"))) {
+          if (any(str_detect(L1a$instrumentList(), "HydroBall"))) {
             progress$set(value = 0.6, detail = "HydroBall")
 
-            HydroBallL1b <- L1a$HBDevices()[which(ensemble_hbdevices %in% ensemble), ]
+            hydroball_l1b <- L1a$HBDevices()[which(ensemble_hbdevices %in% ensemble), ]
 
-            if (nrow(HydroBallL1b) == 0) {
+            if (nrow(hydroball_l1b) == 0) {
               warning(
                 paste0("HydroBall data not found at time interval: ", ensemble)
               )
             } else {
-              Obs$HydroBall$L1b <- HydroBallL1b %>%
-                rename(H = DBT_meter) %>%
+              Obs$HydroBall$L1b <- hydroball_l1b %>%
+                rename(height_watercolumn = DBT_meter) %>%
                 mutate(
-                  H = if_else(H == 0, NA, H),
-                  H = -H
+                  height_watercolumn = if_else(height_watercolumn == 0, NA, height_watercolumn),
+                  height_watercolumn = -height_watercolumn
                 ) %>%
                 select(
-                  Lon,
-                  Lat,
-                  DateTime,
-                  Altitude,
-                  H
+                  lon,
+                  lat,
+                  date_time,
+                  altitude,
+                  height_watercolumn
                 )
 
               test <- Obs$HydroBall$L1b %>% summarise(
-                Lon = mean(Lon, na.rm = T),
-                Lat = mean(Lat, na.rm = T),
-                DateTime = mean(DateTime, na.rm = T),
-                Altitude = mean(Altitude, na.rm = T),
-                H = mean(H, na.rm = T)
+                lon = mean(lon, na.rm = T),
+                lat = mean(lat, na.rm = T),
+                date_time = mean(date_time, na.rm = T),
+                altitude = mean(altitude, na.rm = T),
+                height_watercolumn = mean(height_watercolumn, na.rm = T)
               )
 
               Obs$HydroBall$L2 <- test
 
-              HydroBallL1b <- Obs$HydroBall$L1b %>%
+              hydroball_l1b <- Obs$HydroBall$L1b %>%
                 mutate(
-                  UUID = ObsUUID
+                  uuid_l2 = Obsuuid_l2
                 )
 
-              HydroBallL2 <- Obs$HydroBall$L2 %>%
-                mutate(UUID = ObsUUID)
+              hydroball_l2 <- Obs$HydroBall$L2 %>%
+                mutate(uuid_l2 = Obsuuid_l2)
 
-              DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
-              DBI::dbWriteTable(DB$Con(), "HydroBallL2", HydroBallL2, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "hydroball_l1b", hydroball_l1b, append = TRUE)
+              DBI::dbWriteTable(DB$Con(), "hydroball_l2", hydroball_l2, append = TRUE)
             }
           }
         }
@@ -541,13 +552,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #     j <- 1
     #     n <- 1
     #     while (T) {
-    #       if (length(MainTime) < i + 1) {
+    #       if (length(Maintime) < i + 1) {
     #         message("This is the end")
     #         break
     #       }
     #
-    #       x <- MainTime[i]
-    #       y <- MainTime[j + 1]
+    #       x <- Maintime[i]
+    #       y <- Maintime[j + 1]
     #
     #       # Set upper limit for time difference
     #       if (interval(x, y) > seconds(UpLimit)) {
@@ -561,7 +572,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #
     #       if (interval(x, y) < seconds(LowLimit)) {
     #         while (interval(x, y) < seconds(LowLimit)) {
-    #           if (length(MainTime) < j + 1) {
+    #           if (length(Maintime) < j + 1) {
     #             message("This is the end")
     #             break
     #           }
@@ -573,7 +584,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #           }
     #
     #           j <- j + 1
-    #           y <- MainTime[j]
+    #           y <- Maintime[j]
     #         }
     #       } else {
     #         j <- j + 1
@@ -583,39 +594,39 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #       # Step 3 and 4, processing should happen at this stage
     #       if (interval(x, y) < seconds(UpLimit) & interval(x, y) >= seconds(LowLimit)) {
     #
-    #         TimeInt <- interval(x, y)
+    #         timeInt <- interval(x, y)
     #
-    #         progress$set(message = paste("Processing obs :", n, TimeInt), value = n / (length(MainTime) / 4))
+    #         progress$set(message = paste("Processing obs :", n, timeInt), value = n / (length(Maintime) / 4))
     #
-    #         message(paste("Processing obs:", n, TimeInt))
+    #         message(paste("Processing obs:", n, timeInt))
     #
-    #         Select <- MainLog()[(MainLog()$DateTime %within% TimeInt), ]
+    #         Select <- MainLog()[(MainLog()$date_time %within% timeInt), ]
     #
     #         # Create metadata for the selected L1a points
-    #         ObsUUID <- uuid::UUIDgenerate(
+    #         Obsuuid_l2 <- uuid::UUIDgenerate(
     #           use.time = T,
     #           output = "string"
     #         )
     #
-    #         # First have to write MetadataL2 in which UUID primary key
-    #         # is the reference for UUID foreign key in all the other tables
+    #         # First have to write metadata_l2 in which uuid_l2 primary key
+    #         # is the reference for uuid_l2 foreign key in all the other tables
     #         # Otherwise it is a FOREIGN KEY constraint violation
-    #         Obs$MetadataL2 <- gen_metadataL2(Select = Select)
-    #         MetadataL2 <- Obs$MetadataL2 %>%
+    #         Obs$metadata_l2 <- gen_metadataL2(Select = Select)
+    #         metadata_l2 <- Obs$metadata_l2 %>%
     #           mutate(
-    #             UUID = ObsUUID,
-    #             ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-    #             Analyst = "Raphael Mabit",
-    #             Mail = "raphael.mabit@gmail.com"
+    #             uuid_l2 = Obsuuid_l2,
+    #             date_time_processing = as.character(as.POSIXlt(Sys.time(), tz = "utc")),
+    #             analyst = "Raphael Mabit",
+    #             mail = "raphael.mabit@gmail.com"
     #           )
-    #         DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
+    #         DBI::dbWriteTable(DB$Con(), "metadata_l2", metadata_l2, append = TRUE)
     #
-    #         Obs$MetadataL1b <- gen_metadataL1b(Select = Select)
-    #         MetadataL1b <- Obs$MetadataL1b %>%
+    #         Obs$metadata_l1b <- gen_metadataL1b(Select = Select)
+    #         metadata_l1b <- Obs$metadata_l1b %>%
     #           mutate(
-    #             UUID = ObsUUID
+    #             uuid_l2 = Obsuuid_l2
     #           )
-    #         DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
+    #         DBI::dbWriteTable(DB$Con(), "metadata_l1b", metadata_l1b, append = TRUE)
     #
     #         # Empty L1b and L2 on new processing to avoid confusion
     #         Obs$HOCR$L1b <- tibble()
@@ -633,7 +644,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #
     #         # HOCR --------------------------------------------------------------------
     #
-    #         if (any(str_detect(L1a$InstrumentList(), "HOCR"))) {
+    #         if (any(str_detect(L1a$instrumentList(), "HOCR"))) {
     #           UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
     #             if (is.null(value)) {
     #               value <- progress$getValue()
@@ -642,24 +653,24 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #             progress$set(value = value, message = message, detail = detail)
     #           }
     #
-    #           FiltRawHOCR <- filter_hocr(L1a$HOCR(), L1a$HOCRTimeIndex(), TimeInt)
+    #           Filthocr_raw <- filter_hocr(L1a$HOCR(), L1a$HOCRtimeIndex(), timeInt)
     #
-    #           if (length(FiltRawHOCR) == 0) {
+    #           if (length(Filthocr_raw) == 0) {
     #             warning(
-    #               paste0("HOCR data not found at time interval: ", TimeInt)
+    #               paste0("HOCR data not found at time interval: ", timeInt)
     #             )
-    #           } else if (is.null(CalData$CalHOCR())) {
+    #           } else if (is.null(cal_data$hocr_cal())) {
     #             warning(
     #               "HOCR calibration data not loaded"
     #             )
     #           } else {
     #             # Select nearest dark data
-    #             ObsTime <- int_end(TimeInt / 2)
+    #             Obstime <- int_end(timeInt / 2)
     #
     #             HOCRDark <- L1a$HOCRDark() %>%
-    #               mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(ymd_hms(.x$DateTime) - ObsTime)), ])) %>%
+    #               mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(ymd_hms(.x$date_time) - Obstime)), ])) %>%
     #               ungroup() %>%
-    #               select(SN, DarkAproxData)
+    #               select(sn, DarkAproxData)
     #
     #             WaveSeq <- seq(
     #               Settings$HOCR$WaveMin(),
@@ -668,11 +679,11 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #             )
     #
     #             Obs$HOCR$L1b <- spsComps::shinyCatch(
-    #               cal_hocr(
-    #                 RawHOCR = FiltRawHOCR,
-    #                 CalHOCR = CalData$CalHOCR(),
+    #               hocr_l1b(
+    #                 hocr_raw = Filthocr_raw,
+    #                 hocr_cal = cal_data$hocr_cal(),
     #                 HOCRDark = HOCRDark,
-    #                 MetadataL1b = Obs$MetadataL1b,
+    #                 metadata_l1b = Obs$metadata_l1b,
     #                 UpdateProgress,
     #                 WaveSeq
     #               ),
@@ -687,7 +698,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #
     #             Obs$HOCR$L2 <- tryCatch(
     #               {
-    #                 L2_hocr(
+    #                 hocr_l2(
     #                   Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
     #                   T, 0.1, Obs
     #                 )
@@ -700,9 +711,9 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #               message("Sear is trying to take the next j point")
     #
     #               # Delete the outdated metadata initially created
-    #               #  Necessarry to respect UUID foreign key rule (present in main table)
-    #               DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL1b WHERE UUID = "', ObsUUID, '";'))
-    #               DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM MetadataL2 WHERE UUID = "', ObsUUID,'";'))
+    #               #  Necessarry to respect uuid_l2 foreign key rule (present in main table)
+    #               DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l1b WHERE uuid_l2 = "', Obsuuid_l2, '";'))
+    #               DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l2 WHERE uuid_l2 = "', Obsuuid_l2,'";'))
     #
     #               i <- i
     #               j <- j + 1
@@ -710,288 +721,288 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #               next
     #             }
     #
-    #             HOCRL1b <- Obs$HOCR$L1b %>%
+    #             hocr_l1b <- Obs$HOCR$L1b %>%
     #               unnest(cols = c(AproxData)) %>%
-    #               mutate(UUID = ObsUUID)
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             HOCRL2 <- Obs$HOCR$L2 %>%
-    #               mutate(UUID = ObsUUID)
+    #             hocr_l2 <- Obs$HOCR$L2 %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
-    #             DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
     #           }
     #         }
     #
     #         # SBE19 L1b ---------------------------------------------------------------
     #
-    #         if (any(str_detect(L1a$InstrumentList(), "SBE19"))) {
+    #         if (any(str_detect(L1a$instrumentList(), "SBE19"))) {
     #           progress$set(message = "Processing L1b: ", value = progress$getValue())
     #
     #           progress$set(value = 0.3, detail = "SBE19")
     #
-    #           Lon <- mean(Select$Lon)
-    #           Lat <- mean(Select$Lat)
+    #           lon <- mean(Select$lon)
+    #           lat <- mean(Select$lat)
     #
-    #           SBE19 <- L1a$SBE19() %>% filter(DateTime %within% TimeInt)
+    #           SBE19 <- L1a$SBE19() %>% filter(date_time %within% timeInt)
     #
     #           if (nrow(SBE19) == 0) {
     #             warning(
-    #               paste0("SBE19 data not found at time interval: ", TimeInt)
+    #               paste0("SBE19 data not found at time interval: ", timeInt)
     #             )
-    #           } else if (is.null(CalData$CalSBE19()) | is.null(CalData$CalSBE18()) | is.null(CalData$CalSBE43())) {
+    #           } else if (is.null(cal_data$CalSBE19()) | is.null(cal_data$CalSBE18()) | is.null(cal_data$CalSBE43())) {
     #             warning(
     #               "SBE19 | SBE18 | SBE43 calibration data not loaded"
     #             )
     #           } else {
-    #             SBE19 <- cal_sbe19(SBE19, Lon, Lat) %>%
+    #             SBE19 <- cal_sbe19(SBE19, lon, lat) %>%
     #               mutate(
-    #                 Oxygen = cal_sbe43( # Oxygen in ml/l multiply by 1.42903 to get mg/l
-    #                   Volt = Volt0,
-    #                   Tcelsius = Temperature,
-    #                   Pressure = Pressure,
-    #                   OxSol = OxSol,
-    #                   CalData = CalData$CalSBE43()
+    #                 oxygen_concentration = cal_sbe43( # oxygen_concentration in ml/l multiply by 1.42903 to get mg/l
+    #                   Volt = volt0,
+    #                   Tcelsius = temperature,
+    #                   pressure = pressure,
+    #                   oxygen_solubility = oxygen_solubility,
+    #                   cal_data = cal_data$CalSBE43()
     #                 )
     #               ) %>%
     #               mutate(
     #                 pH = cal_sbe18(
     #                   Volt = Volt2,
-    #                   Tcelsius = Temperature,
-    #                   CalData = CalData$CalSBE18()
+    #                   Tcelsius = temperature,
+    #                   cal_data = cal_data$CalSBE18()
     #                 )
     #               ) %>%
     #               select(
-    #                 DateTime,
-    #                 Temperature,
-    #                 Conductivity,
-    #                 Pressure,
-    #                 SP,
-    #                 SA,
-    #                 CT,
-    #                 O2Sol,
-    #                 OxSol,
-    #                 Oxygen,
+    #                 date_time,
+    #                 temperature,
+    #                 conductivity,
+    #                 pressure,
+    #                 salinity_practical,
+    #                 salinity_absolute,
+    #                 conservative_temperature,
+    #                 oxygen_solubility,
+    #                 oxygen_solubility,
+    #                 oxygen_concentration,
     #                 pH
     #               ) %>%
     #               mutate(
-    #                 ID = seq_along(rownames(SBE19)),
-    #                 QC = "1"
+    #                 id = seq_along(rownames(SBE19)),
+    #                 qc = "1"
     #               )
     #
     #             Obs$SBE19$L1b <- SBE19 %>%
-    #               select(!any_of(c("Conductivity", "CT", "O2Sol"))) %>%
+    #               select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
     #               pivot_longer(
-    #                 cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
-    #                 names_to = "Parameter",
-    #                 values_to = "Value"
+    #                 cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+    #                 names_to = "parameter",
+    #                 values_to = "value"
     #               ) %>%
-    #               group_by(Parameter) %>%
-    #               nest(Data = !matches("Parameter"))
+    #               group_by(parameter) %>%
+    #               nest(Data = !matches("parameter"))
     #
     #             Obs$SBE19$L2 <- L2_param_val(Obs$SBE19$L1b)
     #
     #             # Save to DB
     #
-    #             SBE19L1b <- Obs$SBE19$L1b %>%
+    #             sbe19_l1b <- Obs$SBE19$L1b %>%
     #               unnest(c(Data)) %>%
-    #               mutate(UUID = ObsUUID)
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             SBE19L2 <- Obs$SBE19$L2 %>%
-    #               mutate(UUID = ObsUUID)
+    #             sbe19_l2 <- Obs$SBE19$L2 %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
-    #             DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "sbe19_l1b", sbe19_l1b, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "sbe19_l2", sbe19_l2, append = TRUE)
     #           }
     #         }
     #
     #         # SeaOWL L1b --------------------------------------------------------------
     #
-    #         if (any(str_detect(L1a$InstrumentList(), "SeaOWL"))) {
+    #         if (any(str_detect(L1a$instrumentList(), "SeaOWL"))) {
     #           progress$set(value = 0.4, detail = "SeaOWL")
     #
-    #           SeaOWL <- L1a$SeaOWL() %>% filter(DateTime %within% TimeInt)
+    #           SeaOWL <- L1a$SeaOWL() %>% filter(date_time %within% timeInt)
     #
     #           if (nrow(SeaOWL) == 0) {
     #             warning(
-    #               paste0("SeaOWL data not found at time interval: ", TimeInt)
+    #               paste0("SeaOWL data not found at time interval: ", timeInt)
     #             )
-    #           } else if (is.null(CalData$CalSeaOWL())) {
+    #           } else if (is.null(cal_data$CalSeaOWL())) {
     #             warning(
     #               "SeaOWL calibration data not loaded"
     #             )
     #           } else {
-    #             SeaOWLL1b <- cal_seaowl(SeaOWL, CalData$CalSeaOWL()) %>%
+    #             seaowl_l1b <- cal_seaowl(SeaOWL, cal_data$CalSeaOWL()) %>%
     #               mutate(
-    #                 ID = seq_along(rownames(SeaOWL)),
-    #                 QC = "1"
+    #                 id = seq_along(rownames(SeaOWL)),
+    #                 qc = "1"
     #               )
     #
-    #             Obs$SeaOWL$L1b <- SeaOWLL1b %>%
-    #               select(!any_of(c("SN"))) %>%
+    #             Obs$SeaOWL$L1b <- seaowl_l1b %>%
+    #               select(!any_of(c("sn"))) %>%
     #               pivot_longer(
-    #                 cols = any_of(c("VSF_700", "Chl", "FDOM")),
-    #                 names_to = "Parameter",
-    #                 values_to = "Value"
+    #                 cols = any_of(c("vsf_700", "chl", "fdom")),
+    #                 names_to = "parameter",
+    #                 values_to = "value"
     #               ) %>%
-    #               group_by(Parameter) %>%
-    #               nest(Data = !matches("Parameter"))
+    #               group_by(parameter) %>%
+    #               nest(Data = !matches("parameter"))
     #
     #             Obs$SeaOWL$L2 <- L2_param_val(Obs$SeaOWL$L1b)
     #
-    #             SeaOWLL1b <- Obs$SeaOWL$L1b %>%
+    #             seaowl_l1b <- Obs$SeaOWL$L1b %>%
     #               unnest(c(Data)) %>%
-    #               mutate(UUID = ObsUUID)
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             SeaOWLL2 <- Obs$SeaOWL$L2 %>%
-    #               mutate(UUID = ObsUUID)
+    #             seaowl_l2 <- Obs$SeaOWL$L2 %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
-    #             DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "seaowl_l1b", seaowl_l1b, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "seaowl_l2", seaowl_l2, append = TRUE)
     #           }
     #         }
     #
     #         # BBFL2 L1b ---------------------------------------------------------------
     #
-    #         if (any(str_detect(L1a$InstrumentList(), "BBFL2"))) {
+    #         if (any(str_detect(L1a$instrumentList(), "BBFL2"))) {
     #           progress$set(value = 0.5, detail = "BBFL2")
     #
-    #           BBFL2 <- L1a$BBFL2() %>% filter(DateTime %within% TimeInt)
+    #           BBFL2 <- L1a$BBFL2() %>% filter(date_time %within% timeInt)
     #
     #           if (nrow(BBFL2) == 0) {
     #             warning(
-    #               paste0("BBFL2 data not found at time interval: ", TimeInt)
+    #               paste0("BBFL2 data not found at time interval: ", timeInt)
     #             )
-    #           } else if (is.null(CalData$CalBBFL2())) {
+    #           } else if (is.null(cal_data$CalBBFL2())) {
     #             warning(
     #               "BBFL2 calibration data not loaded"
     #             )
     #           } else {
-    #             BBFL2L1b <- cal_bbfl2(BBFL2, CalData$CalBBFL2()) %>%
+    #             bbfl2_l1b <- cal_bbfl2(BBFL2, cal_data$CalBBFL2()) %>%
     #               mutate(
-    #                 ID = seq_along(rownames(BBFL2)),
-    #                 QC = "1"
+    #                 id = seq_along(rownames(BBFL2)),
+    #                 qc = "1"
     #               )
     #
-    #             Obs$BBFL2$L1b <- BBFL2L1b %>%
+    #             Obs$BBFL2$L1b <- bbfl2_l1b %>%
     #               pivot_longer(
     #                 cols = any_of(c("NTU", "PE", "PC")),
-    #                 names_to = "Parameter",
-    #                 values_to = "Value"
+    #                 names_to = "parameter",
+    #                 values_to = "value"
     #               ) %>%
-    #               group_by(Parameter) %>%
-    #               nest(Data = !matches("Parameter"))
+    #               group_by(parameter) %>%
+    #               nest(Data = !matches("parameter"))
     #
     #             Obs$BBFL2$L2 <- L2_param_val(Obs$BBFL2$L1b)
     #
-    #             BBFL2L1b <- Obs$BBFL2$L1b %>%
+    #             bbfl2_l1b <- Obs$BBFL2$L1b %>%
     #               unnest(c(Data)) %>%
-    #               mutate(UUID = ObsUUID)
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             BBFL2L2 <- Obs$BBFL2$L2 %>%
-    #               mutate(UUID = ObsUUID)
+    #             bbfl2_l2 <- Obs$BBFL2$L2 %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
-    #             DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "bbfl2_l1b", bbfl2_l1b, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "bbfl2_l2", bbfl2_l2, append = TRUE)
     #           }
     #         }
     #
     #         # BioSonic L1b ---------------------------------------------------------------
     #
-    #         if (any(str_detect(L1a$InstrumentList(), "BioSonic"))) {
+    #         if (any(str_detect(L1a$instrumentList(), "BioSonic"))) {
     #           progress$set(value = 0.6, detail = "BioSonic")
     #
-    #           BioSonicL1b <- L1a$BioSonic() %>% filter(DateTime %within% TimeInt)
+    #           biosonic_l1b <- L1a$BioSonic() %>% filter(date_time %within% timeInt)
     #
-    #           if (nrow(BioSonicL1b) == 0) {
+    #           if (nrow(biosonic_l1b) == 0) {
     #             warning(
-    #               paste0("BioSonic data not found at time interval: ", TimeInt)
+    #               paste0("BioSonic data not found at time interval: ", timeInt)
     #             )
     #           } else {
-    #             Obs$BioSonic$L1b <- BioSonicL1b %>%
-    #               rename(Lon = Longitude_deg, Lat = Latitude_deg) %>%
+    #             Obs$BioSonic$L1b <- biosonic_l1b %>%
+    #               rename(lon = longitude_deg, lat = latitude_deg) %>%
     #               select(
-    #                 Lon,
-    #                 Lat,
-    #                 DateTime,
-    #                 Altitude_mReMsl,
-    #                 BottomElevation_m,
-    #                 PlantHeight_m,
-    #                 PercentCoverage
+    #                 lon,
+    #                 lat,
+    #                 date_time,
+    #                 altitude_mReMsl,
+    #                 bottom_elevation_m,
+    #                 plant_height_m,
+    #                 percent_coverage
     #               )
     #             # mutate(
-    #             #   ID = seq_along(rownames(BioSonicL1b)),
-    #             #   QC = "1"
+    #             #   id = seq_along(rownames(biosonic_l1b)),
+    #             #   qc = "1"
     #             # )
     #
     #             test <- Obs$BioSonic$L1b %>% summarise(
-    #               Lon = mean(Lon),
-    #               Lat = mean(Lat),
-    #               DateTime = mean(DateTime),
-    #               Altitude_mReMsl = mean(Altitude_mReMsl),
-    #               BottomElevation_m = mean(BottomElevation_m),
-    #               PlantHeight_m = mean(PlantHeight_m),
-    #               PercentCoverage = mean(PercentCoverage)
+    #               lon = mean(lon),
+    #               lat = mean(lat),
+    #               date_time = mean(date_time),
+    #               altitude_mReMsl = mean(altitude_mReMsl),
+    #               bottom_elevation_m = mean(bottom_elevation_m),
+    #               plant_height_m = mean(plant_height_m),
+    #               percent_coverage = mean(percent_coverage)
     #             )
     #
     #             Obs$BioSonic$L2 <- test
     #
-    #             BioSonicL1b <- Obs$BioSonic$L1b %>%
-    #               mutate(UUID = ObsUUID)
+    #             biosonic_l1b <- Obs$BioSonic$L1b %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             BioSonicL2 <- Obs$BioSonic$L2 %>%
-    #               mutate(UUID = ObsUUID)
+    #             biosonic_l2 <- Obs$BioSonic$L2 %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
-    #             DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "biosonic_l1b", biosonic_l1b, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "biosonic_l2", biosonic_l2, append = TRUE)
     #           }
     #         }
     #
     #         # HydroBall L1b -----------------------------------------------------------
     #
-    #         if (any(str_detect(L1a$InstrumentList(), "HydroBall"))) {
+    #         if (any(str_detect(L1a$instrumentList(), "HydroBall"))) {
     #           progress$set(value = 0.6, detail = "HydroBall")
     #
-    #           HydroBallL1b <- L1a$HBDevices() %>% filter(DateTime %within% TimeInt)
+    #           hydroball_l1b <- L1a$HBDevices() %>% filter(date_time %within% timeInt)
     #
-    #           if (nrow(HydroBallL1b) == 0) {
+    #           if (nrow(hydroball_l1b) == 0) {
     #             warning(
-    #               paste0("HydroBall data not found at time interval: ", TimeInt)
+    #               paste0("HydroBall data not found at time interval: ", timeInt)
     #             )
     #           } else {
-    #             Obs$HydroBall$L1b <- HydroBallL1b %>%
-    #               rename(H = DBT_meter) %>%
+    #             Obs$HydroBall$L1b <- hydroball_l1b %>%
+    #               rename(height_watercolumn = DBT_meter) %>%
     #               mutate(
-    #                 H = if_else(H == 0, NA, H),
-    #                 H = -H
+    #                 height_watercolumn = if_else(height_watercolumn == 0, NA, height_watercolumn),
+    #                 height_watercolumn = -height_watercolumn
     #               ) %>%
     #               select(
-    #                 Lon,
-    #                 Lat,
-    #                 DateTime,
-    #                 Altitude,
-    #                 H
+    #                 lon,
+    #                 lat,
+    #                 date_time,
+    #                 altitude,
+    #                 height_watercolumn
     #               )
     #
     #             test <- Obs$HydroBall$L1b %>% summarise(
-    #               Lon = mean(Lon, na.rm = T),
-    #               Lat = mean(Lat, na.rm = T),
-    #               DateTime = mean(DateTime, na.rm = T),
-    #               Altitude = mean(Altitude, na.rm = T),
-    #               H = mean(H, na.rm = T)
+    #               lon = mean(lon, na.rm = T),
+    #               lat = mean(lat, na.rm = T),
+    #               date_time = mean(date_time, na.rm = T),
+    #               altitude = mean(altitude, na.rm = T),
+    #               height_watercolumn = mean(height_watercolumn, na.rm = T)
     #             )
     #
     #             Obs$HydroBall$L2 <- test
     #
-    #             HydroBallL1b <- Obs$HydroBall$L1b %>%
+    #             hydroball_l1b <- Obs$HydroBall$L1b %>%
     #               mutate(
-    #                 UUID = ObsUUID
+    #                 uuid_l2 = Obsuuid_l2
     #               )
     #
-    #             HydroBallL2 <- Obs$HydroBall$L2 %>%
-    #               mutate(UUID = ObsUUID)
+    #             hydroball_l2 <- Obs$HydroBall$L2 %>%
+    #               mutate(uuid_l2 = Obsuuid_l2)
     #
-    #             DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
-    #             DBI::dbWriteTable(DB$Con(), "HydroBallL2", HydroBallL2, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "hydroball_l1b", hydroball_l1b, append = TRUE)
+    #             DBI::dbWriteTable(DB$Con(), "hydroball_l2", hydroball_l2, append = TRUE)
     #           }
     #         }
     #
@@ -1001,11 +1012,11 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #         #   message = "Saved"
     #         #   # glue::glue(
     #         #   #   "Metadata: ",MetaUp," entry updated\n",
-    #         #   #   "HOCRL1b: ", sum(L1bUp)," entry updated\n",
-    #         #   #   "HOCRL2: ",L2Up," entry updated\n")
+    #         #   #   "hocr_l1b: ", sum(L1bUp)," entry updated\n",
+    #         #   #   "hocr_l2: ",L2Up," entry updated\n")
     #         # )
     #
-    #         # qry <- glue::glue_sql("SELECT * FROM Metadata WHERE UUID = '", ObsUUID, "';")
+    #         # qry <- glue::glue_sql("SELECT * FROM Metadata WHERE uuid_l2 = '", Obsuuid_l2, "';")
     #         #
     #         # Obs$Metadata <- tibble(DBI::dbGetQuery(DB$Con(), qry))
     #
@@ -1017,7 +1028,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, CalData, Obs, Se
     #     }
 
         # Update the list of observation
-        DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
+        DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM metadata_l2")))
       }
     )
 

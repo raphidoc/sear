@@ -55,8 +55,8 @@ usethis::use_coverage(type = c("codecov"))
 # Create a summary readme for the testthat subdirectory
 covrpage::covrpage()
 
-## CI ----
-## Use this part of the script if you need to set up a CI
+## c_i ----
+## Use this part of the script if you need to set up a c_i
 ## service for your application
 ##
 ## (You'll need GitHub there)
@@ -72,7 +72,7 @@ usethis::use_github_action_check_full()
 # Add action for PR
 usethis::use_github_action_pr_commands()
 
-# Travis CI
+# Travis c_i
 usethis::use_travis()
 usethis::use_travis_badge()
 
@@ -80,14 +80,14 @@ usethis::use_travis_badge()
 usethis::use_appveyor()
 usethis::use_appveyor_badge()
 
-# Circle CI
+# Circle c_i
 usethis::use_circleci()
 usethis::use_circleci_badge()
 
 # Jenkins
 usethis::use_jenkins()
 
-# GitLab CI
+# GitLab c_i
 usethis::use_gitlab_ci()
 
 # You're now set! ----

@@ -40,13 +40,13 @@ mod_filter_trim_server <- function(id, SearProj, DataFiles, SelData, Apla) {
           paste0("filtered_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
         )
 
-        PotTimeIndexHocr <- file.path(
+        PottimeIndexHocr <- file.path(
           SearProj()$ProjPath, ".sear",
           paste0("filtered_time_index_hocr_", str_extract(DataFiles()$bin, "[[:digit:]]{8}_[[:digit:]]{6}"), ".rds")
         )
 
-        if (any(!file.exists(PotApla, PotHocr, PotTimeIndexHocr))) {
-          FileNotFound <- c(PotApla, PotHocr, PotTimeIndexHocr)[which(file.exists(c(PotApla, PotHocr, PotTimeIndexHocr)))]
+        if (any(!file.exists(PotApla, PotHocr, PottimeIndexHocr))) {
+          FileNotFound <- c(PotApla, PotHocr, PottimeIndexHocr)[which(file.exists(c(PotApla, PotHocr, PottimeIndexHocr)))]
 
           # Feedback to the user
           session$sendCustomMessage(
@@ -54,7 +54,7 @@ mod_filter_trim_server <- function(id, SearProj, DataFiles, SelData, Apla) {
             message = purrr::map_chr(FileNotFound, ~ glue::glue("File :", .x, " not found"))
           )
 
-          invalidateLater(1)
+          invalidatelater(1)
         } else if (any(class(tryCatch(SelData$SelID(), error = function(e) e)) == "error")) {
           # if no data is selected SelData$SelID() throw an error
 
@@ -75,7 +75,7 @@ mod_filter_trim_server <- function(id, SearProj, DataFiles, SelData, Apla) {
           observeEvent(input$ok, {
             removeModal()
 
-            Apla(Apla()[Apla()$DateTime %in% SelData$SubApla()$DateTime, ])
+            Apla(Apla()[Apla()$date_time %in% SelData$SubApla()$date_time, ])
 
             write_csv(Apla(), PotAplaTrim, append = F)
 
@@ -110,7 +110,7 @@ mod_filter_trim_server <- function(id, SearProj, DataFiles, SelData, Apla) {
           observeEvent(input$ok, {
             removeModal()
 
-            Apla(Apla()[which(!Apla()$ID %in% SelData$SelID()), ])
+            Apla(Apla()[which(!Apla()$id %in% SelData$SelID()), ])
 
             write_csv(Apla(), PotAplaTrim, append = F)
 

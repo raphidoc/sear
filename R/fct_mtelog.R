@@ -19,7 +19,7 @@ read_mtelog <- function(LogFile) {
   )
 
   # Exctract date on line 3 of datalogger header
-  Date <- str_extract(MTELog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
+  date <- str_extract(MTELog[3, ], "[[:digit:]]{4}/[[:digit:]]{2}/[[:digit:]]{2}")
 
   MTELog <- MTELog[7:length(rownames(MTELog)), ]
 
@@ -32,10 +32,10 @@ read_mtelog <- function(LogFile) {
 
   MTELog %>%
     # separate have been superseded
-    separate(Raw, into = c("Time", "Instrument", "Data"), sep = c(12, 19)) %>%
+    separate(Raw, into = c("time", "instrument", "Data"), sep = c(12, 19)) %>%
     mutate(
-      DateTime = lubridate::ymd_hms(paste(Date, Time)),
-      Instrument = str_extract(Instrument, "[:alnum:]+")
+      date_time = lubridate::ymd_hms(paste(date, time)),
+      instrument = str_extract(instrument, "[:alnum:]+")
     )
 }
 
@@ -45,7 +45,7 @@ read_apla <- function(MTELog) {
   # TODO Add NMEA checksum verification
 
   Apla <- MTELog %>%
-    filter(Instrument == "APLA") %>%
+    filter(instrument == "APLA") %>%
     separate_wider_regex(
       col = Data,
       pattern = c("\\s[$]", Trame = "[[:alpha:]]+", ",", Data = ".*"),
@@ -56,8 +56,8 @@ read_apla <- function(MTELog) {
     ) %>%
     mutate(
       Trame = str_extract(Trame, "[[:alpha:]]+"),
-      # Time = str_remove(Time, ".{4}$"),
-      DateTime = round_date(DateTime, unit = "second") # format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
+      # time = str_remove(time, ".{4}$"),
+      date_time = round_date(date_time, unit = "second") # format(date_time, "%Y-%m-%d %H:%M:%OS0") # Take time to second
     ) %>%
     filter(
       !is.na(Trame)
@@ -73,48 +73,48 @@ read_apla <- function(MTELog) {
       col = contains("GGA"),
       sep = ",",
       into = c(
-        "UTC",
-        "Lat",
-        "NS",
-        "Lon",
-        "EW",
-        "GPS",
-        "Nsat",
-        "HorizontalDilution",
-        "Altitude",
-        "AltitudeUnit",
-        "GeoidalSeparation",
-        "GeoidalSeparationUnit",
-        "GPSAge",
-        "DiffID"
+        "utc",
+        "lat",
+        "ns",
+        "lon",
+        "ew",
+        "gps",
+        "n_sat",
+        "horizontal_dilution",
+        "altitude",
+        "altitude_unit",
+        "geoidal_separation",
+        "geoidal_separation_unit",
+        "gps_age",
+        "diff_id"
       )
-    ) %>% # Filter malformated Lat and Lon field
-    filter(str_detect(Lat, "[:digit:]{4}\\.[:digit:]{5}") & str_detect(Lon, "[:digit:]{5}\\.[:digit:]{5}")) %>% # Filter incorect N S W E field
-    filter(NS %in% c("N", "S") & EW %in% c("E", "W"))
+    ) %>% # Filter malformated lat and lon field
+    filter(str_detect(lat, "[:digit:]{4}\\.[:digit:]{5}") & str_detect(lon, "[:digit:]{5}\\.[:digit:]{5}")) %>% # Filter incorect N S W e field
+    filter(ns %in% c("N", "S") & ew %in% c("E", "W"))
 
-  # There is some wrong data from time to time (missing field, incomplete or other format Lat Lon),
+  # There is some wrong data from time to time (missing field, incomplete or other format lat lon),
   # Will have to elucidate that (Applanix or DataLogger issue ?)
 
   GGA <- RawGGA %>%
     mutate(
-      Lat_D = as.numeric(str_sub(Lat, 1, 2)),
-      Lat_DM = as.numeric(str_sub(Lat, 3, 10)),
-      Lon_D = as.numeric(str_sub(Lon, 1, 3)),
-      Lon_DM = as.numeric(str_sub(Lon, 4, 11)),
-      Lat_DD = Lat_D + (Lat_DM / 60),
-      Lon_DD = Lon_D + (Lon_DM / 60),
-      Altitude = as.numeric(Altitude)
+      lat_d = as.numeric(str_sub(lat, 1, 2)),
+      lat_dm = as.numeric(str_sub(lat, 3, 10)),
+      lon_d = as.numeric(str_sub(lon, 1, 3)),
+      lon_dm = as.numeric(str_sub(lon, 4, 11)),
+      lat_dd = lat_d + (lat_dm / 60),
+      lon_dd = lon_d + (lon_dm / 60),
+      altitude = as.numeric(altitude)
     ) %>%
     mutate(
-      Lat_DD = ifelse(NS == "N", Lat_DD, -Lat_DD),
-      Lon_DD = ifelse(EW == "W", -Lon_DD, Lon_DD)
+      lat_dd = ifelse(ns == "N", lat_dd, -lat_dd),
+      lon_dd = ifelse(ew == "W", -lon_dd, lon_dd)
     ) %>%
-    mutate(Lon = Lon_DD, Lat = Lat_DD)
+    mutate(lon = lon_dd, lat = lat_dd)
 
   GGA <- GGA %>%
-    select(Time, DateTime, Lat, Lon, HorizontalDilution, Altitude, AltitudeUnit)
+    select(time, date_time, lat, lon, horizontal_dilution, altitude, altitude_unit)
 
-  GGA <- unique_datetime_second(GGA)
+  GGA <- unique_date_time_second(GGA)
 
   # Extract VTG info, course and speed
 
@@ -130,40 +130,40 @@ read_apla <- function(MTELog) {
         sep = ",",
         convert = T,
         into = c(
-          "Course_TN", # Degrees Applanix doc state: True vessel track in the vessel frame (Actual course and speed relative to the ground).
-          "Reference_TN", # True north
-          "Course_MN", # Degrees
-          "Reference_MN", # Magnetic
-          "Speed_N", # Measured horizontal speed (in knots)
-          "Unit_N", # Knots (N)
-          "Speed_kmh", # Measured horizontal speed (in km/h)
-          "Unit_kmh", # km/h
-          "Mode_Checksum" # A = Autonomous, D = DGPS, E = DR
+          "course_tn", # Degrees Applanix doc state: True vessel track in the vessel frame (Actual course and speed relative to the ground).
+          "reference_tn", # True north
+          "course_mn", # Degrees
+          "reference_mn", # Magnetic
+          "speed_kn", # Measured horizontal speed (in knots)
+          "unit_kn", # Knots (N)
+          "speed_kmh", # Measured horizontal speed (in km/h)
+          "unit_kmh", # km/h
+          "mode_checksum" # a = Autonomous, D = DGPS, e = DR
         )
       ) %>%
-      select(!Time) # Avoid duplication in join
+      select(!time) # Avoid duplication in join
 
     VTG <- RawVTG %>%
       mutate(
-        Course_TN = as.numeric(Course_TN),
-        Course_MN = as.numeric(Course_MN),
-        Speed_N = as.numeric(Speed_N),
-        Speed_kmh = as.numeric(Speed_kmh)
+        course_tn = as.numeric(course_tn),
+        course_mn = as.numeric(course_mn),
+        speed_kn = as.numeric(speed_kn),
+        speed_kmh = as.numeric(speed_kmh)
       )
 
-    VTG <- unique_datetime_second(VTG)
+    VTG <- unique_date_time_second(VTG)
   } else {
     VTG <- tibble(
-      DateTime = NA,
-      Course_TN = NA,
-      Reference_TN = NA,
-      Course_MN = NA,
-      Reference_MN = NA,
-      Speed_N = NA,
-      Unit_N = NA,
-      Speed_kmh = NA,
-      Unit_kmh = NA,
-      Mode_Checksum = NA
+      date_time = NA,
+      course_tn = NA,
+      reference_tn = NA,
+      course_mn = NA,
+      reference_mn = NA,
+      speed_kn = NA,
+      unit_kn = NA,
+      speed_kmh = NA,
+      unit_kmh = NA,
+      mode_checksum = NA
     )
   }
 
@@ -181,90 +181,99 @@ read_apla <- function(MTELog) {
         sep = ",",
         convert = T,
         into = c(
-          "UTC", # UTC time: hhmmss.sss
-          "Heading", # True vessel heading 0 to 359.99: xxx.xx [degrees]
-          "T", # True
-          "Roll", # Roll -90.00 to +90.00: RRR.RR [degrees]
-          "Pitch", # Pitch -90.00 to +90.00: PPP.PP [degrees]
-          "Heave", # Heave -99.00 to +99.00: HHH.HH [meters]
-          "Roll_Accuracy", # 0 to 9.999: a.aaa [degrees]
-          "Pitch_Accuracy", # 0 to 9.999: b.bbb [degrees]
-          "Heading_Accuracy", # 0 to 9.999: c.ccc [degrees]
-          "Heading_Flag", # 0 = no aiding, 1 = GNSS aiding, 2 = GNSS & GAMS aiding
+          "utc", # utc time: hhmmss.sss
+          "heading", # True vessel heading 0 to 359.99: xxx.xx [degrees]
+          "true", # True
+          "roll", # roll -90.00 to +90.00: RRR.RR [degrees]
+          "pitch", # pitch -90.00 to +90.00: PPP.PP [degrees]
+          "heave", # heave -99.00 to +99.00: HHH.HH [meters]
+          "roll_accuracy", # 0 to 9.999: a.aaa [degrees]
+          "pitch_accuracy", # 0 to 9.999: b.bbb [degrees]
+          "heading_accuracy", # 0 to 9.999: c.ccc [degrees]
+          "heading_Flag", # 0 = no aiding, 1 = GNSS aiding, 2 = GNSS & GAMS aiding
           # "IMU_Flag", # 0 = IMU out, 1 = satisfactory *DOSENT SEEM TO BE IN DATA*
           "Checksum" # NA: *hh
         )
       ) %>%
-      select(!Time) # Avoid duplication in join
+      select(!time) # Avoid duplication in join
 
     PASHR <- RawPASHR %>%
       mutate(
-        Heading = as.numeric(Heading),
-        Roll = as.numeric(Roll),
-        Pitch = as.numeric(Pitch),
-        Heave = as.numeric(Heave),
-        Roll_Accuracy = as.numeric(Roll_Accuracy),
-        Pitch_Accuracy = as.numeric(Pitch_Accuracy),
-        Heading_Accuracy = as.numeric(Heading_Accuracy),
-        Heading_Flag = as.numeric(Heading_Flag)
+        heading = as.numeric(heading),
+        roll = as.numeric(roll),
+        pitch = as.numeric(pitch),
+        heave = as.numeric(heave),
+        roll_accuracy = as.numeric(roll_accuracy),
+        pitch_accuracy = as.numeric(pitch_accuracy),
+        heading_accuracy = as.numeric(heading_accuracy),
+        heading_Flag = as.numeric(heading_Flag)
       )
 
-    PASHR <- unique_datetime_second(PASHR)
+    PASHR <- unique_date_time_second(PASHR)
   } else {
     PASHR <- tibble(
-      DateTime = NA,
-      UTC = NA,
-      Heading = NA,
-      T = NA,
-      Roll = NA,
-      Pitch = NA,
-      Heave = NA,
-      Roll_Accuracy = NA,
-      Pitch_Accuracy = NA,
-      Heading_Accuracy = NA,
-      Heading_Flag = NA,
+      date_time = NA,
+      utc = NA,
+      heading = NA,
+      true = NA,
+      roll = NA,
+      pitch = NA,
+      heave = NA,
+      roll_accuracy = NA,
+      pitch_accuracy = NA,
+      heading_accuracy = NA,
+      heading_Flag = NA,
       Checksum = NA
     )
   }
 
-  # Join with DateTime at the second
-  Apla <- left_join(GGA, VTG, by = c("DateTime"))
-  Apla <- left_join(Apla, PASHR, by = c("DateTime"))
+  # Join with date_time at the second
+  Apla <- left_join(GGA, VTG, by = c("date_time"))
+  Apla <- left_join(Apla, PASHR, by = c("date_time"))
 
-  Apla <- Apla %>% rename(date = DateTime, lat = Lat, lon = Lon)
+  Apla <- Apla %>% rename(date = date_time, lat = lat, lon = lon)
 
   # Solar altitude above the horizon in radian and azimuth in radian from south to west
-  PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
-
-  Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
-    rename(DateTime = date, Lat = lat, Lon = lon) %>%
-    mutate(
-      SolAzm = (azimuth * 180 / pi) + 180, # convert rad to degree and shift to north reference
-      SolZen = 90 - (altitude * 180 / pi), # shift altitude above the horizon to zenith angle
-      BoatSolAzm = SolAzm - Course_TN,
-      BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm)
+  PosSol <- suncalc::getSunlightPosition(
+    data = Apla,
+    keep = c("altitude", "azimuth")
+    ) %>%
+    rename(
+      sol_altitude = altitude,
+      sol_azimuth = azimuth
     )
 
-  Apla <- Apla %>% filter(Speed_kmh <= 15)
+  Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
+    rename(date_time = date, lat = lat, lon = lon) %>%
+    mutate(
+      sol_azi = (sol_azimuth * 180 / pi) + 180, # convert rad to degree and shift to north reference
+      sol_zen = 90 - (sol_altitude * 180 / pi), # shift altitude above the horizon in rad to zenith angle
+      boat_raa = sol_azi - course_tn,
+      boat_raa = if_else(boat_raa < 0, boat_raa + 360, boat_raa)
+    )
+
+  #Apla <- Apla %>% filter(speed_kmh <= 15)
+
+  return(Apla)
 }
 
 # BBFL2 extractor -----------------------------------------------------------
 
 read_bbfl2 <- function(MTELog) {
   BBFL2 <- MTELog %>%
-    filter(Instrument == "ECO") %>%
+    filter(instrument == "ECO") %>%
     separate(
       col = Data,
       sep = "(?!^)\\s",
       into = c(
-        "BBFL2Date",
-        "BBFL2Time",
-        "NTURef", # NTU
-        "NTUSig",
-        "PERef", # phycoerithrin
-        "PESig",
-        "PCRef", # phycocyanine
-        "PCSig",
+        "bbfl2_date",
+        "bbfl2_time",
+        "ntu_ref", # NTU
+        "ntu_channel",
+        "pe_ref", # phycoerithrin
+        "pe_channel",
+        "pc_ref", # phycocyanine
+        "pc_channel",
         "g"
       ),
       convert = T,
@@ -272,7 +281,7 @@ read_bbfl2 <- function(MTELog) {
     ) %>%
     mutate(
       # Trame = str_extract(Trame, "[[:alpha:]]+"),
-      Time = str_remove(Time, ".{4}$") # Take Time to second
+      time = str_remove(time, ".{4}$") # Take time to second
     ) %>%
     drop_na()
 }
@@ -281,32 +290,32 @@ read_bbfl2 <- function(MTELog) {
 
 read_seaowl <- function(MTELog) {
   SeaOWL <- MTELog %>%
-    filter(Instrument == "OWL") %>%
+    filter(instrument == "OWL") %>%
     separate(
       col = Data,
       sep = "(?!^)\\s",
       into = c(
-        "SN",
-        "ChlLEDForwardVoltage",
-        "ChlLowGainRawCounts",
-        "ChlHighGainRawCounts",
-        "ChlOutput",
-        "VSF700LEDForwardVoltage",
-        "VSF700LowGainRawCounts",
-        "VSF700HighGainRawCounts",
-        "VSF700Output",
-        "FDOMLED1ForwardVoltage",
-        "FDOMLED2ForwardVoltage",
-        "FDOMLowGainRawCounts",
-        "FDOMHighGainRawCounts",
-        "FDOMOutput"
+        "sn",
+        "chl_led_forward_voltage",
+        "chl_low_gain_raw_count",
+        "chl_high_gain_raw_count",
+        "chl_channel",
+        "vsf_700_led_forward_voltage",
+        "vsf_700_low_gain_raw_count",
+        "vsf_700_high_gain_raw_count",
+        "vsf_700_channel",
+        "fdom_led1_forward_voltage",
+        "fdom_led2_forward_voltage",
+        "fdom_low_gain_raw_count",
+        "fdom_high_gain_raw_count",
+        "fdom_output"
       ),
       convert = T,
       extra = "merge"
     ) %>%
     mutate(
       # Trame = str_extract(Trame, "[[:alpha:]]+"),
-      Time = str_remove(Time, ".{4}$") # Take Time to second
+      time = str_remove(time, ".{4}$") # Take time to second
     ) %>%
     drop_na()
 }
@@ -315,15 +324,15 @@ read_seaowl <- function(MTELog) {
 
 read_sbe19 <- function(MTELog) {
   SBE19 <- MTELog %>%
-    filter(Instrument == "CTD") %>%
+    filter(instrument == "CTD") %>%
     separate(
       col = Data,
       sep = ",\\s",
       into = c(
-        "Temperature", # Celsius ITS-90
-        "Conductivity", # S/m, multiply by 10 to get mS/cm
-        "Pressure", # decibars
-        "Volt0", # Volt0 ? = OXY
+        "temperature", # Celsius ITS-90
+        "conductivity", # S/m, multiply by 10 to get mS/cm
+        "pressure", # decibars
+        "volt0", # volt0 ? = OXY
         "Volt2" # Volt2 ? = pH
       ),
       convert = T,
@@ -331,7 +340,7 @@ read_sbe19 <- function(MTELog) {
     ) %>%
     mutate(
       # Trame = str_extract(Trame, "[[:alpha:]]+"),
-      Time = str_remove(Time, ".{4}$") # Take Time to second
+      time = str_remove(time, ".{4}$") # Take time to second
     ) %>%
     drop_na()
 }

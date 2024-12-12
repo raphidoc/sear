@@ -1,6 +1,6 @@
 #' settings UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -38,15 +38,15 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
           `WaveStep` REAL,
           `Z1Depth` REAL,
           `Z1Z2Depth` REAL,
-          `DateTime` REAL,
-          `UUID` TEXT,
-          FOREIGN KEY (UUID)
-            REFERENCES MetadataL2 (UUID)
+          `date_time` REAL,
+          `uuid_l2` TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
           )"
         )
 
-        LastSettings(tibble(DBI::dbGetQuery(SearProj$Con(), "SELECT * FROM Settings ORDER BY DateTime DESC LIMIT 1;")))
+        LastSettings(tibble(DBI::dbGetQuery(SearProj$Con(), "SELECT * FROM Settings ORDER BY date_time DESC LIMIT 1;")))
       }
     )
 
@@ -68,8 +68,8 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
           WaveStep = input$WaveStep,
           Z1Depth = input$Z1Depth,
           Z1Z2Depth = input$Z1Z2Depth,
-          DateTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-          UUID = SearProj$AccessUUID()
+          date_time = as.character(as.POSIXlt(Sys.time(), tz = "utc")),
+          uuid_l2 = SearProj$Accessuuid_l2()
         )
 
         DBI::dbWriteTable(SearProj$Con(), "Settings", NewSettings, append = TRUE)
@@ -98,7 +98,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
       tagList(
         numericInput(
           ns("WaveMin"),
-          "Minimum Wavelength [nm]",
+          "Minimum wavelength [nm]",
           WaveMin,
           min = NA,
           max = NA,
@@ -107,7 +107,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
         ),
         numericInput(
           ns("WaveMax"),
-          "Maximum Wavelength [nm]",
+          "Maximum wavelength [nm]",
           WaveMax,
           min = NA,
           max = NA,
@@ -116,7 +116,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
         ),
         numericInput(
           ns("WaveStep"),
-          "Wavelength Step [nm]",
+          "wavelength Step [nm]",
           WaveStep,
           min = NA,
           max = NA,

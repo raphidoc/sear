@@ -103,13 +103,13 @@ Show Detailed Test Results
 Session Info
 </summary>
 
-| Field    | Value                        |
+| Field    | value                        |
 |:---------|:-----------------------------|
 | Version  | R version 4.2.1 (2022-06-23) |
 | Platform | x86_64-pc-linux-gnu (64-bit) |
 | Running  | Pop!\_OS 22.04 LTS           |
 | Language | en_US                        |
-| Timezone | America/New_York             |
+| timezone | America/New_York             |
 
 | Package  | Version |
 |:---------|:--------|

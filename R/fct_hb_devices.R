@@ -1,19 +1,19 @@
 #' read_devices
 #'
-#' @description A fct function
+#' @description a fct function
 #'
 #' @return The return value, if any, from executing the function.
 #'
 #' @noRd
 
-read_hb_devices <- function(DevFile, Date) {
+read_hb_devices <- function(DevFile, date) {
   DevTbl <- tibble(
     Raw = readr::read_lines(DevFile, skip = 1)
   )
 
   DevTbl <- DevTbl %>%
     # separate have been superseded
-    separate(Raw, into = c("Time", "Data"), sep = " ")
+    separate(Raw, into = c("time", "Data"), sep = " ")
 
   NMEA <- DevTbl %>%
     separate_wider_regex(
@@ -23,8 +23,8 @@ read_hb_devices <- function(DevFile, Date) {
       cols_remove = T
     ) %>%
     mutate(
-      DateTime = ymd_hms(paste0(Date, Time)),
-      DateTime = round_date(DateTime, unit = "second") # format(DateTime, "%Y-%m-%d %H:%M:%OS0") # Take Time to second
+      date_time = ymd_hms(paste0(date, time)),
+      date_time = round_date(date_time, unit = "second") # format(date_time, "%Y-%m-%d %H:%M:%OS0") # Take time to second
     )
 
   if (all(is.na(NMEA$Data))) {
@@ -41,49 +41,49 @@ read_hb_devices <- function(DevFile, Date) {
       col = contains("GGA"),
       sep = ",",
       into = c(
-        "UTC",
-        "Lat",
-        "NS",
-        "Lon",
-        "EW",
-        "GPS",
-        "Nsat",
-        "HorizontalDilution",
-        "Altitude",
-        "AltitudeUnit",
-        "GeoidalSeparation",
-        "GeoidalSeparationUnit",
-        "GPSAge",
-        "DiffID"
+        "utc",
+        "lat",
+        "ns",
+        "lon",
+        "ew",
+        "gps",
+        "n_sat",
+        "horizontal_dilution",
+        "altitude",
+        "altitude_unit",
+        "geoidal_separation",
+        "geoidal_separation_unit",
+        "gps_age",
+        "diff_id"
       )
-    ) %>% # Filter malformated Lat and Lon field
-    filter(str_detect(Lat, "[:digit:]{4}\\.[:digit:]{5}") & str_detect(Lon, "[:digit:]{5}\\.[:digit:]{5}")) %>% # Filter incorect N S W E field
-    filter(NS %in% c("N", "S") & EW %in% c("E", "W"))
+    ) %>% # Filter malformated lat and lon field
+    filter(str_detect(lat, "[:digit:]{4}\\.[:digit:]{5}") & str_detect(lon, "[:digit:]{5}\\.[:digit:]{5}")) %>% # Filter incorect N S W e field
+    filter(ns %in% c("N", "S") & ew %in% c("e", "W"))
 
-  # There is some wrong data from time to time (missing field, incomplete or other format Lat Lon),
+  # There is some wrong data from time to time (missing field, incomplete or other format lat lon),
   # Will have to elucidate that (Applanix or DataLogger issue ?)
 
   GGA <- RawGGA %>%
     mutate(
-      Lat_D = as.numeric(str_sub(Lat, 1, 2)),
-      Lat_DM = as.numeric(str_sub(Lat, 3, 10)),
-      Lon_D = as.numeric(str_sub(Lon, 1, 3)),
-      Lon_DM = as.numeric(str_sub(Lon, 4, 11)),
-      Lat_DD = Lat_D + (Lat_DM / 60),
-      Lon_DD = Lon_D + (Lon_DM / 60),
-      Altitude = as.numeric(Altitude)
+      lat_d = as.numeric(str_sub(lat, 1, 2)),
+      lat_dm = as.numeric(str_sub(lat, 3, 10)),
+      lon_d = as.numeric(str_sub(lon, 1, 3)),
+      lon_dm = as.numeric(str_sub(lon, 4, 11)),
+      lat_dd = lat_d + (lat_dm / 60),
+      lon_dd = lon_d + (lon_dm / 60),
+      altitude = as.numeric(altitude)
     ) %>%
     mutate(
-      Lat_DD = ifelse(NS == "N", Lat_DD, -Lat_DD),
-      Lon_DD = ifelse(EW == "W", -Lon_DD, Lon_DD),
-      Lat = Lat_DD,
-      Lon = Lon_DD
+      lat_dd = ifelse(ns == "N", lat_dd, -lat_dd),
+      lon_dd = ifelse(ew == "W", -lon_dd, lon_dd),
+      lat = lat_dd,
+      lon = lon_dd
     )
 
   GGA <- GGA %>%
-    select(Time, DateTime, Lat, Lon, HorizontalDilution, Altitude, AltitudeUnit)
+    select(time, date_time, lat, lon, horizontal_dilution, altitude, altitude_unit)
 
-  GGA <- unique_datetime_second(GGA)
+  GGA <- unique_date_time_second(GGA)
 
   # Extract DBT (Depth Below Transducer) info
 
@@ -108,7 +108,7 @@ read_hb_devices <- function(DevFile, Date) {
           "Checksum"
         )
       ) %>%
-      select(!Time) # Avoid duplication in join
+      select(!time) # Avoid duplication in join
 
     DBT <- RawDBT %>%
       mutate(
@@ -117,10 +117,10 @@ read_hb_devices <- function(DevFile, Date) {
         DBT_fathom = as.numeric(DBT_fathom)
       )
 
-    DBT <- unique_datetime_second(DBT)
+    DBT <- unique_date_time_second(DBT)
   } else {
     DBT <- tibble(
-      DateTime = NA,
+      date_time = NA,
       DBT_feet = NA,
       Feet = "f",
       DBT_meter = NA,
@@ -145,83 +145,83 @@ read_hb_devices <- function(DevFile, Date) {
         sep = ",|[*]",
         convert = T,
         into = c(
-          "Heading", # True vessel heading 0 to 359.99: xxx.xx [degrees]
-          "HeadingStatus", # L: low alarm, M: low warning, N: normal, O: high warning, P: high alarm, C: Tuning analog circuit
-          "Pitch", # Pitch
-          "PitchStatus", # Same as heading status
-          "Roll", # Roll
-          "RollStatus", # Same as heading status
+          "heading", # True vessel heading 0 to 359.99: xxx.xx [degrees]
+          "headingStatus", # L: low alarm, M: low warning, N: normal, O: high warning, P: high alarm, c: Tuning analog circuit
+          "pitch", # pitch
+          "pitchStatus", # Same as heading status
+          "roll", # roll
+          "rollStatus", # Same as heading status
           "Checksum" # NA: *hh
         )
       ) %>%
-      select(!Time) # Avoid duplication in join
+      select(!time) # Avoid duplication in join
 
     PTNTHPR <- RawPTNTHPR %>%
       mutate(
-        Heading = as.numeric(Heading),
-        Pitch = as.numeric(Pitch),
-        Roll = as.numeric(Roll)
+        heading = as.numeric(heading),
+        pitch = as.numeric(pitch),
+        roll = as.numeric(roll)
       )
 
-    PTNTHPR <- unique_datetime_second(PTNTHPR)
+    PTNTHPR <- unique_date_time_second(PTNTHPR)
   } else {
     PTNTHPR <- tibble(
-      DateTime = NA,
-      Heading = NA,
-      HeadingStatus = NA,
-      Pitch = NA,
-      PitchStatus = NA,
-      Roll = NA,
-      RollStatus = NA,
+      date_time = NA,
+      heading = NA,
+      headingStatus = NA,
+      pitch = NA,
+      pitchStatus = NA,
+      roll = NA,
+      rollStatus = NA,
       Checksum = NA
     )
   }
 
-  # Join with DateTime at the second
-  MainLog <- left_join(GGA, PTNTHPR, by = c("DateTime"))
-  MainLog <- left_join(MainLog, DBT, by = c("DateTime"))
+  # Join with date_time at the second
+  MainLog <- left_join(GGA, PTNTHPR, by = c("date_time"))
+  MainLog <- left_join(MainLog, DBT, by = c("date_time"))
 
-  MainLog <- MainLog %>% rename(date = DateTime, lat = Lat, lon = Lon)
+  MainLog <- MainLog %>% rename(date = date_time, lat = lat, lon = lon)
 
   # Solar altitude above the horizon in radian and azimuth in radian from south to west
   PosSol <- suncalc::getSunlightPosition(data = MainLog, keep = c("altitude", "azimuth"))
 
   MainLog <- left_join(MainLog, PosSol, by = c("date", "lat", "lon")) %>%
-    rename(DateTime = date, Lat = lat, Lon = lon, SolAzm = azimuth, SolZen = altitude) %>%
+    rename(date_time = date, lat = lat, lon = lon, sol_azi = azimuth, sol_zen = altitude) %>%
     mutate(
-      SolAzm = SolAzm * 180 / pi + 180, # convert rad to degree and shift to north reference
-      SolZen = SolZen * 180 / pi,
-      BoatSolAzm = SolAzm - Heading,
-      BoatSolAzm = if_else(BoatSolAzm < 0, BoatSolAzm + 360, BoatSolAzm)
+      sol_azi = sol_azi * 180 / pi + 180, # convert rad to degree and shift to north reference
+      sol_zen = sol_zen * 180 / pi,
+      boat_raa = sol_azi - heading,
+      boat_raa = if_else(boat_raa < 0, boat_raa + 360, boat_raa)
     )
 
-  # Add Speed_kmh
+  # Add speed_kmh
 
   MainLog <- MainLog %>%
     mutate(
-      TimeDiff = DateTime - lag(DateTime)
+      timeDiff = date_time - lag(date_time)
     )
 
-  LatMin <- MainLog$Lat[seq(1, length(MainLog$Lat) - 1, by = 2)]
-  LonMin <- MainLog$Lon[seq(1, length(MainLog$Lat) - 1, by = 2)]
-  LatMax <- MainLog$Lat[seq(2, length(MainLog$Lat), by = 2)]
-  LonMax <- MainLog$Lon[seq(2, length(MainLog$Lat), by = 2)]
-  TimeDiff <- MainLog$TimeDiff[seq(2, length(MainLog$Lat), by = 2)] # in seconds
+  lat_min <- MainLog$lat[seq(1, length(MainLog$lat) - 1, by = 2)]
+  lon_min <- MainLog$lon[seq(1, length(MainLog$lat) - 1, by = 2)]
+  lat_max <- MainLog$lat[seq(2, length(MainLog$lat), by = 2)]
+  lon_max <- MainLog$lon[seq(2, length(MainLog$lat), by = 2)]
+  timeDiff <- MainLog$timeDiff[seq(2, length(MainLog$lat), by = 2)] # in seconds
 
   Speed <- purrr::pmap(
-    list(LatMin, LonMin, LatMax, LonMax, TimeDiff),
+    list(lat_min, lon_min, lat_max, lon_max, timeDiff),
     ~ pracma::haversine(c(..1, ..2), c(..3, ..4)) / ..5 * 3600
   ) # in kmh
 
   SpeedApprox <- approx(
-    x = MainLog$DateTime[seq(2, length(MainLog$Lat), by = 2)],
+    x = MainLog$date_time[seq(2, length(MainLog$lat), by = 2)],
     y = Speed,
-    xout = MainLog$DateTime
+    xout = MainLog$date_time
   )[[2]]
 
   MainLog <- MainLog %>%
     mutate(
-      Speed_kmh = SpeedApprox
+      speed_kmh = SpeedApprox
     )
 
   return(MainLog)

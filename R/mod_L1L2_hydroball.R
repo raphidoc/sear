@@ -1,6 +1,6 @@
 #' L1L2_hydroball UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -26,7 +26,7 @@ mod_L1L2_hydroball_server <- function(id, Obs) {
     output$L1b <- renderPlotly({
       validate(need(nrow(Obs$HydroBall$L1b) != 0, "No L1b data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
+      PlyFont <- list(family = "times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -43,25 +43,25 @@ mod_L1L2_hydroball_server <- function(id, Obs) {
 
       ply <- Obs$HydroBall$L1b %>%
         mutate(
-          Distance = seq(from = 0, to = Obs$MetadataL2$DistanceRun, along.with = DateTime)
+          Distance = seq(from = 0, to = Obs$metadata_l2$distance_run, along.with = date_time)
         ) %>%
         plot_ly(
-          text = ~DateTime,
+          text = ~date_time,
           x = ~Distance,
           colors = pal
         ) %>%
         add_lines(
-          y = ~Altitude,
+          y = ~altitude,
           color = "Watercraft"
         ) %>%
         add_lines(
-          y = ~H,
+          y = ~height_watercolumn,
           color = "Bottom"
         ) %>%
         layout(
           shapes = BlackSquare,
           xaxis = list(title = list(text = "Distance [m]"))
-          # yaxis = list(range = list(~min(BottomElevation_m, na.rm = TRUE), 0))
+          # yaxis = list(range = list(~min(bottom_elevation_m, na.rm = TRUE), 0))
         )
 
       # Save graph
@@ -75,11 +75,11 @@ mod_L1L2_hydroball_server <- function(id, Obs) {
       input$ProcessL2,
       {
         test <- Obs$HydroBall$L1b %>% summarise(
-          Lon = mean(Lon, na.rm = T),
-          Lat = mean(Lat, na.rm = T),
-          DateTime = mean(DateTime, na.rm = T),
-          Altitude = mean(Altitude, na.rm = T),
-          H = mean(H, na.rm = T)
+          lon = mean(lon, na.rm = T),
+          lat = mean(lat, na.rm = T),
+          date_time = mean(date_time, na.rm = T),
+          altitude = mean(altitude, na.rm = T),
+          height_watercolumn = mean(height_watercolumn, na.rm = T)
         )
 
         Obs$HydroBall$L2 <- test
@@ -114,8 +114,8 @@ mod_L1L2_hydroball_server <- function(id, Obs) {
           selection = "none",
           editable = F
         ) %>%
-          DT::formatRound(c("Lat", "Lon"), digits = 6) %>%
-          DT::formatRound(c("Altitude", "H"), digits = 3)
+          DT::formatRound(c("lat", "lon"), digits = 6) %>%
+          DT::formatRound(c("altitude", "height_watercolumn"), digits = 3)
       },
       server = FALSE,
       editable = F

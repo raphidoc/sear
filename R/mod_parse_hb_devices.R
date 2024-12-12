@@ -1,6 +1,6 @@
 #' hb_devices UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -41,21 +41,21 @@ mod_parse_hb_devices_server <- function(id, SearProj, ParsedFiles) {
 
         file.copy(Files$datapath, Files$rawpath)
 
-        TimeTag <- str_extract(Files$name, "[:digit:]{2}_[:digit:]{2}_[:digit:]{2}-[:digit:]{4}_[:digit:]{2}_[:digit:]{2}")
+        timeTag <- str_extract(Files$name, "[:digit:]{2}_[:digit:]{2}_[:digit:]{2}-[:digit:]{4}_[:digit:]{2}_[:digit:]{2}")
 
-        Time <- str_split(TimeTag, "-")[[1]][1]
-        Date <- str_split(TimeTag, "-")[[1]][2]
+        time <- str_split(timeTag, "-")[[1]][1]
+        date <- str_split(timeTag, "-")[[1]][2]
 
-        DateTime <- ymd_hms(paste(Date, Time))
+        date_time <- ymd_hms(paste(date, time))
 
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
         dir.create(ParsedDir, recursive = TRUE)
 
         # No date is available in the devices files, take it from the file name
-        HBDevices <- read_hb_devices(Files$rawpath, date(DateTime))
+        HBDevices <- read_hb_devices(Files$rawpath, date(date_time))
 
-        PotHBDevices <- file.path(ParsedDir, paste0("hb_devices_", format(DateTime, "%Y%m%d_%H%M%S"), ".csv"))
+        PotHBDevices <- file.path(ParsedDir, paste0("hb_devices_", format(date_time, "%Y%m%d_%height_watercolumn%M%S"), ".csv"))
 
         write_csv(HBDevices, PotHBDevices)
       }

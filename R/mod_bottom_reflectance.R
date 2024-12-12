@@ -1,6 +1,6 @@
 #' bottom_reflectance UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -22,10 +22,11 @@ mod_bottom_reflectance_server <- function(id, Obs) {
     ns <- session$ns
 
     output$Rb <- renderPlotly({
+
       validate(need(nrow(Obs$HOCR$L2) != 0, "No HOCR L2 data"))
       validate(need(nrow(Obs$BioSonic$L2) != 0 | nrow(Obs$HydroBall$L2) != 0, "No BioSonic L2 data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
+      PlyFont <- list(family = "times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -42,21 +43,21 @@ mod_bottom_reflectance_server <- function(id, Obs) {
       # KZ <- Obs$HOCR$L2
       # test <- KZ %>%
       #   mutate(
-      #     KZ = KLu_loess*(Obs$BioSonic$L2$BottomElevation_m),
+      #     KZ = KLu_loess*(Obs$BioSonic$L2$bottom_elevation_m),
       #     eKZ = exp(-KZ),
       #     Rw = pi*Rrs_loess,
       #     Rb = Rw/eKZ
       #     )
 
       if (nrow(Obs$BioSonic$L2) != 0) {
-        KZ <- Obs$HOCR$L2$KLu_loess * (Obs$BioSonic$L2$BottomElevation_m)
+        KZ <- Obs$HOCR$L2$klu_mean * (Obs$BioSonic$L2$bottom_elevation_m)
       } else {
-        KZ <- Obs$HOCR$L2$KLu_loess * (Obs$HydroBall$L2$H)
+        KZ <- Obs$HOCR$L2$klu_mean * (Obs$HydroBall$L2$height_watercolumn)
       }
 
       Obs$HOCR$L2 <- isolate(Obs$HOCR$L2) %>%
         mutate(
-          BRI = pi * Rrs_loess / exp(-KZ)
+          BRI = pi * rrs_mean / exp(-KZ)
         )
 
       pal <- c("Rw" = "turquoise", "BRI" = "orange")
@@ -66,19 +67,19 @@ mod_bottom_reflectance_server <- function(id, Obs) {
           colors = pal
         ) %>%
         add_lines(
-          x = ~Wavelength,
+          x = ~wavelength,
           y = ~BRI,
           showlegend = T,
           color = "BRI"
         ) %>% # add_lines(
-        #   x = ~Wavelength,
+        #   x = ~wavelength,
         #   y = ~RbII,
         #   showlegend = T,
         #   name = "RbII",
         # ) %>%
         add_lines(
-          x = ~Wavelength,
-          y = ~ pi * Rrs_loess,
+          x = ~wavelength,
+          y = ~ pi * rrs_mean,
           showlegend = T,
           color = "Rw",
           fill = "tonexty"

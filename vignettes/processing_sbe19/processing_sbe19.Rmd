@@ -1,7 +1,7 @@
 ---
 title: "sbe19_processing"
 output: html_document
-date: "`r Sys.Date()`"
+date: "`r Sys.date()`"
 ---
 
 ```{r setup, include=FALSE}
@@ -24,7 +24,7 @@ library(sear)
 ```{r}
 SBE19CalFile <- sear:::app_sys("cal", "sbe19", "7974.cal")
 
-SBE19CalData <- sear:::read_sbe19_cal()
+SBE19cal_data <- sear:::read_sbe19_cal()
 ```
 
 ### SBE43
@@ -32,7 +32,7 @@ SBE19CalData <- sear:::read_sbe19_cal()
 ```{r}
 SBE43CalFile <- sear:::app_sys("cal", "sbe43", "3625.cal")
 
-SBE43CalData <- sear:::read_sbe43_cal()
+SBE43cal_data <- sear:::read_sbe43_cal()
 ```
 
 ### SBE18
@@ -40,12 +40,12 @@ SBE43CalData <- sear:::read_sbe43_cal()
 ```{r}
 SBE18CalFile <- sear:::app_sys("cal", "sbe18", "1494.cal")
 
-SBE18CalData <- sear:::read_sbe18_cal()
+SBE18cal_data <- sear:::read_sbe18_cal()
 ```
 
 ## Calibrate data
 
-SBE19 data consist of Temperature Pressure and Conductivity which can be converted in Practical Salinity Unit (PSU). Additionally the SBE19 can record voltage send by optional instrument such as Oxygen (SBE43) and pH (SBE18, case on the UQAR SeaDoo). To manage different instruments configurations it could be a solution to provide an instrument definition file to determine how the data should parsed.
+SBE19 data consist of temperature pressure and conductivity which can be converted in Practical Salinity Unit (PSU). Additionally the SBE19 can record voltage send by optional instrument such as oxygen_concentration (SBE43) and pH (SBE18, case on the UQAR SeaDoo). To manage different instruments configurations it could be a solution to provide an instrument definition file to determine how the data should parsed.
 
 ```{r}
 Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
@@ -54,14 +54,14 @@ DataFile <- sear:::app_sys("extdata", "DATA_20220705_105732.txt")
 
 MTELog <- sear:::read_mtelog(DataFile)
 
-MTELog <- MTELog %>% filter(DateTime %within% Station)
+MTELog <- MTELog %>% filter(date_time %within% Station)
 
 SBE19Data <- sear:::read_sbe19(MTELog)
 
 Apla <- sear:::read_apla(MTELog) %>%
   summarise(
-    Lat = mean(Lat_DD),
-    Lon = mean(Lon_DD)
+    lat = mean(lat_dd),
+    lon = mean(lon_dd)
   )
 ```
 
@@ -69,7 +69,7 @@ Apla <- sear:::read_apla(MTELog) %>%
 
 ```{r}
 # oxygen solubility in ml/l from Garcia and Gordon 1992
-oxy_sol <- function(Temperature, SP) {
+oxy_sol <- function(temperature, salinity_practical) {
   A0 <- 2.00907
   A1 <- 3.22014
   A2 <- 4.0501
@@ -82,11 +82,11 @@ oxy_sol <- function(Temperature, SP) {
   B3 <- -0.00817083
   C0 <- -0.000000488682
 
-  Ts <- log((298.15 - Temperature) / (273.15 + Temperature))
+  Ts <- log((298.15 - temperature) / (273.15 + temperature))
 
-  OxSol <- exp({
+  oxygen_solubility <- exp({
     A0 + (A1 * Ts) + (A2 * Ts)^2 + (A3 * Ts)^3 + (A4 * Ts)^4 + (A5 * Ts)^5 +
-      SP * (B0 + (B1 * Ts) + (B2 * Ts)^2 + (B3 * Ts)^3) + (C0 * SP)^2
+      salinity_practical * (B0 + (B1 * Ts) + (B2 * Ts)^2 + (B3 * Ts)^3) + (C0 * salinity_practical)^2
   })
 }
 ```
@@ -96,43 +96,43 @@ EOS-80 (calculating PSU) have been replaced by TEOS-10 (calculating absolute sal
 The function `gsw::gsw_SP_from_C()` allow to compute practical salinity from conductivity.
 
 ```{r}
-cal_sbe19 <- function(Data, Lon, Lat) {
+cal_sbe19 <- function(Data, lon, lat) {
   Data %>%
     mutate(
-      SP = gsw::gsw_SP_from_C( # Salinity Practical in PSU
-        C = Conductivity * 10,
-        t = Temperature,
-        p = Pressure
+      salinity_practical = gsw::gsw_SP_from_C( # Salinity Practical in PSU
+        c = conductivity * 10,
+        t = temperature,
+        p = pressure
       ),
-      SA = gsw::gsw_SA_from_SP( # Salinity Absolute in g/Kg
-        SP = SP,
-        p = Pressure,
-        long = Lon,
-        lat = Lat
+      salinity_absolute = gsw::gsw_SA_from_SP( # Salinity Absolute in g/Kg
+        salinity_practical = salinity_practical,
+        p = pressure,
+        long = lon,
+        lat = lat
       ),
-      CT = gsw::gsw_CT_from_t( # Conservative Temperature in deg C
-        SA = SA,
-        t = Temperature,
-        p = Pressure
+      conservative_temperature = gsw::gsw_CT_from_t( # Conservative temperature in deg c
+        salinity_absolute = salinity_absolute,
+        t = temperature,
+        p = pressure
       ),
-      O2Sol = gsw::gsw_O2sol( # Oxygen solubility in umol/kg
-        SA = SA,
-        CT = CT,
-        p = Pressure,
-        longitude = Lon,
-        latitude = Lat
+      oxygen_solubility = gsw::gsw_O2sol( # oxygen_concentration solubility in umol/kg
+        salinity_absolute = salinity_absolute,
+        conservative_temperature = conservative_temperature,
+        p = pressure,
+        longitude = lon,
+        latitude = lat
       ),
-      OxSol = oxy_sol( # oxygen solubility in ml/l from Garcia and Gordon 1992
-        Temperature = Temperature,
-        SP = SP
+      oxygen_solubility = oxy_sol( # oxygen solubility in ml/l from Garcia and Gordon 1992
+        temperature = temperature,
+        salinity_practical = salinity_practical
       )
     )
 }
 
-SBE19Data <- cal_sbe19(SBE19Data, Apla$Lon, Apla$Lat)
+SBE19Data <- cal_sbe19(SBE19Data, Apla$lon, Apla$lat)
 ```
 
-### Oxygen concentration calibration
+### oxygen_concentration concentration calibration
 
 The calibration equation is given in the Application Note 64-2.
 ![SBE43 calibration equation](oxy_equation.png)
@@ -141,32 +141,32 @@ How to cumpute `tau(T, P)` sensor time constant at temperature and pressure ? Te
 
 From "SBE43_ApplicationNote64_RevJun2013.pdf" the [tau(T,P) * δV/δt] derivative can be disabled.
 
-the `Oxsol` parameter can be computed with `gsw::gsw_O2sol(SA, CT, p, longitude, latitude)`. SBE use Oxygen saturation value after Garcia and Gordon (1992), should validate that I can use another method.
-The absolute salinity (`SA`) can be computed with `gsw_SA_from_SP(SP, p, long, lat)`.
-The conservative temperature (`CT`) can be computed with `gsw::gsw_CT_from_t`.
+the `Oxsol` parameter can be computed with `gsw::gsw_O2sol(salinity_absolute, conservative_temperature, p, longitude, latitude)`. SBE use oxygen_concentration saturation value after Garcia and Gordon (1992), should validate that I can use another method.
+The absolute salinity (`salinity_absolute`) can be computed with `gsw_SA_from_SP(salinity_practical, p, long, lat)`.
+The conservative temperature (`conservative_temperature`) can be computed with `gsw::gsw_CT_from_t`.
 
 ```{r}
-cal_sbe43 <- function(Volt, Tcelsius, Pressure, OxSol, CalData) {
-  Soc <- CalData$SOC
-  Voffset <- CalData$VOFFSET
-  A <- CalData$A
-  B <- CalData$B
-  C <- CalData$C
-  E <- CalData$E
+cal_sbe43 <- function(Volt, Tcelsius, pressure, oxygen_solubility, cal_data) {
+  soc <- cal_data$soc
+  voffset <- cal_data$voffset
+  a <- cal_data$a
+  b <- cal_data$b
+  c <- cal_data$c
+  e <- cal_data$e
 
   Tkelvin <- Tcelsius + 273.15
 
-  Oxygen <- (Soc * (Volt + Voffset)) * OxSol * (1.0 + A * Tcelsius + B * Tcelsius^2 + C * Tcelsius^3) * exp(1)^(E * Pressure / Tkelvin)
+  oxygen_concentration <- (soc * (Volt + voffset)) * oxygen_solubility * (1.0 + a * Tcelsius + b * Tcelsius^2 + c * Tcelsius^3) * exp(1)^(e * pressure / Tkelvin)
 }
 
 SBE19Data <- SBE19Data %>%
   mutate(
-    Oxygen = cal_sbe43( # Oxygen in ml/l multiply by 1.42903 to get mg/l
-      Volt = Volt0,
-      Tcelsius = Temperature,
-      Pressure = Pressure,
-      OxSol = OxSol,
-      CalData = SBE43CalData
+    oxygen_concentration = cal_sbe43( # oxygen_concentration in ml/l multiply by 1.42903 to get mg/l
+      Volt = volt0,
+      Tcelsius = temperature,
+      pressure = pressure,
+      oxygen_solubility = oxygen_solubility,
+      cal_data = SBE43cal_data
     )
   )
 ```
@@ -174,39 +174,39 @@ SBE19Data <- SBE19Data %>%
 ### pH calibration
 
 ```{r}
-cal_sbe18 <- function(Volt, Tcelsius, CalData) {
-  Voffset <- CalData$OFFSET
-  Slope <- CalData$SLOPE
+cal_sbe18 <- function(Volt, Tcelsius, cal_data) {
+  voffset <- cal_data$offset
+  slope <- cal_data$slope
 
   Tkelvin <- Tcelsius + 273.15
 
-  pH <- 7.0 + (Volt - Voffset) / (Slope * Tkelvin * 1.98416e-4)
+  pH <- 7.0 + (Volt - voffset) / (slope * Tkelvin * 1.98416e-4)
 }
 
 SBE19Data <- SBE19Data %>%
   mutate(
     pH = cal_sbe18(
       Volt = Volt2,
-      Tcelsius = Temperature,
-      CalData = SBE18CalData
+      Tcelsius = temperature,
+      cal_data = SBE18cal_data
     )
   ) %>%
   select(
-    DateTime,
-    Temperature,
-    Conductivity,
-    Pressure,
-    SP,
-    SA,
-    CT,
-    O2Sol,
-    OxSol,
-    Oxygen,
+    date_time,
+    temperature,
+    conductivity,
+    pressure,
+    salinity_practical,
+    salinity_absolute,
+    conservative_temperature,
+    oxygen_solubility,
+    oxygen_solubility,
+    oxygen_concentration,
     pH
   ) %>%
   mutate(
-    ID = seq_along(rownames(SBE19Data)),
-    QC = "1"
+    id = seq_along(rownames(SBE19Data)),
+    qc = "1"
   )
 ```
 
@@ -216,17 +216,17 @@ SBE19Data <- SBE19Data %>%
 
 ```{r}
 SBE19nest <- SBE19Data %>%
-  select(!any_of(c("Conductivity", "CT", "O2Sol"))) %>%
+  select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
   pivot_longer(
-    cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
-    names_to = "Parameter",
-    values_to = "Value"
+    cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+    names_to = "parameter",
+    values_to = "value"
   ) %>%
-  group_by(Parameter) %>%
+  group_by(parameter) %>%
   nest()
 
 
-PlyFont <- list(family = "Times New Roman", size = 18)
+PlyFont <- list(family = "times New Roman", size = 18)
 BlackSquare <- list(
   type = "rect",
   fillcolor = "transparent",
@@ -241,9 +241,9 @@ BlackSquare <- list(
 
 SBE19nest <- SBE19nest %>%
   mutate(
-    Plot = purrr::map2(.x = data, .y = Parameter, ~
-      plot_ly(.x, text = ~ID) %>%
-        add_markers(x = ~DateTime, y = ~Value) %>%
+    Plot = purrr::map2(.x = data, .y = parameter, ~
+      plot_ly(.x, text = ~id) %>%
+        add_markers(x = ~date_time, y = ~value) %>%
         layout(
           shapes = BlackSquare,
           yaxis = list(title = list(text = .y))
@@ -251,7 +251,7 @@ SBE19nest <- SBE19nest %>%
   )
 
 
-# format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
+# format(SBE19nest[[2]][[1]]$date_time, "%Y-%m-%d %H:%M:%OS3")
 
 subplot(SBE19nest$Plot, nrows = nrow(SBE19nest), shareX = TRUE, titleY = TRUE)
 ```

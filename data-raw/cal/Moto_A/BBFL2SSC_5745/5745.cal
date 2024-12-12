@@ -1,9 +1,9 @@
-InstrumentType=BBFL2
+instrumentType=BBFL2
 SerialNo=5745
-CalDate=2-Jul-2019
-NTUScaleFactor=0.2410
-NTUDarkCounts=50
-PEScaleFactor=0.0555
-PEDarkCounts=50
-PCScaleFactor=0.0555
-PCDarkCounts=46
+cal_date=2-Jul-2019
+ntu_scale_factor=0.2410
+ntu_dark_count=50
+pe_scale_factor=0.0555
+pe_dark_count=50
+pc_scale_factor=0.0555
+pc_dark_count=46

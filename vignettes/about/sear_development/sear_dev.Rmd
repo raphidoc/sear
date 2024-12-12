@@ -42,7 +42,7 @@ MTELog <- sear:::read_mtelog(TxtFile)
 Apla <- sear:::read_apla(MTELog)
 
 MainLog <- Apla %>%
-  rename(Lon = Lon_DD, Lat = Lat_DD)
+  rename(lon = lon_dd, lat = lat_dd)
 
 
 SBE19 <- sear:::read_sbe19(MTELog)
@@ -55,13 +55,13 @@ RawFile <- system.file("data-raw", "SatView", "2019-236-130913.raw", package = "
 
 SatViewHOCR <- sear:::read_satview_hocr(RawFile)
 
-AplaDate <- unique(date(Apla$DateTime))
+Apladate <- unique(date(Apla$date_time))
 
-HOCRTimeIndex <- as.POSIXct(unlist(purrr::map(
+HOCRtimeIndex <- as.POSIXct(unlist(purrr::map(
   .x = HOCR,
   ~ clock::date_time_parse(
     paste0(
-      AplaDate, " ", hms::as_hms(.x$gpstime / 1000)
+      Apladate, " ", hms::as_hms(.x$gpstime / 1000)
     ),
     zone = "UTC"
   )
@@ -80,7 +80,7 @@ The idea behind this application software originated from a conversation with my
 
 * [https://en.wikipedia.org/wiki/Consistency_(disambiguation)](Consistency) :
 
-> A consistent theory is one that does not lead to a logical contradiction.
+> a consistent theory is one that does not lead to a logical contradiction.
 
 Software as a Service offer a solution to have a common architecture and code base to be shared among people while suiting their specific need. Managing and processing different data type of various format coming from different instruments require a trade off between the rigidity of a consistent architecture and the flexibility required to solve various problems. This trade off is best achieved today by web-based application. That's why *sear* is such an application.
 
@@ -100,7 +100,7 @@ It revolves around four kind of documentation:
 1. Tutorial
   Story that take a beginner by the hand to reach a meaningful goal to create engagement and provide a learning experience. Like a cooking lesson.
 2. How-to
-  Step-by-step guide that assume a minimal knowledge of the reader and give him instruction to go from A to B. Like a recipe.
+  Step-by-step guide that assume a minimal knowledge of the reader and give him instruction to go from a to b. Like a recipe.
 3. Reference
   Concise description of the software. In this case it is generated with `roxygen2`.
 4. Explanation
@@ -167,13 +167,13 @@ D08 <- list(
 ### Reducing txt files. Easy Peasy Lemon Squeezy !
 
 ```{r eval=FALSE, include=TRUE}
-trim_MTELog <- function(If, Of, TimeSeq, n_head) {
+trim_MTELog <- function(If, Of, timeSeq, n_head) {
   Head <- readr::read_lines(If, n_max = n_head)
   readr::write_lines(Head, Of)
 
   Data <- readr::read_lines(If, skip = n_head)
 
-  Pat <- str_c(unlist(TimeSeq), collapse = "|")
+  Pat <- str_c(unlist(timeSeq), collapse = "|")
   Tind <- str_detect(Data, Pat)
   any(Tind)
   readr::write_lines(Data[Tind], Of, append = T)
@@ -220,14 +220,14 @@ Wah ! The `dd` command use 512 as a default number of bytes for the `-bs` argume
 Whats behind this number !?
 
 ```{r eval=FALSE, include=TRUE}
-trim_hocr <- function(If, Of, TimeIndex, TimeInt) {
+trim_hocr <- function(If, Of, timeIndex, timeInt) {
   # Copy header
   system2("dd", paste0("if=", If, " bs=512", " count=", 1, " >>", Of))
 
-  for (Tint in TimeInt) {
+  for (Tint in timeInt) {
     print(Tint)
 
-    ind <- which(purrr::map_lgl(.x = TimeIndex, ~ .x %within% Tint))
+    ind <- which(purrr::map_lgl(.x = timeIndex, ~ .x %within% Tint))
     BytesStart <- min(ind) #* 512
     BytesEnd <- max(ind) #* 512
     Skip <- BytesStart - 1
@@ -254,25 +254,25 @@ F02Nbytes <- as.numeric(system2("wc", paste0("-c < ", F02bin), stdout = T))
 F02Nbytes / MTEBytes
 # 84409
 
-RawHOCR <- sear:::read_hocr(F02bin)
+hocr_raw <- sear:::read_hocr(F02bin)
 # Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
-TimeIndex <- purrr::map(
-  .x = RawHOCR,
+timeIndex <- purrr::map(
+  .x = hocr_raw,
   ~ clock::date_time_parse(
     paste0(ymd("20220702"), " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC"
   )
 )
 
-TimeInt <- list(
+timeInt <- list(
   interval(ymd_hms("2022-07-02 16:31:00"), ymd_hms("2022-07-02 16:32:00")),
   interval(ymd_hms("2022-07-02 19:08:23"), ymd_hms("2022-07-02 19:08:45")),
   interval(ymd_hms("2022-07-02 19:32:51"), ymd_hms("2022-07-02 19:33:26"))
 )
 
-trim_hocr(If = F02bin, Of = F02out, TimeIndex, TimeInt)
+trim_hocr(If = F02bin, Of = F02out, timeIndex, timeInt)
 
 ######### F05
 
@@ -280,25 +280,25 @@ trim_hocr(If = F02bin, Of = F02out, TimeIndex, TimeInt)
 F05bin <- file.path(full, "DATA_20220705_105732.bin")
 F05out <- file.path(reduced, "DATA_20220705_105732.bin")
 
-RawHOCR <- sear:::read_hocr(F05bin)
+hocr_raw <- sear:::read_hocr(F05bin)
 # Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
-TimeIndex <- purrr::map(
-  .x = RawHOCR,
+timeIndex <- purrr::map(
+  .x = hocr_raw,
   ~ clock::date_time_parse(
     paste0(ymd("20220705"), " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC"
   )
 )
 
-TimeInt <- list(
+timeInt <- list(
   interval(ymd_hms("2022-07-05 11:50:27"), ymd_hms("2022-07-05 11:51:02")),
   interval(ymd_hms("2022-07-05 14:14:51"), ymd_hms("2022-07-05 14:21:16")),
   interval(ymd_hms("2022-07-05 14:40:20"), ymd_hms("2022-07-05 14:40:47"))
 )
 
-trim_hocr(If = F05bin, Of = F05out, TimeIndex, TimeInt)
+trim_hocr(If = F05bin, Of = F05out, timeIndex, timeInt)
 
 ######### F0615
 
@@ -306,24 +306,24 @@ trim_hocr(If = F05bin, Of = F05out, TimeIndex, TimeInt)
 F0615bin <- file.path(full, "DATA_20220706_153838.bin")
 F0615out <- file.path(reduced, "DATA_20220706_153838.bin")
 
-RawHOCR <- sear:::read_hocr(F0615bin)
+hocr_raw <- sear:::read_hocr(F0615bin)
 # Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
-TimeIndex <- purrr::map(
-  .x = RawHOCR,
+timeIndex <- purrr::map(
+  .x = hocr_raw,
   ~ clock::date_time_parse(
     paste0(ymd("20220706"), " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC"
   )
 )
 
-TimeInt <- list(
+timeInt <- list(
   interval(ymd_hms("2022-07-06 15:48:00"), ymd_hms("2022-07-06 15:55:00")),
   interval(ymd_hms("2022-07-06 16:54:45"), ymd_hms("2022-07-06 17:02:41"))
 )
 
-trim_hocr(If = F0615bin, Of = F0615out, TimeIndex, TimeInt)
+trim_hocr(If = F0615bin, Of = F0615out, timeIndex, timeInt)
 
 ######### F0618
 
@@ -331,24 +331,24 @@ trim_hocr(If = F0615bin, Of = F0615out, TimeIndex, TimeInt)
 F0618bin <- file.path(full, "DATA_20220706_183905.bin")
 F0618out <- file.path(reduced, "DATA_20220706_183905.bin")
 
-RawHOCR <- sear:::read_hocr(F0618bin)
+hocr_raw <- sear:::read_hocr(F0618bin)
 # Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
-TimeIndex <- purrr::map(
-  .x = RawHOCR,
+timeIndex <- purrr::map(
+  .x = hocr_raw,
   ~ clock::date_time_parse(
     paste0(ymd("20220706"), " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC"
   )
 )
 
-TimeInt <- list(
+timeInt <- list(
   interval(ymd_hms("2022-07-06 20:26:50"), ymd_hms("2022-07-06 20:29:28")),
   interval(ymd_hms("2022-07-06 20:48:26"), ymd_hms("2022-07-06 20:50:28"))
 )
 
-trim_hocr(If = F0618bin, Of = F0618out, TimeIndex, TimeInt)
+trim_hocr(If = F0618bin, Of = F0618out, timeIndex, timeInt)
 
 ######### F07
 
@@ -356,23 +356,23 @@ trim_hocr(If = F0618bin, Of = F0618out, TimeIndex, TimeInt)
 F07bin <- file.path(full, "DATA_20220707_181725.bin")
 F07out <- file.path(reduced, "DATA_20220707_181725.bin")
 
-RawHOCR <- sear:::read_hocr(F07bin)
+hocr_raw <- sear:::read_hocr(F07bin)
 # Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
-TimeIndex <- purrr::map(
-  .x = RawHOCR,
+timeIndex <- purrr::map(
+  .x = hocr_raw,
   ~ clock::date_time_parse(
     paste0(ymd("20220707"), " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC"
   )
 )
 
-TimeInt <- list(
+timeInt <- list(
   interval(ymd_hms("2022-07-07 19:26:04"), ymd_hms("2022-07-07 19:38:31"))
 )
 
-trim_hocr(If = F07bin, Of = F07out, TimeIndex, TimeInt)
+trim_hocr(If = F07bin, Of = F07out, timeIndex, timeInt)
 
 ######### F08
 
@@ -380,26 +380,26 @@ trim_hocr(If = F07bin, Of = F07out, TimeIndex, TimeInt)
 F08bin <- file.path(full, "DATA_20220708_165254.bin")
 F08out <- file.path(reduced, "DATA_20220708_165254.bin")
 
-RawHOCR <- sear:::read_hocr(F08bin)
+hocr_raw <- sear:::read_hocr(F08bin)
 # Invalid HOCR packets detected and removed: 17
 # 84409 - 17 - 1 = 84391 yeah !
 
-TimeIndex <- purrr::map(
-  .x = RawHOCR,
+timeIndex <- purrr::map(
+  .x = hocr_raw,
   ~ clock::date_time_parse(
     paste0(ymd("20220708"), " ", hms::as_hms(.x$gpstime / 1000)),
     zone = "UTC"
   )
 )
 
-TimeInt <- list(
+timeInt <- list(
   interval(ymd_hms("2022-07-08 19:10:42"), ymd_hms("2022-07-08 19:14:52")),
   interval(ymd_hms("2022-07-08 19:36:28"), ymd_hms("2022-07-08 19:39:19")),
   interval(ymd_hms("2022-07-08 20:47:42"), ymd_hms("2022-07-08 20:50:10")),
   interval(ymd_hms("2022-07-08 20:53:44"), ymd_hms("2022-07-08 20:56:34"))
 )
 
-trim_hocr(If = F08bin, Of = F08out, TimeIndex, TimeInt)
+trim_hocr(If = F08bin, Of = F08out, timeIndex, timeInt)
 ```
 
 # UI
@@ -410,7 +410,7 @@ The UI use the 'norwegian blue' (The dead parrot) #4f89b0, rgb(79, 137, 176) as 
 
 ## Project workflow
 
-The first step to work with `sear` is to select a project folder. A project folder is identified by the presence of a `.searproj` file, this file additionally contain relevant metadata such as the project path, date of creation and last update. Other useful information could be added.
+The first step to work with `sear` is to select a project folder. a project folder is identified by the presence of a `.searproj` file, this file additionally contain relevant metadata such as the project path, date of creation and last update. Other useful information could be added.
 If the selected folder does not contains `.searproj` file, one is created. The root of the project is set as the folder in which this file live.
 
 The app will also look for folder and data files to re-initiate the app state as it was in the last processing save.
@@ -419,7 +419,7 @@ The app will also look for folder and data files to re-initiate the app state as
 
 ### MTE data logger
 
-If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw MTE files (.bin and .txt) are saved in `.sear/data/raw`. On load, the app will parse and save the resulting applanix data, HOCR packet, HOCR dark packet, HOCR Time index, SBE19, SeaOwl and BBFL2 in `.sear/data/parsed`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time (~2/3 min for .bin = 46 MB).
+If no data where previously loaded, you need to provide some to the app. For now, only data from MTE datalogger can be parsed to populate the app. The raw MTE files (.bin and .txt) are saved in `.sear/data/raw`. On load, the app will parse and save the resulting applanix data, HOCR packet, HOCR dark packet, HOCR time index, SBE19, SeaOwl and BBFL2 in `.sear/data/parsed`. This allow to save considerable time when re-opening the app as the bulk files are quite large and parsing them take time (~2/3 min for .bin = 46 MB).
 If parsed data is already present, it will be read at the project selection.
 
 When starting the MTE DataLogger wait to recieve the NMEA \$UTC string to synchronize itself with that time before starting logging. The time difference between the DataLogger time and \$xxGGA is about ~10 milliseconds.
@@ -430,7 +430,7 @@ the time stamp of the DataLogger is given with millisecond precision.
 We can create a MainLog whose time will be use as coordinate for every measurments.
 Considering the output rate of the NMEA strings, rounding the time at the second seem appropriate.
 
-Rounding might be enough, but strict checking seems a good idea. The function `unique_datetime_second` does that.
+Rounding might be enough, but strict checking seems a good idea. The function `unique_date_time_second` does that.
 
 #### HOCR specific files
 
@@ -452,17 +452,17 @@ TODO: Create a processing pipeline for the hydroball WISE-Man 2019 setup.
 
 ### MainLog
 
-When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `DataParsed`), a data synthesis is calculated from the `DateTime` values of each instrument. As this per-row operation takes time, `MainLog` is saved under `.sear/data/parsed/main_log_[:digit:]{8}_[:digit:]{6}.csv`.
+When parsed data is loaded in the app, the `MainLog` is populated from the positioning system of the instruments package. For now only the SeaDoo Applanix can populate the `MainLog`. During the `MainLog` population (event dependent on `DataParsed`), a data synthesis is calculated from the `date_time` values of each instrument. As this per-row operation takes time, `MainLog` is saved under `.sear/data/parsed/main_log_[:digit:]{8}_[:digit:]{6}.csv`.
 
 TODO: could be improved by computing only for the new piece of Apla data that is added (but still on the complete time index of instrument) or could filter the time index of instrument by the interval of min and max time of the new piece of apla !
 
 NEW: The `half_time` algorithm try to improve computation time.
 It slice the time vector by half on each iteration and match to any near
-4 or less remaining DateTime.
+4 or less remaining date_time.
 
 ```{r}
-x <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by = 1)
-y <- seq(as_datetime("2014-01-13 00:00:01"), as_datetime("2014-01-13 23:59:59"), by = 0.1)
+x <- seq(as_date_time("2014-01-13 00:00:01"), as_date_time("2014-01-13 23:59:59"), by = 1)
+y <- seq(as_date_time("2014-01-13 00:00:01"), as_date_time("2014-01-13 23:59:59"), by = 0.1)
 
 data_synthesis_any_near <- function(x, y, tol = 3) {
   purrr::map_lgl(
@@ -518,9 +518,9 @@ TODO: List the required and optional NMEA string that sear will use.
 *GPGGA
 *GPVTG
 
-### DateTime filtering
+### date_time filtering
 
-DateTime classe is huge to store as is. As number of second since origin it is up to 100 times smaller.
+date_time classe is huge to store as is. As number of second since origin it is up to 100 times smaller.
 
 
 
@@ -532,19 +532,19 @@ DateTime classe is huge to store as is. As number of second since origin it is u
 
 ### Azimuth polar plot
 
-**MANDATORY**: boat azimuth can be taken from the appropriate VTG NMEA string, or could be computed from GGA from two Lon Lat points ?
+**MANDATORY**: boat azimuth can be taken from the appropriate VTG NMEA string, or could be computed from GGA from two lon lat points ?
 
 First compute the sun azimuth.
 
 ```{r}
-# Apla <- Apla %>% rename(date = DateTime, lat = Lat_DD, lon = Lon_DD)
+# Apla <- Apla %>% rename(date = date_time, lat = lat_dd, lon = lon_dd)
 #
 # # Solar altitude above the horizon in radian and azimuth in radian from south to west
 # PosSol <- suncalc::getSunlightPosition(data = Apla, keep = c("altitude", "azimuth"))
 #
 # Apla <- left_join(Apla, PosSol, by = c("date", "lat", "lon")) %>%
-#   rename(DateTime = date, Lat_DD = lat, Lon_DD = lon, SolAzm = azimuth, SolAlt = altitude) %>%
-#   mutate(SolAzm = SolAzm * 180/pi + 180, # convert rad to degree and shift to north reference
+#   rename(date_time = date, lat_dd = lat, lon_dd = lon, sol_azi = azimuth, SolAlt = altitude) %>%
+#   mutate(sol_azi = sol_azi * 180/pi + 180, # convert rad to degree and shift to north reference
 #          SolAlt = SolAlt * 180/pi)
 ```
 
@@ -553,10 +553,10 @@ Take the boat azimuth (relative to true north) from the applanix, then subtract 
 ```{r}
 Station1PaP <- interval(ymd_hms("2021-11-11 17:50:31"), ymd_hms("2021-11-11 17:50:40"))
 
-temp <- Apla %>% filter(DateTime %within% Station1PaP)
+temp <- Apla %>% filter(date_time %within% Station1PaP)
 
 # Apla <- Apla %>% mutate(
-#   BoatSolAzm = SolAzm-Course_TN
+#   boat_raa = sol_azi-course_tn
 # )
 
 m <- list(
@@ -570,8 +570,8 @@ m <- list(
 temp %>%
   plot_ly(
     type = "scatterpolar",
-    r = ~Speed_N,
-    Theta = ~BoatSolAzm,
+    r = ~speed_kn,
+    Theta = ~boat_raa,
     mode = "markers"
   ) %>%
   layout(
@@ -579,18 +579,18 @@ temp %>%
     margin = m,
     polar = list(
       angularaxis = list(
-        # rotation = ~mean(Course_TN, na.rm = T)+90,
+        # rotation = ~mean(course_tn, na.rm = T)+90,
         direction = "clockwise"
       )
     )
   )
 ```
 
-### Pitch and roll
+### pitch and roll
 
 *Mandatory*
 
-Pitch and Roll are taken from the PASHR NMEA string of the Aplanix.
+pitch and roll are taken from the PASHR NMEA string of the Aplanix.
 The PASHR string appear to be recorded at 1 Hz, therfore fixing the time limit for any further analysis.
 
 ```{r}
@@ -601,8 +601,8 @@ SQLDemo <- DBI::dbConnect(
 ```
 
 ```{sql, connection=SQLDemo, output.var = "SQLDemo"}
-SELECT MetadataL1b.DateTime, MetadataL1b.Lon, MetadataL1b.Lat, Speed, SolZen, SolAzm, BoatSolAzm, Roll, Pitch, Heading, Heave, Instrument, SN, ID, Type, Wavelength, Channels, MetadataL1b.UUID FROM MetadataL1b
-LEFT JOIN HOCRL1b ON MetadataL1b.UUID = HOCRL1b.UUID
+SELECT metadata_l1b.date_time, metadata_l1b.lon, metadata_l1b.lat, Speed, sol_zen, sol_azi, boat_raa, roll, pitch, heading, heave, instrument, sn, id, type, wavelength, channel, metadata_l1b.uuid_l2 FROM metadata_l1b
+LEFT JOIN hocr_l1b ON metadata_l1b.uuid_l2 = hocr_l1b.uuid_l2
 ```
 
 ```{r}
@@ -613,26 +613,26 @@ library(viridis)
 
 test <- SQLDemo %>%
   filter(
-    Pitch < 10,
-    Roll < 10,
-    !is.na(Channels),
-    date(DateTime) == "2022-07-08", # UUID == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7",
-    Type == "LU", Wavelength == 580.44
+    pitch < 10,
+    roll < 10,
+    !is.na(channel),
+    date(date_time) == "2022-07-08", # uuid_l2 == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7",
+    type == "LU", wavelength == 580.44
   ) %>%
-  # filter(Type == "LU" & Wavelength == 580.44 & UUID == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7") %>%
+  # filter(type == "LU" & wavelength == 580.44 & uuid_l2 == "b7b6ab30-63e4-11ee-b767-3cf011fcb4b7") %>%
   mutate(
-    # Pitch = -Pitch, # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
-    # Roll = -Roll,
+    # pitch = -pitch, # negate pitch nd roll to swhicth between Apllanix coordinate system and Plotly
+    # roll = -roll,
     # Convert sun azimuth and zenith angles to Cartesian coordinates
-    Solx = sin((90 - SolZen) * pi / 180) * cos(SolAzm * pi / 180),
-    Soly = sin((90 - SolZen) * pi / 180) * sin(SolAzm * pi / 180),
-    Solz = cos((90 - SolZen) * pi / 180),
-    x1 = sin(Heading * pi / 180) * cos(Pitch * pi / 180),
-    y1 = sin(Heading * pi / 180) * sin(Pitch * pi / 180),
-    z1 = sin(Pitch * pi / 180),
-    Phi = Roll * pi / 180,
-    Theta = Pitch * pi / 180,
-    Psi = Heading * pi / 180
+    Solx = sin((90 - sol_zen) * pi / 180) * cos(sol_azi * pi / 180),
+    Soly = sin((90 - sol_zen) * pi / 180) * sin(sol_azi * pi / 180),
+    Solz = cos((90 - sol_zen) * pi / 180),
+    x1 = sin(heading * pi / 180) * cos(pitch * pi / 180),
+    y1 = sin(heading * pi / 180) * sin(pitch * pi / 180),
+    z1 = sin(pitch * pi / 180),
+    Phi = roll * pi / 180,
+    Theta = pitch * pi / 180,
+    Psi = heading * pi / 180
   )
 ```
 
@@ -816,7 +816,7 @@ PolarSphere <- polar_sphere(radius = 1, n = 46)
 rotate_body_frame <- function(heading, pitch, roll) {
   # Convert angles from degrees to radians
   heading_rad <- heading * pi / 180
-  pitch_rad <- -pitch * pi / 180 # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
+  pitch_rad <- -pitch * pi / 180 # negate pitch nd roll to swhicth between Apllanix coordinate system and Plotly
   roll_rad <- -roll * pi / 180
 
   # Create the rotation matrices
@@ -824,7 +824,7 @@ rotate_body_frame <- function(heading, pitch, roll) {
   rotation_y <- matrix(c(cos(pitch_rad), 0, -sin(pitch_rad), 0, 1, 0, sin(pitch_rad), 0, cos(pitch_rad)), nrow = 3)
   rotation_x <- matrix(c(1, 0, 0, 0, cos(roll_rad), sin(roll_rad), 0, -sin(roll_rad), cos(roll_rad)), nrow = 3)
 
-  # Rotate the body frame in the correct order: Z (Yaw) -> Y (Pitch) -> X (Roll)
+  # Rotate the body frame in the correct order: Z (Yaw) -> Y (pitch) -> X (roll)
   rotation_matrix <- rotation_z %*% rotation_y %*% rotation_x
 
   # Original body frame vectors (x, y, z)
@@ -849,15 +849,15 @@ rotate_body_frame <- function(heading, pitch, roll) {
 
 test <- test %>%
   mutate(
-    RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_body_frame)
+    rotated_body = purrr::pmap(list(heading, pitch, roll), rotate_body_frame)
   ) %>%
-  unnest(cols = c(RotatedBody))
+  unnest(cols = c(rotated_body))
 
 # Function to rotate a point using Tait-Bryan angles
 rotate_point <- function(point, heading, pitch, roll) {
   # Convert angles from degrees to radians
   heading_rad <- heading * pi / 180
-  pitch_rad <- -pitch * pi / 180 # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
+  pitch_rad <- -pitch * pi / 180 # negate pitch nd roll to swhicth between Apllanix coordinate system and Plotly
   roll_rad <- -roll * pi / 180
 
   # Create the rotation matrices
@@ -865,7 +865,7 @@ rotate_point <- function(point, heading, pitch, roll) {
   rotation_y <- matrix(c(cos(pitch_rad), 0, -sin(pitch_rad), 0, 1, 0, sin(pitch_rad), 0, cos(pitch_rad)), nrow = 3)
   rotation_x <- matrix(c(1, 0, 0, 0, cos(roll_rad), sin(roll_rad), 0, -sin(roll_rad), cos(roll_rad)), nrow = 3)
 
-  # Rotate the body frame in the correct order: Z (Yaw) -> Y (Pitch) -> X (Roll)
+  # Rotate the body frame in the correct order: Z (Yaw) -> Y (pitch) -> X (roll)
   rotated_point <- rotation_z %*% rotation_y %*% rotation_x %*% point
 
   rotated_point <- as_tibble(rotated_point) %>%
@@ -892,7 +892,7 @@ test <- test %>%
 
 test <- test %>%
   mutate(
-    RotatedPoint = purrr::pmap(list(EsPoint, Heading, Pitch, Roll), rotate_point)
+    RotatedPoint = purrr::pmap(list(EsPoint, heading, pitch, roll), rotate_point)
   ) %>%
   unnest(cols = c(RotatedPoint))
 ```
@@ -906,21 +906,21 @@ fig <- test %>%
     x = ~Zy,
     z = ~Zz,
     symbol = "triangle-up-open",
-    color = ~Channels,
+    color = ~channel,
     colors = inferno(200),
     marker = list(
       size = 5
     ),
     text = ~ paste0(
-      "<b>Heading</b>: ", Heading, "<br>",
-      "<b>Pitch</b>: ", Pitch, "<br>",
-      "<b>Roll</b>: ", Roll, "<br>",
-      "<b>SolZen</b>: ", SolZen, "<br>",
-      "<b>Channels</b>: ", Channels, "<br>"
+      "<b>heading</b>: ", heading, "<br>",
+      "<b>pitch</b>: ", pitch, "<br>",
+      "<b>roll</b>: ", roll, "<br>",
+      "<b>sol_zen</b>: ", sol_zen, "<br>",
+      "<b>channel</b>: ", channel, "<br>"
     )
   ) %>%
   add_markers(
-    name = "Heading",
+    name = "heading",
     y = ~Xx, # reverse x and y to shift between applanix coordinate system and plotly
     x = ~Xy,
     z = ~Xz,
@@ -933,11 +933,11 @@ fig <- test %>%
       )
     ),
     text = ~ paste0(
-      "<b>Heading</b>: ", Heading, "<br>",
-      "<b>Pitch</b>: ", Pitch, "<br>",
-      "<b>Roll</b>: ", Roll, "<br>",
-      "<b>SolZen</b>: ", SolZen, "<br>",
-      "<b>Channels</b>: ", Channels, "<br>"
+      "<b>heading</b>: ", heading, "<br>",
+      "<b>pitch</b>: ", pitch, "<br>",
+      "<b>roll</b>: ", roll, "<br>",
+      "<b>sol_zen</b>: ", sol_zen, "<br>",
+      "<b>channel</b>: ", channel, "<br>"
     )
   ) %>%
   add_markers(
@@ -945,13 +945,13 @@ fig <- test %>%
     y = ~Solx,
     x = ~Soly,
     z = ~Solz,
-    # color = ~SolZen,
+    # color = ~sol_zen,
     # colors = inferno(200),
     text = ~ paste0(
-      "<b>SolAzm</b>: ", SolAzm, "<br>",
-      "<b>SolZen</b>: ", SolZen, "<br>",
-      "<b>DateTime</b>: ", DateTime, "<br>",
-      "<b>BoatSolAzm</b>: ", BoatSolAzm, "<br>"
+      "<b>sol_azi</b>: ", sol_azi, "<br>",
+      "<b>sol_zen</b>: ", sol_zen, "<br>",
+      "<b>date_time</b>: ", date_time, "<br>",
+      "<b>boat_raa</b>: ", boat_raa, "<br>"
     ),
     marker = list(
       color = "rgb(253, 184, 19)",
@@ -1062,7 +1062,7 @@ sol_direction_body <- function(RotationMatrixBody, Solx, Soly, Solz) {
 
 test <- test %>%
   mutate(
-    RotationMatrixBody = pmap(list(Roll, Pitch, Heading), tait_bryan_to_rotation_matrix),
+    RotationMatrixBody = pmap(list(roll, pitch, heading), tait_bryan_to_rotation_matrix),
     SolDirectionBody = pmap(list(RotationMatrixBody, Solx, Soly, Solz), sol_direction_body)
   ) %>%
   unnest(cols = c(SolDirectionBody))
@@ -1071,9 +1071,9 @@ test <- test %>%
 
 
 
-## Instruments selection and processing
+## instruments selection and processing
 
-Instrument available to process are detected from the loaded files. For now the processing is tailored to the SeaDoo configuration.
+instrument available to process are detected from the loaded files. For now the processing is tailored to the SeaDoo configuration.
 
 *NEED* think about generalization of processing with different instruments configuration. 
 usage of \*.con files (similar to ProSoft) ?
@@ -1086,14 +1086,14 @@ Clouds percentage, Wind speed in the area (?) as metadata ?
 # Automatic processing
 
 As the quantity of data acquired in continuous acquisition quickly become large, it is necessary to automatize the processing. Full automation is of course possible and in this case, the interactivity offered by *sear* would not matter much. However I think that the analyst need's to keep an eye (or at least be able to) on the data. Therefore the goals of this section are threefold:
-* Developing the logic for automatic processing, from L1 to L2 including QC
+* Developing the logic for automatic processing, from L1 to L2 including qc
 * Preserving the analyst ability to judge things and to interact with the data
 * Maintaining data consistency through and within the interaction of the human and the computer.
 
-## Time is of the essence
+## time is of the essence
 
 The algorithmic logic for the discretization based on time slicing is as follow:
-1. Start from the first `DateTime` (x) take the next `DateTime` (y), with a minimum of three seconds difference.
+1. Start from the first `date_time` (x) take the next `date_time` (y), with a minimum of three seconds difference.
 2. If y is more than ten seconds away replace x by y+1 and start over at step 1
 3. Try to process with that time `interval(x, y)`
 4. If there is not enough data (HOCR), add +1 second to y and retry step 3.
@@ -1102,19 +1102,19 @@ The algorithmic logic for the discretization based on time slicing is as follow:
 *TODO* check inclusive exclusive intervals ends.
 
 ```{r}
-discretize_time <- function(MainTime) {
+discretize_time <- function(Maintime) {
   i <- 1
   j <- 1
   while (T) {
-    if (length(MainTime) < i + 1) {
+    if (length(Maintime) < i + 1) {
       print("This is the end")
       break
     }
 
     j <- i
 
-    x <- MainTime[i]
-    y <- MainTime[j + 1]
+    x <- Maintime[i]
+    y <- Maintime[j + 1]
 
     if (interval(x, y) > seconds(10)) {
       i <- j + 1
@@ -1123,13 +1123,13 @@ discretize_time <- function(MainTime) {
 
     # Step 1, iter until interval < 3 sec
     while (interval(x, y) < seconds(3)) {
-      if (length(MainTime) < j + 1) {
+      if (length(Maintime) < j + 1) {
         print("This is the end")
         break
       }
 
       j <- j + 1
-      y <- MainTime[j]
+      y <- Maintime[j]
     }
 
     # At this point. this should always be true
@@ -1142,7 +1142,7 @@ discretize_time <- function(MainTime) {
   }
 }
 
-discretize_time(MainTime = MainLog$DateTime)
+discretize_time(Maintime = MainLog$date_time)
 ```
 
 
@@ -1150,7 +1150,7 @@ discretize_time(MainTime = MainLog$DateTime)
 
 ## golem organization
 
-This shiny app is becoming quite large. A clear organisation is the key to development and maintenance, golem is here to help in this task.
+This shiny app is becoming quite large. a clear organisation is the key to development and maintenance, golem is here to help in this task.
 
 * fct_ : files containing the function of the app, they defined the data parsing, tidying and computation logic.
 * mod_ : files containing both frontend (`_ui` function) and backend (`_server` function) shiny logic. Inputs, reactive value, observer and consumer are defined here.
@@ -1183,15 +1183,15 @@ Adapted from: https://stackoverflow.com/questions/4253804/how-do-i-add-a-new-col
 Create new table with the added column, here Rrs_loess KLu_loess, RbI
 ```{sql}
 CREATE TABLE NewHOCRL2 (
-  `Wavelength` REAL,
+  `wavelength` REAL,
   `Rrs` REAL,
   `Rrs_loess` REAL,
   `KLu` REAL,
   `KLu_loess` REAL,
   `RbI` REAL,
-  `UUID` TEXT,
-  FOREIGN KEY (UUID)
-    REFERENCES Metadata (UUID)
+  `uuid_l2` TEXT,
+  FOREIGN KEY (uuid_l2)
+    REFERENCES Metadata (uuid_l2)
     ON DELETE CASCADE
 );
 ```
@@ -1199,45 +1199,45 @@ CREATE TABLE NewHOCRL2 (
 Insert the old data in the new table
 ```{sql}
 INSERT INTO NewHOCRL2 (
-  `Wavelength`,
+  `wavelength`,
   `Rrs`,
   `Rrs_loess`,
   `KLu`,
   `KLu_loess`,
-  `UUID`
+  `uuid_l2`
 ) SELECT   
-  `Wavelength`,
+  `wavelength`,
   `Rrs`,
   `Rrs_loess`,
   `KLu`,
   `KLu_loess`,
-  `UUID`
-FROM HOCRL2;
+  `uuid_l2`
+FROM hocr_l2;
 ```
 
 *Check that the insertion is correct*
 Delete the old table.
 ```{sql}
-DROP TABLE HOCRL2;
+DROP TABLE hocr_l2;
 ```
 
 Rename the new table.
 ```{sql}
-ALTER TABLE NewHOCRL2 RENAME TO HOCRL2;
+ALTER TABLE NewHOCRL2 RENAME TO hocr_l2;
 ```
 
 # SQLite frontend
 
 ## Save
 
-When an `UUID` already exist and the `Save` button is pressed, the records in the SQLite DB are uptaded. For the `Metadata` table, the following fields are updated:
-* `Comment`
-* `ProTime`
-* `Analyst`
-* `Mail`
+When an `uuid_l2` already exist and the `Save` button is pressed, the records in the SQLite DB are uptaded. For the `Metadata` table, the following fields are updated:
+* `comment`
+* `date_time_processing`
+* `analyst`
+* `mail`
 
-For the `HOCRL1b` table only the `QC` field is updated, it is uniquely identified by the (UUID, ID) pair. THIS PAIR IS NOT A PRIMARY KEY as it doesn't uniquely identifies the entry of the table. The PRIMARY KEY of the HOCRL1b table is (UUID, ID, SN, Wavelength).
-QUESTION: Would it be relevant to separate the `QC` in it's own table ?
+For the `hocr_l1b` table only the `qc` field is updated, it is uniquely identified by the (uuid_l2, id) pair. THIS PAIR IS NOT a PRIMARY KEY as it doesn't uniquely identifies the entry of the table. The PRIMARY KEY of the hocr_l1b table is (uuid_l2, id, sn, wavelength).
+QUESTION: Would it be relevant to separate the `qc` in it's own table ?
 
 When the `Save` button is pressed, feedback is given to the user in the form of a `session$sendCustomMessage`.
 
@@ -1246,4 +1246,4 @@ Whith
 
 ## Delete
 
-When the delete button is pressed, if the active data point (station) has an `UUID`, it's suppressed in the `Metadata` table. As the FOREIGN KEY constraint is activated in the DB schema (`PRAGMA foreign_keys=ON`) and `HOCRL1b` and `HOCRL2` are child table build with the `ON DELETE CASCADE` constraints, matching record are automatically deleted.
+When the delete button is pressed, if the active data point (station) has an `uuid_l2`, it's suppressed in the `Metadata` table. As the FOREIGN KEY constraint is activated in the DB schema (`PRAGMA foreign_keys=ON`) and `hocr_l1b` and `hocr_l2` are child table build with the `ON DELETE CASCADE` constraints, matching record are automatically deleted.

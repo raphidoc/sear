@@ -1,6 +1,6 @@
 #' obs_seaowl UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -10,7 +10,7 @@
 mod_L1L2_seaowl_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    plotlyOutput(ns("SeaOWLL1b")),
+    plotlyOutput(ns("seaowl_l1b")),
     actionButton(ns("ProcessL2"), "Process L2"),
     DT::DTOutput(ns("DataTable"))
   )
@@ -23,10 +23,10 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    output$SeaOWLL1b <- renderPlotly({
+    output$seaowl_l1b <- renderPlotly({
       validate(need(nrow(Obs$SeaOWL$L1b) != 0, "No L1b data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
+      PlyFont <- list(family = "times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -43,17 +43,17 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
         mutate(
           Plot = purrr::map2(
             .x = Data,
-            .y = Parameter,
+            .y = parameter,
             ~ plot_ly(
               .x,
-              text = ~ID,
-              customdata = ~ paste0(.y, "_", ID)
+              text = ~id,
+              customdata = ~ paste0(.y, "_", id)
             ) %>%
               add_markers(
-                x = ~ ymd_hms(DateTime),
-                y = ~Value,
+                x = ~ ymd_hms(date_time),
+                y = ~value,
                 showlegend = F,
-                color = ~QC,
+                color = ~qc,
                 colors = c("1" = "seagreen", "0" = "red")
               ) %>%
               layout(
@@ -67,19 +67,19 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
         event_register("plotly_click")
 
       # Set source for selection event
-      p$x$source <- "SeaOWLL1b"
+      p$x$source <- "seaowl_l1b"
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
     })
 
     observeEvent(
-      event_data("plotly_click", source = "SeaOWLL1b"),
-      label = "QC SeaOWL",
+      event_data("plotly_click", source = "seaowl_l1b"),
+      label = "qc SeaOWL",
       ignoreInit = TRUE,
       {
         Selected <- stringr::str_split_fixed(
-          event_data("plotly_click", source = "SeaOWLL1b")$customdata,
+          event_data("plotly_click", source = "seaowl_l1b")$customdata,
           "_(?=[:digit:]{1,}?$)",
           n = 2
         )
@@ -90,7 +90,7 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
         Obs$SeaOWL$L1b <- Obs$SeaOWL$L1b %>%
           mutate(
             Data = purrr::map2(
-              .x = Parameter,
+              .x = parameter,
               .y = Data,
               ~ if (.x == SelParam) {
                 qc_shift(.y, SelID)
@@ -138,8 +138,8 @@ mod_L1L2_seaowl_server <- function(id, Obs) {
             selection = "none",
             editable = F
           ) %>%
-          DT::formatRound(c("VSF_700"), digits = 5) %>%
-          DT::formatRound(c("Chl", "FDOM"), digits = 3)
+          DT::formatRound(c("vsf_700"), digits = 5) %>%
+          DT::formatRound(c("chl", "fdom"), digits = 3)
       },
       server = FALSE,
       editable = F

@@ -1,7 +1,7 @@
 ---
 title: "processing_bbfl2"
 output: html_document
-date: "`r Sys.Date()`"
+date: "`r Sys.date()`"
 ---
 
 ```{r setup, include=FALSE}
@@ -36,28 +36,28 @@ DataFile <- sear:::app_sys("extdata", "DATA_20220705_105732.txt")
 
 MTELog <- sear:::read_mtelog(DataFile)
 
-MTELog <- MTELog %>% filter(DateTime %within% Station)
+MTELog <- MTELog %>% filter(date_time %within% Station)
 
-BBFL2Data <- sear:::read_bbfl2(MTELog)
+BBFl2_data <- sear:::read_bbfl2(MTELog)
 ```
 
 ## Calibrate data
 
 ```{r}
-cal_bbfl2 <- function(BBFL2Data, BBFL2Cal) {
-  BBFL2Data %>%
+cal_bbfl2 <- function(BBFl2_data, BBFL2Cal) {
+  BBFl2_data %>%
     mutate(
-      NTU = BBFL2Cal$NTUScaleFactor * (NTUSig - BBFL2Cal$NTUDarkCounts),
-      PE = BBFL2Cal$PEScaleFactor * (PESig - BBFL2Cal$PEDarkCounts),
-      PC = BBFL2Cal$PCScaleFactor * (PCSig - BBFL2Cal$PCDarkCounts)
+      NTU = BBFL2Cal$ntu_scale_factor * (ntu_channel - BBFL2Cal$ntu_dark_count),
+      PE = BBFL2Cal$pe_scale_factor * (pe_channel - BBFL2Cal$pe_dark_count),
+      PC = BBFL2Cal$pc_scale_factor * (pc_channel - BBFL2Cal$pc_dark_count)
     ) %>%
-    select(DateTime, NTU, PE, PC)
+    select(date_time, NTU, PE, PC)
 }
 
-BBFL2L1b <- cal_bbfl2(BBFL2Data, BBFL2Cal) %>%
+bbfl2_l1b <- cal_bbfl2(BBFl2_data, BBFL2Cal) %>%
   mutate(
-    ID = seq_along(rownames(BBFL2Data)),
-    QC = "1"
+    id = seq_along(rownames(BBFl2_data)),
+    qc = "1"
   )
 ```
 
@@ -66,17 +66,17 @@ BBFL2L1b <- cal_bbfl2(BBFL2Data, BBFL2Cal) %>%
 ### L1b
 
 ```{r}
-BBFL2L1bNest <- BBFL2L1b %>%
+BBFL2L1bNest <- bbfl2_l1b %>%
   pivot_longer(
     cols = any_of(c("NTU", "PE", "PC")),
-    names_to = "Parameter",
-    values_to = "Value"
+    names_to = "parameter",
+    values_to = "value"
   ) %>%
-  group_by(Parameter) %>%
-  nest(Data = !matches("Parameter"))
+  group_by(parameter) %>%
+  nest(Data = !matches("parameter"))
 
 
-PlyFont <- list(family = "Times New Roman", size = 18)
+PlyFont <- list(family = "times New Roman", size = 18)
 BlackSquare <- list(
   type = "rect",
   fillcolor = "transparent",
@@ -92,9 +92,9 @@ BlackSquare <- list(
 
 ply <- BBFL2L1bNest %>%
   mutate(
-    Plot = purrr::map2(.x = Data, .y = Parameter, ~
-      plot_ly(.x, text = ~ID) %>%
-        add_markers(x = ~DateTime, y = ~Value) %>%
+    Plot = purrr::map2(.x = Data, .y = parameter, ~
+      plot_ly(.x, text = ~id) %>%
+        add_markers(x = ~date_time, y = ~value) %>%
         layout(
           shapes = BlackSquare,
           yaxis = list(title = list(text = .y))
@@ -102,7 +102,7 @@ ply <- BBFL2L1bNest %>%
   )
 
 
-# format(SBE19nest[[2]][[1]]$DateTime, "%Y-%m-%d %H:%M:%OS3")
+# format(SBE19nest[[2]][[1]]$date_time, "%Y-%m-%d %H:%M:%OS3")
 
 subplot(ply$Plot, nrows = nrow(BBFL2L1bNest), shareX = TRUE, titleY = TRUE)
 ```

@@ -1,6 +1,6 @@
 #' L1L2_obs UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -25,7 +25,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
 
     # Tab panel ---------------------------------------------------------------
     output$TabPanel <- renderUI({
-      req(nrow(Obs$MetadataL2) != 0)
+      req(nrow(Obs$metadata_l2) != 0)
 
       tabsetPanel(
         id = ns("Tabset"),
@@ -36,7 +36,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
         ),
         tabPanel(
           "HOCR",
-          mod_L1L2_hocr_ui(ns("L1L2_hocr"))
+          mod_L1hocr_l2_ui(ns("L1hocr_l2"))
         ),
         tabPanel(
           "SBE19",
@@ -84,7 +84,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
     # DataTable used to display Obs information
     output$DataTable <- DT::renderDT(
       DT::datatable(
-        Obs$MetadataL2,
+        Obs$metadata_l2,
         extensions = c("Buttons", "Scroller", "Select"),
         # filter = "top",
         escape = TRUE, rownames = FALSE,
@@ -97,7 +97,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           columnDefs = list(
             list(
               visible = FALSE,
-              targets = str_which(colnames(Obs$MetadataL2), "\\b(?!Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch)\\b\\S+") - 1
+              targets = str_which(colnames(Obs$metadata_l2), "\\b(?!Speed|distance_run|sol_zen|boat_raa|roll|pitch)\\b\\S+") - 1
             )
           ),
           deferRender = TRUE,
@@ -109,7 +109,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
         editable = F
       ) %>%
         DT::formatRound(
-          columns = as.character(na.omit(str_extract(colnames(Obs$MetadataL2), "Speed|DistanceRun|SolZen|BoatSolAzm|Roll|Pitch"))),
+          columns = as.character(na.omit(str_extract(colnames(Obs$metadata_l2), "Speed|distance_run|sol_zen|boat_raa|roll|pitch"))),
           digits = 2
         ),
       server = FALSE,
@@ -120,8 +120,8 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
       tagList(
         DT::DTOutput(ns("DataTable")),
         textAreaInput(
-          ns("Comment"),
-          "Comment",
+          ns("comment"),
+          "comment",
           value = "No comment",
           width = NULL,
           height = NULL,
@@ -137,13 +137,13 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
     observeEvent(
       input$Save,
       {
-        Obs$MetadataL2 <- Obs$MetadataL2 %>% mutate(Comment = input$Comment)
+        Obs$metadata_l2 <- Obs$metadata_l2 %>% mutate(comment = input$comment)
       }
     )
 
     # HOCR tab ----------------------------------------------------------------
 
-    mod_L1L2_hocr_server("L1L2_hocr", Obs, Settings)
+    mod_L1hocr_l2_server("L1hocr_l2", Obs, Settings)
 
     # SBE19 tab ---------------------------------------------------------------
 
@@ -177,7 +177,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
       # Save = reactive(input$Save),
       # Delete = reactive(input$Delete)
       # ObsTbl = ObsTbl,
-      # HOCR = HOCRL2
+      # HOCR = hocr_l2
     )
   })
 }

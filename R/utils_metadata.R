@@ -8,12 +8,12 @@
 #'
 #' @param tol allowed time difference (+-)
 #'
-#' @return A logical vector (T/F),
+#' @return a logical vector (T/F),
 #'
 #' @export
 
 data_synthesis <- function(x, y, tol = 3) {
-  # as.POSIXct(y, tz = "UTC")
+  # as.POSIXct(y, tz = "utc")
 
   # Recursive time matching algorithm splicing in half each time
   half_life <- function(x, y, tol = tol) {
@@ -43,25 +43,25 @@ data_synthesis <- function(x, y, tol = 3) {
 
 #' discretize_time
 #'
-#' @description A utils function
+#' @description a utils function
 #'
 #' @return The return value, if any, from executing the utility.
 #'
 #' @noRd
 
-discretize_time <- function(MainTime) {
+discretize_time <- function(Maintime) {
   i <- 1
   j <- 1
   while (T) {
-    if (length(MainTime) < i + 1) {
+    if (length(Maintime) < i + 1) {
       message("This is the end")
       break
     }
 
     j <- i
 
-    x <- MainTime[i]
-    y <- MainTime[j + 1]
+    x <- Maintime[i]
+    y <- Maintime[j + 1]
 
     if (interval(x, y) > seconds(10)) {
       i <- j + 1
@@ -71,13 +71,13 @@ discretize_time <- function(MainTime) {
 
     # Step 1, iter until interval < 3 sec
     while (interval(x, y) < seconds(3)) {
-      if (length(MainTime) < j + 1) {
+      if (length(Maintime) < j + 1) {
         message("This is the end")
         break
       }
 
       j <- j + 1
-      y <- MainTime[j]
+      y <- Maintime[j]
     }
 
     # At this point. this should always be true
@@ -94,7 +94,7 @@ discretize_time <- function(MainTime) {
 #'
 #' @description Make ensemble group by duration from timestamp
 #'
-#' @return A vector of ensemble group
+#' @return a vector of ensemble group
 #'
 #' @noRd
 
@@ -110,125 +110,124 @@ make_ensemble <- function(date_time, duration = 10) {
 #'
 #' @description generate metadata for a discrete obs from MainLog
 #'
-#' @return A tibble with one row and cols:
+#' @return a tibble with one row and cols:
 #' \itemize{
-#'  \item{"DateTime"}{}
-#'  \item{"DateTimeMin"}{}
-#'  \item{"DateTimeMax"}{}
-#'  \item{"TimeElapsed"}{}
-#'  \item{"Lon"}{}
-#'  \item{"Lat"}{}
+#'  \item{"date_time"}{}
+#'  \item{"date_timeMin"}{}
+#'  \item{"date_timeMax"}{}
+#'  \item{"timeElapsed"}{}
+#'  \item{"lon"}{}
+#'  \item{"lat"}{}
 #' }
 #'
 #' @noRd
 
 gen_metadataL2 <- function(metadata, ensemble) {
-  MetadataL2 <- tibble(
+  metadata_l2 <- tibble(
     ensemble = ensemble,
-    DateTime = as.character(format(mean(metadata$DateTime, na.rm = T), "%Y-%m-%d %H:%M:%S")),
-    DateTimeMin = as.character(min(metadata$DateTime, na.rm = T)),
-    DateTimeMax = as.character(max(metadata$DateTime, na.rm = T)),
-    TimeElapsed = as.numeric(interval(DateTimeMin, DateTimeMax)), # in second
-    Speed = as.numeric(mean(metadata$Speed_kmh, na.rm = T)), # speed in kmh
-    Lon = mean(metadata$Lon, na.rm = T),
-    Lat = mean(metadata$Lat, na.rm = T),
-    LonMin = min_geo(metadata$Lon, na.rm = T),
-    LonMax = max_geo(metadata$Lon, na.rm = T),
-    LatMin = min_geo(metadata$Lat, na.rm = T),
-    LatMax = max_geo(metadata$Lat, na.rm = T),
-    DistanceRun = pracma::haversine(c(LatMin, LonMin), c(LatMax, LonMax)) * 1000, # in meter
-    Altitude = mean(as.numeric(metadata$Altitude), na.rm = T),
-    SolZen = mean(metadata$SolZen, na.rm = T),
-    SolAzm = mean(metadata$SolAzm, na.rm = T),
-    BoatSolAzm = mean(metadata$BoatSolAzm, na.rm = T),
-    Roll = mean(metadata$Roll, na.rm = T),
-    Pitch = mean(metadata$Pitch, na.rm = T),
-    Heading = mean(metadata$Heading, na.rm = T),
-    Comment = "NA",
-    UUID = NA
+    date_time = as.character(format(mean(metadata$date_time, na.rm = T), "%Y-%m-%d %H:%M:%S")),
+    date_timeMin = as.character(min(metadata$date_time, na.rm = T)),
+    date_timeMax = as.character(max(metadata$date_time, na.rm = T)),
+    timeElapsed = as.numeric(interval(date_timeMin, date_timeMax)), # in second
+    Speed = as.numeric(mean(metadata$speed_kmh, na.rm = T)), # speed in kmh
+    lon = mean(metadata$lon, na.rm = T),
+    lat = mean(metadata$lat, na.rm = T),
+    lon_min = min_geo(metadata$lon, na.rm = T),
+    lon_max = max_geo(metadata$lon, na.rm = T),
+    lat_min = min_geo(metadata$lat, na.rm = T),
+    lat_max = max_geo(metadata$lat, na.rm = T),
+    distance_run = pracma::haversine(c(lat_min, lon_min), c(lat_max, lon_max)) * 1000, # in meter
+    altitude = mean(as.numeric(metadata$altitude), na.rm = T),
+    sol_zen = mean(metadata$sol_zen, na.rm = T),
+    sol_azi = mean(metadata$sol_azi, na.rm = T),
+    boat_raa = mean(metadata$boat_raa, na.rm = T),
+    roll = mean(metadata$roll, na.rm = T),
+    pitch = mean(metadata$pitch, na.rm = T),
+    heading = mean(metadata$heading, na.rm = T),
+    comment = "NA",
+    uuid_l2 = NA
   )
 
-  MetadataL2 <- MetadataL2 %>%
+  metadata_l2 <- metadata_l2 %>%
     mutate(
-      RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_vessel_frame),
-      .before = Comment
+      rotated_body = purrr::pmap(list(heading, pitch, roll), rotate_vessel_frame),
+      .before = comment
     ) %>%
-    unnest(cols = c(RotatedBody))
+    unnest(cols = c(rotated_body))
 
-  return(MetadataL2)
+  return(metadata_l2)
 }
 
 #' gen_metadataL1b
 #'
 #' @description generate metadata for a discrete obs from MainLog
 #'
-#' @return A tibble with one row and cols:
+#' @return a tibble with one row and cols:
 #' \itemize{
-#'  \item{"DateTime"}{}
-#'  \item{"DateTimeMin"}{}
-#'  \item{"DateTimeMax"}{}
-#'  \item{"TimeElapsed"}{}
-#'  \item{"Lon"}{}
-#'  \item{"Lat"}{}
+#'  \item{"date_time"}{}
+#'  \item{"date_timeMin"}{}
+#'  \item{"date_timeMax"}{}
+#'  \item{"timeElapsed"}{}
+#'  \item{"lon"}{}
+#'  \item{"lat"}{}
 #' }
 #'
 #' @noRd
 
 gen_metadataL1b <- function(metadata, ensemble) {
-  MetadataL1b <- tibble(
+  metadata_l1b <- tibble(
     ensemble = ensemble,
-    DateTime = as.numeric(metadata$DateTime),
-    Speed = as.numeric(metadata$Speed_kmh), # speed in kmh
-    Lon = metadata$Lon,
-    Lat = metadata$Lat,
-    Altitude = as.numeric(metadata$Altitude),
-    SolZen = metadata$SolZen,
-    SolAzm = metadata$SolAzm,
-    BoatSolAzm = metadata$BoatSolAzm,
-    Roll = metadata$Roll,
-    Pitch = metadata$Pitch,
-    Heading = metadata$Heading,
-    UUID = NA
+    date_time = as.numeric(metadata$date_time),
+    Speed = as.numeric(metadata$speed_kmh), # speed in kmh
+    lon = metadata$lon,
+    lat = metadata$lat,
+    altitude = as.numeric(metadata$altitude),
+    sol_zen = metadata$sol_zen,
+    sol_azi = metadata$sol_azi,
+    boat_raa = metadata$boat_raa,
+    roll = metadata$roll,
+    pitch = metadata$pitch,
+    heading = metadata$heading,
+    uuid_l2 = NA
   )
 
-
-  MetadataL1b <- MetadataL1b %>%
+  metadata_l1b <- metadata_l1b %>%
     mutate(
-      RotatedBody = purrr::pmap(list(Heading, Pitch, Roll), rotate_vessel_frame),
-      .before = UUID
+      rotated_body = purrr::pmap(list(heading, pitch, roll), rotate_vessel_frame),
+      .before = uuid_l2
     ) %>%
-    unnest(cols = c(RotatedBody))
+    unnest(cols = c(rotated_body))
 
-  return(MetadataL1b)
+  return(metadata_l1b)
 }
 
 #' qc_shift
 #'
-#' @description shift selected ID between 0 and 1
+#' @description shift selected id between 0 and 1
 #'
-#' @return The original data frame with the selected ID QC value changed
+#' @return The original data frame with the selected id qc value changed
 #'
 #' @noRd
 # qc_shift <- function(df, Selected) {
 #   df %>%
-#     filter(ID == Selected) %>%
-#     mutate(QC = if_else(QC == "1", "0", "1")) %>%
-#     bind_rows(df %>% filter(ID != Selected))
+#     filter(id == Selected) %>%
+#     mutate(qc = if_else(qc == "1", "0", "1")) %>%
+#     bind_rows(df %>% filter(id != Selected))
 # }
 
 qc_shift <- function(df, Selected) {
   df %>%
     mutate(
-      QC = case_when(
-        ID != Selected ~ QC,
-        QC == "1" ~ "0",
-        QC == "0" ~ "1"
+      qc = case_when(
+        id != Selected ~ qc,
+        qc == "1" ~ "0",
+        qc == "0" ~ "1"
       )
     )
 }
 
-#' QWIP: A Quantitative Metric for Quality Control of Aquatic Reflectance
-#' Spectral Shape Using the Apparent Visible Wavelength (Dierssen et al., FRS, 2022)
+#' QWIP: a Quantitative Metric for Quality Control of Aquatic Reflectance
+#' Spectral Shape Using the Apparent Visible wavelength (Dierssen et al., FRS, 2022)
 #'
 #' @description This function calculates the Quality Water Index Polynomial (QWIP)
 #' based on Diesrssen et al 2022 paper.
@@ -238,11 +237,11 @@ qc_shift <- function(df, Selected) {
 #'
 #' @return QWIP.score
 #'
-#' @author Simon Bélanger, Raphael Mabit
+#' @author Simon bélanger, Raphael Mabit
 #' @export
 
 qc_qwip <- function(Waves, Rrs) {
-  # Compute the Apparent Visible Wavelength (AVW)
+  # Compute the Apparent Visible wavelength (AVW)
   Waves.int <- (400:700)
   Rrs.int <- spline(Waves, Rrs, xout = Waves.int, method = "natural")$y
 
@@ -334,7 +333,7 @@ qc_qwip <- function(Waves, Rrs) {
   return(list("Score" = Score, "Pass" = Pass))
 }
 
-#' unique_datetime_second
+#' unique_date_time_second
 #'
 #' @description remove duplicate time at the second in a data frame
 #'
@@ -344,22 +343,22 @@ qc_qwip <- function(Waves, Rrs) {
 #'
 #' @noRd
 
-unique_datetime_second <- function(data) {
+unique_date_time_second <- function(data) {
   nm <- deparse(substitute(data))
 
-  if (length(unique(as.numeric(data$DateTime))) == length(as.numeric(data$DateTime))) {
+  if (length(unique(as.numeric(data$date_time))) == length(as.numeric(data$date_time))) {
     message(paste0("No duplicated second in ", nm))
   } else {
-    Nsec <- length(data$DateTime[duplicated(data$DateTime)])
+    Nsec <- length(data$date_time[duplicated(data$date_time)])
 
     warning(
       paste(
         "Removing", Nsec, "duplicated second", nm, "at:",
-        paste(data$DateTime[duplicated(data$DateTime)], collapse = ", ")
+        paste(data$date_time[duplicated(data$date_time)], collapse = ", ")
       )
     )
 
-    data <- data[!duplicated(data$DateTime), ]
+    data <- data[!duplicated(data$date_time), ]
   }
 
   return(data)
@@ -367,32 +366,32 @@ unique_datetime_second <- function(data) {
 
 #' rotate_vessel_frame
 #'
-#' @description Uses the Tait-Bryan angles (Heading, Pitch, Roll) to rotate the vessel frame
+#' @description Uses the Tait-Bryan angles (heading, pitch, roll) to rotate the vessel frame
 #'
-#' @param Heading rotation in degree about the Z axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you, 0 = North, 90 = East)
+#' @param heading rotation in degree about the Z axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you, 0 = North, 90 = East)
 #'
-#' @param Pitch rotation in degree about the Y axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you)
+#' @param pitch rotation in degree about the Y axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you)
 #'
-#' @param Roll rotation about the X axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you)
+#' @param roll rotation about the X axis (hand righted cartesian rotation, counterclockwise when vector pointing toward you)
 #'
 #' @return a data frame with columns
-#'  VesselXx, VesselXy, VesselXz, VesselYx, VesselYy, VesselYz, VesselZx, VesselZy, VesselZz
+#'  boat_xx, boat_xy, boat_xz, boat_yx, boat_yy, boat_yz, boat_zx, boat_zy, boat_zz
 #'  giving the cartesian coordinates of the vessel frame unit vector X, Y, Z.
 #'
 #' @noRd
 
-rotate_vessel_frame <- function(Heading, Pitch, Roll) {
+rotate_vessel_frame <- function(heading, pitch, roll) {
   # Convert angles from degrees to radians
-  Heading <- Heading * pi / 180
-  Pitch <- -Pitch * pi / 180 # negate Pitch nd Roll to swhicth between Apllanix coordinate system and Plotly
-  Roll <- -Roll * pi / 180
+  heading <- heading * pi / 180
+  pitch <- -pitch * pi / 180 # negate pitch nd roll to swhicth between Apllanix coordinate system and Plotly
+  roll <- -roll * pi / 180
 
   # Create the rotation matrices
-  RotationZ <- matrix(c(cos(Heading), sin(Heading), 0, -sin(Heading), cos(Heading), 0, 0, 0, 1), nrow = 3)
-  RotationY <- matrix(c(cos(Pitch), 0, -sin(Pitch), 0, 1, 0, sin(Pitch), 0, cos(Pitch)), nrow = 3)
-  RotationX <- matrix(c(1, 0, 0, 0, cos(Roll), sin(Roll), 0, -sin(Roll), cos(Roll)), nrow = 3)
+  RotationZ <- matrix(c(cos(heading), sin(heading), 0, -sin(heading), cos(heading), 0, 0, 0, 1), nrow = 3)
+  RotationY <- matrix(c(cos(pitch), 0, -sin(pitch), 0, 1, 0, sin(pitch), 0, cos(pitch)), nrow = 3)
+  RotationX <- matrix(c(1, 0, 0, 0, cos(roll), sin(roll), 0, -sin(roll), cos(roll)), nrow = 3)
 
-  # Rotate the body frame in the correct order: Z (Heading) -> Y (Pitch) -> X (Roll)
+  # Rotate the body frame in the correct order: Z (heading) -> Y (pitch) -> X (roll)
   RotationMatrix <- RotationZ %*% RotationY %*% RotationX
 
   # Original body frame vectors (X, Y, Z)
@@ -401,14 +400,15 @@ rotate_vessel_frame <- function(Heading, Pitch, Roll) {
   # Rotate the body frame vectors
   RotatedVectors <- RotationMatrix %*% BodyVectors
 
+  colnames(RotatedVectors) <- c("boat_x", "boat_y", "boat_z")
+
   RotatedVectors <- as_tibble(RotatedVectors) %>%
     mutate(
       Coord = c("x", "y", "z")
     ) %>%
-    rename(VesselX = V1, VesselY = V2, VesselZ = V3) %>%
     pivot_wider(
       names_from = Coord,
-      values_from = c(VesselX, VesselY, VesselZ),
+      values_from = c(boat_x, boat_y, boat_z),
       names_sep = ""
     )
 

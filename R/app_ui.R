@@ -28,7 +28,7 @@ app_ui <- function(request) {
       mod_L1b_process_ui("L1b_process"),
       mod_automatic_processing_ui("automatic_processing")
     ),
-    # mod_filter_trim_ui("filter_trim"),
+    mod_filter_trim_ui("filter_trim"),
     # mod_discretize_ui("discretize"),
     sidebarMenu(
       menuItem("DataBase", tabName = "Database", icon = icon("database"))

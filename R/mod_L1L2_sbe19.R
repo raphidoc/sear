@@ -1,6 +1,6 @@
 #' obs_ctd UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -10,7 +10,7 @@
 mod_L1L2_sbe19_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    plotlyOutput(ns("SBE19L1b")),
+    plotlyOutput(ns("sbe19_l1b")),
     actionButton(ns("ProcessL2"), "Process L2"),
     DT::DTOutput(ns("DataTable"))
   )
@@ -23,10 +23,10 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    output$SBE19L1b <- renderPlotly({
+    output$sbe19_l1b <- renderPlotly({
       validate(need(nrow(Obs$SBE19$L1b) != 0, "No L1b data"))
 
-      PlyFont <- list(family = "Times New Roman", size = 18)
+      PlyFont <- list(family = "times New Roman", size = 18)
       BlackSquare <- list(
         type = "rect",
         fillcolor = "transparent",
@@ -40,30 +40,30 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
       )
 
       # SBE19nest <- Obs$SBE19$L1b %>%
-      #   select(!any_of(c("Conductivity", "CT", "O2Sol")))%>%
+      #   select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility")))%>%
       #   pivot_longer(
-      #     cols = any_of(c("Temperature", "Pressure", "SP", "SA", "OxSol", "Oxygen", "pH")),
-      #     names_to = "Parameter",
-      #     values_to = "Value"
+      #     cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+      #     names_to = "parameter",
+      #     values_to = "value"
       #   ) %>%
-      #   group_by(Parameter) %>%
+      #   group_by(parameter) %>%
       #   nest()
 
       ply <- Obs$SBE19$L1b %>%
         mutate(
           Plot = purrr::map2(
             .x = Data,
-            .y = Parameter,
+            .y = parameter,
             ~ plot_ly(
               .x,
-              text = ~ID,
-              customdata = ~ paste0(.y, "_", ID)
+              text = ~id,
+              customdata = ~ paste0(.y, "_", id)
             ) %>%
               add_markers(
-                x = ~ ymd_hms(DateTime),
-                y = ~Value,
+                x = ~ ymd_hms(date_time),
+                y = ~value,
                 showlegend = F,
-                color = ~QC,
+                color = ~qc,
                 colors = c("1" = "seagreen", "0" = "red")
               ) %>%
               layout(
@@ -77,20 +77,20 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
         event_register("plotly_click")
 
       # Set source for selection event
-      p$x$source <- "SBE19L1b"
+      p$x$source <- "sbe19_l1b"
 
       # Iframe to render svg properly
       widgetframe::frameableWidget(p)
     })
 
-    # Get the ID of HOCR spectra selected in: selected()$customdata
+    # Get the id of HOCR spectra selected in: selected()$customdata
     observeEvent(
-      event_data("plotly_click", source = "SBE19L1b"),
-      label = "QC SBE19",
+      event_data("plotly_click", source = "sbe19_l1b"),
+      label = "qc SBE19",
       ignoreInit = TRUE,
       {
         Selected <- stringr::str_split_fixed(
-          event_data("plotly_click", source = "SBE19L1b")$customdata,
+          event_data("plotly_click", source = "sbe19_l1b")$customdata,
           "_",
           n = 2
         )
@@ -101,7 +101,7 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
         Obs$SBE19$L1b <- Obs$SBE19$L1b %>%
           mutate(
             Data = purrr::map2(
-              .x = Parameter,
+              .x = parameter,
               .y = Data,
               ~ if (.x == SelParam) {
                 qc_shift(.y, SelID)
@@ -148,7 +148,7 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
           selection = "none",
           editable = F
         ) %>%
-          DT::formatRound(c("OxSol", "Oxygen", "pH", "Pressure", "SA", "SP", "Temperature"), digits = 3)
+          DT::formatRound(c("oxygen_solubility", "oxygen_concentration", "pH", "pressure", "salinity_absolute", "salinity_practical", "temperature"), digits = 3)
       },
       server = FALSE,
       editable = F

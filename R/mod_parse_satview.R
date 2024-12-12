@@ -1,6 +1,6 @@
 #' parse_satview UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -17,14 +17,14 @@ mod_parse_satview_ui <- function(id) {
 #' parse_satview Server Functions
 #'
 #' @noRd
-mod_parse_satview_server <- function(id, SearProj, CalData, ParsedFiles) {
+mod_parse_satview_server <- function(id, SearProj, cal_data, ParsedFiles) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     output$Load <- renderUI({
       req(SearProj())
 
-      validate(need(CalData$CalHOCR(), message = "Need HOCR calibration data"))
+      validate(need(cal_data$hocr_cal(), message = "Need HOCR calibration data"))
 
       fluidRow(
         column(
@@ -70,20 +70,20 @@ mod_parse_satview_server <- function(id, SearProj, CalData, ParsedFiles) {
 
         # MTELog <- read_mtelog(str_subset(Files$rawpath, "\\.txt$"))
 
-        InstList <- "OCR" # unique(MTELog$Instrument)
+        InstList <- "OCR" # unique(MTELog$instrument)
 
-        DateTime <- str_extract(str_subset(Files$name, "\\.raw$"), "[:digit:]{4}-[:digit:]{3}-[:digit:]{6}")
+        date_time <- str_extract(str_subset(Files$name, "\\.raw$"), "[:digit:]{4}-[:digit:]{3}-[:digit:]{6}")
 
-        Year <- str_extract(DateTime, "^[:digit:]{4}(?=-)")
+        Year <- str_extract(date_time, "^[:digit:]{4}(?=-)")
 
-        DOY <- str_extract(DateTime, "(?<=-)[:digit:]{3}(?=-)")
+        DOY <- str_extract(date_time, "(?<=-)[:digit:]{3}(?=-)")
 
-        Date <- as.Date(as.numeric(DOY) - 1, origin = as.Date(paste0(Year, "-01-01")))
+        date <- as.date(as.numeric(DOY) - 1, origin = as.date(paste0(Year, "-01-01")))
 
-        Time <- str_extract(DateTime, "(?<=-)[:digit:]{6}$")
+        time <- str_extract(date_time, "(?<=-)[:digit:]{6}$")
 
-        DateTime <- lubridate::ymd_hms(paste(Date, Time))
-        DateTime <- format(DateTime, "%Y%m%d_%H%M%S")
+        date_time <- lubridate::ymd_hms(paste(date, time))
+        date_time <- format(date_time, "%Y%m%d_%height_watercolumn%M%S")
 
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
@@ -92,21 +92,21 @@ mod_parse_satview_server <- function(id, SearProj, CalData, ParsedFiles) {
         # HOCR
 
         # Chech that all three HOCR are present
-        # OCRList <- InstrumentList[str_detect(InstrumentList, "OCR")]
+        # OCRList <- instrumentList[str_detect(instrumentList, "OCR")]
         #
         # if (any(OCRList %in% c("OCR1", "OCR2", "OCR3")) & any(!OCRList %in% c("OCR1", "OCR2", "OCR3"))) {
-        #   MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% InstrumentList)]
+        #   MissingOCR <- c("OCR1", "OCR2", "OCR3")[which(!c("OCR1", "OCR2", "OCR3") %in% instrumentList)]
         #
         #   warning("HOCR on port ", MissingOCR, "is missing from MainLog. Cannot process HOCR data.")
         #
-        #   InstrumentList <- str_remove(InstrumentList, "OCR1|OCR2|OCR3")
+        #   instrumentList <- str_remove(instrumentList, "OCR1|OCR2|OCR3")
         # }
 
         progress$set(value = 0.1, detail = "HOCR")
 
-        PotHOCR <- file.path(ParsedDir, paste0("hocr_", DateTime, ".rds"))
-        PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_", DateTime, ".rds"))
-        PotHOCRTimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_", DateTime, ".rds"))
+        PotHOCR <- file.path(ParsedDir, paste0("hocr_", date_time, ".rds"))
+        PotHOCRDark <- file.path(ParsedDir, paste0("hocr_dark_", date_time, ".rds"))
+        PotHOCRtimeIndex <- file.path(ParsedDir, paste0("hocr_time_index_", date_time, ".rds"))
 
         if (any(str_detect(InstList, "OCR"), na.rm = T) & !file.exists(PotHOCR)) {
           progress$set(value = 0.2, message = "Reading SatView .raw")
@@ -117,35 +117,35 @@ mod_parse_satview_server <- function(id, SearProj, CalData, ParsedFiles) {
 
           progress$set(value = 0.4, message = "Calibrate HOCR dark")
 
-          PrimHOCRDark <- cal_dark(PrimHocrDarkRaw, CalHOCR = CalData$CalHOCR(), Date = "data")
+          PrimHOCRDark <- cal_dark(PrimHocrDarkRaw, hocr_cal = cal_data$hocr_cal(), date = "data")
 
           progress$set(value = 0.6, message = "Creating HOCR time index")
 
-          # Posixct object appear to be heavy, same length list of DateTime is heavier (25.8 MB) than the list of HOCR packets (22.2)
+          # Posixct object appear to be heavy, same length list of date_time is heavier (25.8 MB) than the list of HOCR packets (22.2)
           # Computation time arround 2/3 minutes
-          TimeIndex <- purrr::map(
+          timeIndex <- purrr::map(
             .x = PrimHOCR,
             function(.x) {
               Year <- str_extract(.x$date, "^[:digit:]{4}")
 
               DOY <- str_extract(.x$date, "[:digit:]{3}$")
 
-              Date <- as.Date(as.numeric(DOY) - 1, origin = as.Date(paste0(Year, "-01-01")))
+              date <- as.date(as.numeric(DOY) - 1, origin = as.date(paste0(Year, "-01-01")))
 
-              Time <- substring(.x$time, c(1, 3, 5, 7), c(2, 4, 6, 9))
+              time <- substring(.x$time, c(1, 3, 5, 7), c(2, 4, 6, 9))
 
-              HMS <- str_c(Time[1:3], collapse = ":")
-              HMSmmm <- str_c(HMS, Time[4], sep = ".")
+              HMS <- str_c(time[1:3], collapse = ":")
+              HMSmmm <- str_c(HMS, time[4], sep = ".")
 
-              return(as.numeric(ymd_hms(paste(Date, HMSmmm))))
+              return(as.numeric(ymd_hms(paste(date, HMSmmm))))
             }
           )
 
-          if (length(TimeIndex) != length(PrimHOCR)) {
-            stop("HOCRTimeIndex not the same length as HOCR !")
+          if (length(timeIndex) != length(PrimHOCR)) {
+            stop("HOCRtimeIndex not the same length as HOCR !")
           }
 
-          PrimHOCRTimeIndex <- as.POSIXct(unlist(TimeIndex), tz = "UTC")
+          PrimHOCRtimeIndex <- as.POSIXct(unlist(timeIndex), tz = "utc")
 
           progress$set(value = 0.8, message = "Writing HOCR data")
 
@@ -153,7 +153,7 @@ mod_parse_satview_server <- function(id, SearProj, CalData, ParsedFiles) {
 
           write_rds(PrimHOCRDark, PotHOCRDark)
 
-          write_rds(PrimHOCRTimeIndex, PotHOCRTimeIndex)
+          write_rds(PrimHOCRtimeIndex, PotHOCRtimeIndex)
         }
 
         progress$set(value = 1, message = "DONE")

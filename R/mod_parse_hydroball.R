@@ -1,6 +1,6 @@
 #' parse_hydroball UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -41,7 +41,7 @@ mod_parse_hydroball_server <- function(id, SearProj, ParsedFiles) {
 
         file.copy(Files$datapath, Files$rawpath)
 
-        DateRange <- str_extract(Files$name, "[:digit:]{8}_[:digit:]{8}")
+        dateRange <- str_extract(Files$name, "[:digit:]{8}_[:digit:]{8}")
 
         ParsedDir <- file.path(SearProj()$ProjPath, "sear", "data", "parsed")
 
@@ -49,7 +49,7 @@ mod_parse_hydroball_server <- function(id, SearProj, ParsedFiles) {
 
         HydroBall <- read_hydroball(Files$rawpath)
 
-        PotHydroBall <- file.path(ParsedDir, paste0("hydroball_", DateRange, ".csv"))
+        PotHydroBall <- file.path(ParsedDir, paste0("hydroball_", dateRange, ".csv"))
 
         write_csv(HydroBall, PotHydroBall)
       }

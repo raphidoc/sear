@@ -1,6 +1,6 @@
 #' biosonic
 #'
-#' @description A fct function
+#' @description a fct function
 #'
 #' @return The return value, if any, from executing the function.
 #'
@@ -10,6 +10,6 @@ read_biosonic <- function(CSVFile) {
     CSVFile,
     delim = ","
   ) %>%
-    rename(DateTime = Time) %>%
-    mutate(DateTime = as.character(ymd_hms(DateTime)))
+    rename(date_time = time) %>%
+    mutate(date_time = as.character(ymd_hms(date_time)))
 }

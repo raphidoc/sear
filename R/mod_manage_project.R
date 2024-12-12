@@ -1,6 +1,6 @@
 #' project_manager UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -139,7 +139,7 @@ mod_manage_project_server <- function(id) {
 
     # Check if .searproj file already exist if not create the default one
 
-    AccessUUID <- reactiveVal(uuid::UUIDgenerate(use.time = T, output = "string"))
+    Accessuuid_l2 <- reactiveVal(uuid::UUIDgenerate(use.time = T, output = "string"))
 
     Con <- reactive({
       req(Project$Path)
@@ -158,12 +158,12 @@ mod_manage_project_server <- function(id) {
         message("Reading ", PotSQLite)
 
         SearProj <- tibble::tibble(
-          DateTime = as.character(Sys.time()),
+          date_time = as.character(Sys.time()),
           User = system2("echo", "$USER", stdout = T),
           SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
           ProjPath = Project$Path,
-          UUID = AccessUUID()
+          uuid_l2 = Accessuuid_l2()
         )
 
         DBI::dbWriteTable(Con(), "History", SearProj, append = TRUE)
@@ -183,22 +183,22 @@ mod_manage_project_server <- function(id) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS History (
-          DateTime TEXT NOT NULL,
+          date_time TEXT NOT NULL,
           User TEXT NOT NULL,
           SearVersion TEXT NOT NULL,
           ProjName TEXT NOT NULL,
           ProjPath TEXT NOT NULL,
-          UUID TEXT PRIMARY KEY
+          uuid_l2 TEXT PRIMARY KEY
           );"
         )
 
         SearProj <- tibble::tibble(
-          DateTime = as.character(Sys.time()),
+          date_time = as.character(Sys.time()),
           User = system2("echo", "$USER", stdout = T),
           SearVersion = as.character(packageVersion("sear")),
           ProjName = Project$Name,
           ProjPath = Project$Path,
-          UUID = AccessUUID()
+          uuid_l2 = Accessuuid_l2()
         )
 
         DBI::dbWriteTable(Con(), "History", SearProj, append = TRUE)
@@ -213,7 +213,7 @@ mod_manage_project_server <- function(id) {
     list(
       History = History,
       Con = Con,
-      AccessUUID = AccessUUID
+      Accessuuid_l2 = Accessuuid_l2
     )
   })
 }

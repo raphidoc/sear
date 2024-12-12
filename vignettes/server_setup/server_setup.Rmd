@@ -1,7 +1,7 @@
 ---
 title: "server_setup"
 author: "Raphaël Mabit"
-date: "`r Sys.Date()`"
+date: "`r Sys.date()`"
 output: html_document
 ---
 
@@ -241,9 +241,9 @@ To correctly manage the system side authorization and persistent data storage, w
 When arriving on the log in page, it's this user who is responsible for checking the credentials against the user database.
 It's also this admin user who can create new user with shinymanager.
 The idea is that when a new user is created with shinymanager, an user is also created on the system.
-A copy of sear is made in `/home/user/ShinyApps/sear` and shiny-server has to restart to serve it to the user ... not the best but may be more secure has the user permission would be limited to it's home directory.
+a copy of sear is made in `/home/user/ShinyApps/sear` and shiny-server has to restart to serve it to the user ... not the best but may be more secure has the user permission would be limited to it's home directory.
 The alternative would be to log in the user in the system from within shiny ... not sure about the feasibility.
-A third option is to keep the process `run_as` sear but to change the working directory to the home user.
+a third option is to keep the process `run_as` sear but to change the working directory to the home user.
 
 
 In both cases, here is the bash script to initiate the `sear` user

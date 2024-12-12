@@ -1,6 +1,6 @@
 #' selection_display UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -13,12 +13,12 @@ mod_L1a_select_ui <- function(id) {
     fluidRow(
       column(
         width = 6,
-        uiOutput(ns("FilterInstDate")),
-        uiOutput(ns("FilterTimeSpeed"))
+        uiOutput(ns("FilterInstdate")),
+        uiOutput(ns("FiltertimeSpeed"))
       ),
       column(
         width = 6,
-        plotlyOutput(ns("BoatSolAzm"), width = NULL, height = 100),
+        plotlyOutput(ns("boat_raa"), width = NULL, height = 100),
         textOutput(ns("SurveyDuration")) # ,
         # selectInput(ns("Style"), "Select a mapbox style", MapStyles)
       )
@@ -41,80 +41,80 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     ns <- session$ns
 
     # Filters for data selection ----------------------------------------------
-    output$FilterInstDate <- renderUI({
+    output$FilterInstdate <- renderUI({
       req(MainLog())
 
       tagList(
         checkboxGroupInput(
-          ns("Instrument"), "Intrument",
-          choices = L1a$InstrumentList(),
-          selected = L1a$InstrumentList(),
+          ns("instrument"), "Intrument",
+          choices = L1a$instrumentList(),
+          selected = L1a$instrumentList(),
           inline = TRUE,
           width = NULL,
           choiceNames = NULL,
           choiceValues = NULL
         ),
         dateRangeInput(
-          ns("DateFilter"), "Date",
-          start = min(lubridate::date(MainLog()$DateTime)),
-          end = max(lubridate::date(MainLog()$DateTime)),
-          min = min(lubridate::date(MainLog()$DateTime)),
-          max = max(lubridate::date(MainLog()$DateTime))
+          ns("dateFilter"), "date",
+          start = min(lubridate::date(MainLog()$date_time)),
+          end = max(lubridate::date(MainLog()$date_time)),
+          min = min(lubridate::date(MainLog()$date_time)),
+          max = max(lubridate::date(MainLog()$date_time))
         )
       )
     })
 
-    output$FilterTimeSpeed <- renderUI({
-      req(AllowedTime())
+    output$FiltertimeSpeed <- renderUI({
+      req(Allowedtime())
 
       tagList(
         sliderInput(
-          ns("TimeFilter"), "Time",
-          min = min(AllowedTime()),
-          max = max(AllowedTime()),
-          value = c(min(AllowedTime()), max = max(AllowedTime())),
+          ns("timeFilter"), "time",
+          min = min(Allowedtime()),
+          max = max(Allowedtime()),
+          value = c(min(Allowedtime()), max = max(Allowedtime())),
           timeFormat = "%T",
           timezone = "+0000",
           width = NULL,
           step = 1
         ),
-        sliderInput(ns("SolAzmLimit"), "BoatSolAzm [degree]", value = c(90, 180), min = 0, max = 360),
+        sliderInput(ns("sol_aziLimit"), "boat_raa [degree]", value = c(90, 180), min = 0, max = 360),
         numericInput(ns("SpeedLimit"), "Speed [km/h]", 11, step = 0.1)
       )
     })
 
-    DateInterval <- reactive({
-      req(input$DateFilter)
-      lubridate::interval(input$DateFilter[1], input$DateFilter[2])
+    dateInterval <- reactive({
+      req(input$dateFilter)
+      lubridate::interval(input$dateFilter[1], input$dateFilter[2])
     })
 
-    AllowedTime <- reactive({
-      req(DateInterval())
+    Allowedtime <- reactive({
+      req(dateInterval())
 
-      Int <- DateInterval()
-      IntStart <- int_start(DateInterval())
-      IntEnd <- int_end(DateInterval())
+      Int <- dateInterval()
+      IntStart <- int_start(dateInterval())
+      IntEnd <- int_end(dateInterval())
 
       # Make the IntEnd day inclusive for %within%
       int_end(Int) <- IntEnd + days(1) - seconds(1)
 
       if (IntStart == IntEnd) {
-        MainLog()$DateTime[lubridate::date(MainLog()$DateTime) == IntStart]
+        MainLog()$date_time[lubridate::date(MainLog()$date_time) == IntStart]
       } else {
-        MainLog()$DateTime[MainLog()$DateTime %within% Int]
+        MainLog()$date_time[MainLog()$date_time %within% Int]
       }
     })
 
-    TimeInterval <- reactive({
-      lubridate::interval(input$TimeFilter[1], input$TimeFilter[2])
+    timeInterval <- reactive({
+      lubridate::interval(input$timeFilter[1], input$timeFilter[2])
     })
 
     SubMainLog <- reactiveVal({})
 
     observe({
-      req(TimeInterval(), input$SpeedLimit, input$SolAzmLimit, input$Instrument)
+      req(timeInterval(), input$SpeedLimit, input$sol_aziLimit, input$instrument)
 
-      Inst <- input$Instrument
+      Inst <- input$instrument
 
       PrimMainLog <- MainLog()
 
@@ -140,16 +140,16 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
 
       PrimMainLog <- PrimMainLog %>%
         filter(
-          DateTime %within% TimeInterval(),
-          BoatSolAzm > input$SolAzmLimit[1] & BoatSolAzm < input$SolAzmLimit[2],
-          Speed_kmh <= input$SpeedLimit
+          date_time %within% timeInterval(),
+          boat_raa > input$sol_aziLimit[1] & boat_raa < input$sol_aziLimit[2],
+          speed_kmh <= input$SpeedLimit
         )
 
       SubMainLog(PrimMainLog)
     })
 
     # Selected data points ----------------------------------------------------
-    # Get the ID of plotly_mapbox selected point in: selected()$customdata
+    # Get the id of plotly_mapbox selected point in: selected()$customdata
     # Selected <- reactiveVal({})
 
     SelID <- eventReactive(
@@ -161,51 +161,51 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
 
         # curvenumber 0 is the Applanix trace
         # warning("To Raph, curvenumber must equal 0 or 1")
-        ID <- event_data("plotly_selected", source = "map") %>%
+        id <- event_data("plotly_selected", source = "map") %>%
           filter(curveNumber == 1 | curveNumber == 0)
 
-        # When Obs trace is selected, UUID make custom data as character
-        ID <- as.numeric(ID$customdata)
+        # When Obs trace is selected, uuid_l2 make custom data as character
+        id <- as.numeric(id$customdata)
 
-        # Check that all ID form a continuous sequence with increment of one
-        if (!all(abs(diff(ID)) == 1)) {
+        # Check that all id form a continuous sequence with increment of one
+        if (!all(abs(diff(id)) == 1)) {
           showModal(modalDialog(
             title = "Invalid selection",
             "You selected discontinous data, please select only contiguous points",
             easyClose = TRUE
           ))
-          # invalidateLater(1)
-          ID
+          # invalidatelater(1)
+          id
         } else {
-          ID
+          id
         }
       }
     )
 
-    # Define zoom and center reactive value to be updated with SelUUID
+    # Define zoom and center reactive value to be updated with Seluuid_l2
 
     Center <- reactiveVal()
     Zoom <- reactiveVal()
 
-    SelUUID <- reactiveVal()
+    Seluuid_l2 <- reactiveVal()
 
     observeEvent(
       event_data("plotly_click", source = "map"),
       label = "Click Obs select data",
       ignoreInit = T,
       {
-        UUID <- as.character(event_data("plotly_click", source = "map")$customdata)
+        uuid_l2 <- as.character(event_data("plotly_click", source = "map")$customdata)
 
-        if (!identical(UUID, character(0)) && !uuid::UUIDvalidate(UUID)) {
+        if (!identical(uuid_l2, character(0)) && !uuid::UUIDvalidate(uuid_l2)) {
           showModal(modalDialog(
             title = "Invalid click",
-            "You didn't click on an Obs feature, no UUID attatched",
+            "You didn't click on an Obs feature, no uuid_l2 attatched",
             easyClose = TRUE
           ))
-          invalidateLater(1)
+          invalidatelater(1)
         } else {
-          SelUUID(UUID)
-          Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
+          Seluuid_l2(uuid_l2)
+          Center(DB$ObsMeta() %>% filter(uuid_l2 == Seluuid_l2()) %>% select(lat, lon))
           Zoom(20)
         }
       }
@@ -215,13 +215,13 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       DB$ObsSel(),
       label = "Select Obs",
       {
-        UUID <- DB$ObsSel()
+        uuid_l2 <- DB$ObsSel()
 
-        if (!uuid::UUIDvalidate(UUID)) {
-          invalidateLater(1)
+        if (!uuid::UUIDvalidate(uuid_l2)) {
+          invalidatelater(1)
         } else {
-          SelUUID(UUID)
-          Center(DB$ObsMeta() %>% filter(UUID == SelUUID()) %>% select(Lat, Lon))
+          Seluuid_l2(uuid_l2)
+          Center(DB$ObsMeta() %>% filter(uuid_l2 == Seluuid_l2()) %>% select(lat, lon))
           Zoom(20)
         }
       }
@@ -230,10 +230,10 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     observeEvent(
       ManObs$Save(),
       {
-        UUID <- Obs$MetadataL2$UUID
+        uuid_l2 <- Obs$metadata_l2$uuid_l2
 
-        SelUUID(UUID)
-        Center(Obs$MetadataL2 %>% select(Lat, Lon))
+        Seluuid_l2(uuid_l2)
+        Center(Obs$metadata_l2 %>% select(lat, lon))
         Zoom(20)
       }
     )
@@ -243,7 +243,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
 
       # Should not be recomputed when processing to L1b ...
 
-      MainLog()[MainLog()$ID %in% SelID(), ]
+      MainLog()[MainLog()$id %in% SelID(), ]
     })
 
     # Map for data selection --------------------------------------------------
@@ -251,14 +251,14 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     # TODO: GitHub issue #11
 
     # observeEvent(
-    #   SelUUID(),
+    #   Seluuid_l2(),
     #   {
     #     plotlyProxy("Map", session) %>%
     #       plotlyProxyInvoke(
     #         "addTraces",
     #         list(
-    #           Lon = list(Center()[[2]]),
-    #           Lat = list(Center()[[1]]),
+    #           lon = list(Center()[[2]]),
+    #           lat = list(Center()[[1]]),
     #           marker.color = list('rgb(255, 0, 0)')
     #         )
     #       )
@@ -282,20 +282,20 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
 
       validate(need(nrow(SubMainLog()) != 0, message = "No data to display with those filters"))
 
-      if (is.null(SelUUID())) {
-        ZC <- zoom_center(SubMainLog()$Lat, SubMainLog()$Lon)
+      if (is.null(Seluuid_l2())) {
+        ZC <- zoom_center(SubMainLog()$lat, SubMainLog()$lon)
         Zoom(ZC[[1]])
         Center(ZC[[2]])
       }
 
-      # SF read coords as XY not YX aka Lat Lon
-      # ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
-      # ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun / 2) %>% sf::st_transform(4326)
+      # SF read coords as XY not YX aka lat lon
+      # ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("lon", "lat"), crs = 4326) %>% sf::st_transform(2947)
+      # ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$distance_run / 2) %>% sf::st_transform(4326)
 
       # Avoid sfheaders::sf_to_df bug if object empty
       # if (nrow(ObsMetaBuffer) == 0) {
       #   ObsMetaBuffer <- tibble(
-      #     UUID = NA,
+      #     uuid_l2 = NA,
       #     x = NA,
       #     y = NA
       #   )
@@ -309,16 +309,16 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           add_markers(
             name = "Raw",
             data = SubMainLog(),
-            x = ~Lon,
-            y = ~Lat,
-            customdata = ~ID,
+            x = ~lon,
+            y = ~lat,
+            customdata = ~id,
             marker = list(color = "rgb(154, 42, 42)"),
             text = ~ paste0(
-              "<b>Date</b>: ", format(DateTime, "%Y-%m-%d"), "<br>",
-              "<b>Time</b>: ", format(DateTime, "%H:%M:%S"), "<br>",
-              "<b>Speed (km/h)</b>: ", Speed_kmh, "<br>",
-              # "<b>Course (TN)</b>: ", Course_TN, "<br>",
-              "<b>BoatSolAzm (degree)</b>: ", BoatSolAzm, "<br>"
+              "<b>date</b>: ", format(date_time, "%Y-%m-%d"), "<br>",
+              "<b>time</b>: ", format(date_time, "%H:%M:%S"), "<br>",
+              "<b>Speed (km/h)</b>: ", speed_kmh, "<br>",
+              # "<b>Course (TN)</b>: ", course_tn, "<br>",
+              "<b>boat_raa (degree)</b>: ", boat_raa, "<br>"
             )
           ) %>%
           # add_polygons( # When add_sf is used a center and zoom animation is enable and I dont know how to control it
@@ -326,25 +326,25 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           #   data = ObsMetaBuffer,
           #   x = ~x,
           #   y = ~y,
-          #   customdata = ~UUID,
+          #   customdata = ~uuid_l2,
           #   line = list(color = "rgb(127, 255, 212)", width = 1),
           #   fillcolor = "rgba(127, 255, 212, 0.2)",
-          #   split = ~UUID,
+          #   split = ~uuid_l2,
           #   legendgroup = "Obs",
           #   showlegend = F) %>%
           add_markers(
             name = "Obs",
             data = DB$ObsMeta(),
-            x = ~Lon,
-            y = ~Lat,
-            customdata = ~UUID,
+            x = ~lon,
+            y = ~lat,
+            customdata = ~uuid_l2,
             marker = list(
               color = "rgb(127, 255, 212)" # ,
-              # size = ~ DistanceRun
+              # size = ~ distance_run
             ),
             text = ~ paste0(
-              "<b>DateTime</b>: ", DateTime, "<br>",
-              "<b>UUID</b>: ", UUID, "<br>"
+              "<b>date_time</b>: ", date_time, "<br>",
+              "<b>uuid_l2</b>: ", uuid_l2, "<br>"
             ),
             legendgroup = "Obs"
           ) %>%
@@ -385,7 +385,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       } else {
         # Determine survey area bounding box and crop coastline accordingly
 
-        SurveyArea <- sf::st_as_sf(SubMainLog(), coords = c("Lon", "Lat"), crs = 4326) %>%
+        SurveyArea <- sf::st_as_sf(SubMainLog(), coords = c("lon", "lat"), crs = 4326) %>%
           select(geometry) %>%
           summarise()
 
@@ -412,8 +412,8 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       p
     })
 
-    # BoatSolAzm polar plot ---------------------------------------------------
-    output$BoatSolAzm <- renderPlotly({
+    # boat_raa polar plot ---------------------------------------------------
+    output$boat_raa <- renderPlotly({
       req(SelMainLog())
 
       m <- list(
@@ -429,8 +429,8 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           width = 250,
           height = 250,
           type = "scatterpolar",
-          r = ~Speed_kmh,
-          theta = ~BoatSolAzm,
+          r = ~speed_kmh,
+          theta = ~boat_raa,
           mode = "markers"
         ) %>%
         layout(
@@ -438,7 +438,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           margin = m,
           polar = list(
             angularaxis = list(
-              # rotation = ~mean(Course_TN, na.rm = T),
+              # rotation = ~mean(course_tn, na.rm = T),
               direction = "clockwise"
             )
           )
@@ -451,9 +451,9 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
     output$SurveyDuration <- renderText({
       validate(need(nrow(SubMainLog()) != 0, message = "No data to display with those filters"))
 
-      Time <- SubMainLog()$DateTime
+      time <- SubMainLog()$date_time
 
-      as.character(dseconds(length(Time)))
+      as.character(dseconds(length(time)))
     })
 
     # Module output -----------------------------------------------------------
@@ -462,7 +462,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
       SubMainLog = SubMainLog,
       MainLog = SelMainLog,
       SelID = SelID,
-      SelUUID = SelUUID,
+      Seluuid_l2 = Seluuid_l2,
       Map = Map
     )
   })

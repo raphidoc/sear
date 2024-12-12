@@ -15,7 +15,7 @@ app_sys <- function(...) {
 
 #' Read App Config
 #'
-#' @param value Value to retrieve from the config file.
+#' @param value value to retrieve from the config file.
 #' @param config GOLEM_CONFIG_ACTIVE value. If unset, R_CONFIG_ACTIVE.
 #' If unset, "default".
 #' @param use_parent Logical, scan the parent directory for config file.

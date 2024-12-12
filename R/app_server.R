@@ -45,7 +45,7 @@ app_server <- function(input, output, session) {
 
   # Global objects ----------------------------------------------------------
 
-  # format(L1$SBE19()$DateTime, "%Y-%m-%d %H:%M:%OS3")
+  # format(L1$SBE19()$date_time, "%Y-%m-%d %H:%M:%OS3")
   options(digits.secs = 3)
   options(shiny.maxRequestSize = 50 * 1024^2) # 50MB
   options(shiny.reactlog = TRUE)
@@ -54,26 +54,26 @@ app_server <- function(input, output, session) {
 
   # Active discrete observation
   Obs <- reactiveValues(
-    MetadataL2 = tibble(
-      DateTime = character(),
-      DateTimeMin = character(),
-      DateTimeMax = character(),
-      TimeElapsed = numeric(),
-      Lat = numeric(),
-      Lon = numeric(),
-      LatMin = numeric(),
-      LatMax = numeric(),
-      LonMin = numeric(),
-      LonMax = numeric(),
-      DistanceRun = numeric(),
-      Altitude = numeric(),
-      SolZen = numeric(),
-      SolAzm = numeric(),
-      BoatSolAzm = numeric(),
-      Comment = character(),
-      UUID = character()
+    metadata_l2 = tibble(
+      date_time = character(),
+      date_timeMin = character(),
+      date_timeMax = character(),
+      timeElapsed = numeric(),
+      lat = numeric(),
+      lon = numeric(),
+      lat_min = numeric(),
+      lat_max = numeric(),
+      lon_min = numeric(),
+      lon_max = numeric(),
+      distance_run = numeric(),
+      altitude = numeric(),
+      sol_zen = numeric(),
+      sol_azi = numeric(),
+      boat_raa = numeric(),
+      comment = character(),
+      uuid_l2 = character()
     ),
-    MetadataL1b = tibble(),
+    metadata_l1b = tibble(),
     HOCR = reactiveValues(
       L1b = tibble(),
       L2 = tibble()
@@ -115,20 +115,20 @@ app_server <- function(input, output, session) {
 
   Settings <- mod_settings_server("settings", SearProj, ActiveMenu)
 
-  CalData <- mod_parse_cal_server("parse_cal", SearProj$History)
-
   DB <- mod_manage_db_server("manage_db", SearProj$History, Obs)
 
-  L1a <- mod_parse_data_server("parse_data", SearProj$History, CalData, MainLog)
+  cal_data <- mod_parse_cal_server("parse_cal", SearProj$History, DB)
+
+  L1a <- mod_parse_data_server("parse_data", SearProj$History, cal_data, MainLog)
 
   L1aSelect <- mod_L1a_select_server("L1a_select", MainLog, DB, Obs, ManObs, L1a)
 
   AutoProcess <- mod_automatic_processing_server(
     "automatic_processing",
-    L1a, L1aSelect, CalData, Obs, Settings, MainLog, DB
+    L1a, L1aSelect, cal_data, Obs, Settings, MainLog, DB
   )
 
-  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, CalData, Obs, MainLog, Settings)
+  L1b <- mod_L1b_process_server("L1b_process", L1a, L1aSelect, cal_data, Obs, MainLog, Settings)
 
   L2 <- mod_L1bL2_server("L1bL2", Obs, Settings)
 

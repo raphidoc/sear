@@ -41,7 +41,7 @@ To see a demonstration video of the software, click on the following picture:
 * Files `.raw` from SatView.
 * BioSonic csv exported by VisualAquatic.
 * Calibration files for HOCR, SBE19. SBE18, SBE43, SeaOWL, BBFL2.
-* Use longitude (`Lon`), latitude (`Lat`) and `DateTime` from GNSS device (Applanix for the SeaDoo) to create a `MainLog`.
+* Use longitude (`lon`), latitude (`lat`) and `date_time` from GNSS device (Applanix for the SeaDoo) to create a `MainLog`.
 * Create a data synthesis, presence or absence of said instrument at a specific time in the `MainLog`.
 
 {::comment}
@@ -50,9 +50,9 @@ To see a demonstration video of the software, click on the following picture:
 
 ### Filters
 
-* Instruments combination based on the data synthesis
-* Date range
-* Time range
+* instruments combination based on the data synthesis
+* date range
+* time range
 * Solar azimuth relative to the boat heading (to asses self shadow effect on AOPs)
 * Watercraft speed
 
@@ -67,7 +67,7 @@ To see a demonstration video of the software, click on the following picture:
 
 * Click `Process L1b` to manually process selected raw data
 * Click `Auto Process` to automatically process all displayed raw data, discretization is performed with a time interval of minimum 4 and maximum 10 seconds.
-* Human QC of L1b data, analyst can click on the data to shift it between green (1 = good) and red (0 = bad). Data that have the flag QC flag 0 is removed from further analysis.
+* Human qc of L1b data, analyst can click on the data to shift it between green (1 = good) and red (0 = bad). Data that have the flag qc flag 0 is removed from further analysis.
 * Process L2 to summarize (mean) non spectral data. For the HOCRs, mean AOPs are computed.
 * Additional Loess interpolation and smoothing for AOPs.
 * Metadata include rotation of the vessel frame (X, Y, Z vectors in cartesian coordinates) if Tait-Bryan angles (heading, pitch, roll) are available.
@@ -76,7 +76,7 @@ To see a demonstration video of the software, click on the following picture:
 
 * In manual processing,`Save` send the discrete observation L1b and L2 data to the SQL backend.
 * In automatic processing data is automatically saved during each observation processing.
-* If `Save` is hit for a UUID that is already present (reprocessing for example) the data corresponding to this UUID is updated.
+* If `Save` is hit for a uuid_l2 that is already present (reprocessing for example) the data corresponding to this uuid_l2 is updated.
 * `Delete` to delete an observation from the database (with FOREIGN KEY ON DELETE CASCADE)
 
 ## Instalation

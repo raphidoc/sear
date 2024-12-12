@@ -1,6 +1,6 @@
 #' obs_manager UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -32,55 +32,55 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     })
 
     output$Delete <- renderUI({
-      req(!is.na(Obs$MetadataL2$UUID))
+      req(!is.na(Obs$metadata_l2$uuid_l2))
 
       actionButton(ns("Delete"), "Delete", class = "btn btn-danger", icon = icon("glyphicon glyphicon-trash", lib = "glyphicon"))
     })
 
     observeEvent(
       c(
-        L2Select$SelUUID()
+        L2Select$Seluuid_l2()
       ),
       {
-        # MetadataL2
-        # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM MetadataL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        # metadata_l2
+        # Have to query data based on uuid_l2
+        qry <- paste0("SELECT * FROM metadata_l2 WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        L2Obs$MetadataL2 <- tibble(DBI::dbFetch(res))
+        L2Obs$metadata_l2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
-        # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM MetadataL1b WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        # Have to query data based on uuid_l2
+        qry <- paste0("SELECT * FROM metadata_l1b WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        L2Obs$MetadataL1b <- tibble(DBI::dbFetch(res))
+        L2Obs$metadata_l1b <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # HOCR
-        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        qry <- paste0("SELECT * FROM hocr_l2 WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         L2Obs$HOCR <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SBE19
-        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        qry <- paste0("SELECT * FROM sbe19_l2 WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         L2Obs$SBE19 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SeaOWL
-        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        qry <- paste0("SELECT * FROM seaowl_l2 WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         L2Obs$SeaOWL <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # BBFL2
-        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        qry <- paste0("SELECT * FROM bbfl2_l2 WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         L2Obs$BBFL2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # Biosonic
-        qry <- paste0("SELECT * FROM BioSonicL2 WHERE UUID IN ('", paste0(L2Select$SelUUID(), collapse = "','"), "');")
+        qry <- paste0("SELECT * FROM biosonic_l2 WHERE uuid_l2 IN ('", paste0(L2Select$Seluuid_l2(), collapse = "','"), "');")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         L2Obs$BioSonic <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
@@ -88,97 +88,97 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     )
 
 
-    # UUID selection event trigger data display -------------------------------
+    # uuid_l2 selection event trigger data display -------------------------------
     # by populating the Obs reactiveValues data table needed
     observeEvent(
       c(
-        L1aSelect$SelUUID()
+        L1aSelect$Seluuid_l2()
       ),
       {
-        # MetadataL2
-        # Have to query data based on UUID
-        qry <- paste0("SELECT * FROM MetadataL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        # metadata_l2
+        # Have to query data based on uuid_l2
+        qry <- paste0("SELECT * FROM metadata_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$MetadataL2 <- tibble(DBI::dbFetch(res))
+        Obs$metadata_l2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
-        # MetadataL1b
-        qry <- paste0("SELECT * FROM MetadataL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        # metadata_l1b
+        qry <- paste0("SELECT * FROM metadata_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
-        Obs$MetadataL1b <- tibble(DBI::dbFetch(res))
+        Obs$metadata_l1b <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # HOCR
-        # UUID have to ship with Instrument and SN to be passed to HOCR$L2
-        qry <- paste0("SELECT * FROM HOCRL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        # uuid_l2 have to ship with instrument and sn to be passed to HOCR$L2
+        qry <- paste0("SELECT * FROM hocr_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(CalData = !matches("Instrument|SN|UUID"))
+          group_by(id) %>%
+          nest(cal_data = !matches("instrument|sn|uuid_l2"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM HOCRL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM hocr_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HOCR$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SBE19
-        qry <- paste0("SELECT * FROM SBE19L1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM sbe19_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SBE19$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(Data = !matches("Parameter|UUID"))
+          group_by(id) %>%
+          nest(Data = !matches("parameter|uuid_l2"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM SBE19L2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM sbe19_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SBE19$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # SeaOWL
-        qry <- paste0("SELECT * FROM SeaOWLL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM seaowl_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SeaOWL$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(Data = !matches("Parameter|UUID"))
+          group_by(id) %>%
+          nest(Data = !matches("parameter|uuid_l2"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM SeaOWLL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM seaowl_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$SeaOWL$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # BBFL2
-        qry <- paste0("SELECT * FROM BBFL2L1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM bbfl2_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BBFL2$L1b <- tibble(DBI::dbFetch(res)) %>%
-          group_by(ID) %>%
-          nest(Data = !matches("Parameter|UUID"))
+          group_by(id) %>%
+          nest(Data = !matches("parameter|uuid_l2"))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM BBFL2L2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM bbfl2_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BBFL2$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # BioSonic
-        qry <- paste0("SELECT * FROM BioSonicL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM biosonic_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BioSonic$L1b <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM BioSonicL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM biosonic_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$BioSonic$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
         # HydroBall
-        qry <- paste0("SELECT * FROM HydroBallL1b WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM hydroball_l1b WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HydroBall$L1b <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
 
-        qry <- paste0("SELECT * FROM HydroBallL2 WHERE UUID='", L1aSelect$SelUUID(), "';")
+        qry <- paste0("SELECT * FROM hydroball_l2 WHERE uuid_l2='", L1aSelect$Seluuid_l2(), "';")
         res <- DBI::dbSendQuery(DB$Con(), qry)
         Obs$HydroBall$L2 <- tibble(DBI::dbFetch(res))
         DBI::dbClearResult(res)
@@ -186,7 +186,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     )
 
     # Save to SQLite ----------------------------------------------------------
-    UUID <- reactiveVal()
+    uuid_l2 <- reactiveVal()
 
     observeEvent(
       req(input$Save),
@@ -195,37 +195,37 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
         # Remove variables used for dev of Rb retrieval that don't belong in tables
 
         Obs$HOCR$L2 <- Obs$HOCR$L2 %>%
-          select(matches("Wavelength|Rrs|Rrs_loess|KLu|KLu_loess|RbI|UUID"))
+          select(matches("wavelength|Rrs|Rrs_loess|KLu|KLu_loess|RbI|uuid_l2"))
 
-        # Does UUID is present in MetadataL2 colnames ?
+        # Does uuid_l2 is present in metadata_l2 colnames ?
         # Now it is initiated on start so always TRUE
-        UUIDPresent <- any(str_detect(names(Obs$MetadataL2), "UUID"))
+        uuid_l2Present <- any(str_detect(names(Obs$metadata_l2), "uuid_l2"))
 
-        # Does UUID exist in database, check ObsMeta
-        if (UUIDPresent) {
-          UUIDExist <- any(Obs$MetadataL2$UUID %in% DB$ObsMeta()$UUID)
+        # Does uuid_l2 exist in database, check ObsMeta
+        if (uuid_l2Present) {
+          uuid_l2Exist <- any(Obs$metadata_l2$uuid_l2 %in% DB$ObsMeta()$uuid_l2)
         } else {
-          UUIDExist <- F
+          uuid_l2Exist <- F
         }
 
-        # If UUID already exist, update record in SQLite
-        if (UUIDPresent & UUIDExist) {
-          # Update MetadataL2 ---------------------------------------------------------
+        # If uuid_l2 already exist, update record in SQLite
+        if (uuid_l2Present & uuid_l2Exist) {
+          # Update metadata_l2 ---------------------------------------------------------
 
-          MetadataL2 <- Obs$MetadataL2 %>%
+          metadata_l2 <- Obs$metadata_l2 %>%
             mutate(
-              ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-              Analyst = "Raphael Mabit",
-              Mail = "raphael.mabit@gmail.com"
+              date_time_processing = as.character(as.POSIXlt(Sys.time(), tz = "utc")),
+              analyst = "Raphael Mabit",
+              mail = "raphael.mabit@gmail.com"
             )
 
           qry <- glue::glue(
-            "UPDATE MetadataL2
-            SET Comment = '", MetadataL2$Comment, "',
-                ProTime = '", MetadataL2$ProTime, "',
-                Analyst = '", MetadataL2$Analyst, "',
-                Mail = '", MetadataL2$Mail, "'
-            WHERE UUID = '", Obs$MetadataL2$UUID, "';"
+            "UPDATE metadata_l2
+            SET comment = '", metadata_l2$comment, "',
+                date_time_processing = '", metadata_l2$date_time_processing, "',
+                analyst = '", metadata_l2$analyst, "',
+                mail = '", metadata_l2$mail, "'
+            WHERE uuid_l2 = '", Obs$metadata_l2$uuid_l2, "';"
           )
 
           # Execute the statement and return the number of line affected
@@ -234,26 +234,26 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
 
           # Update HOCR -------------------------------------------------------------
 
-          HOCRL1b <- Obs$HOCR$L1b %>%
-            unnest(cols = c(CalData))
+          hocr_l1b <- Obs$HOCR$L1b %>%
+            unnest(cols = c(cal_data))
 
           # List L1bID the link between the instruments spectrum.
-          SumQC <- HOCRL1b %>%
-            group_by(UUID, ID, QC) %>%
+          SumQC <- hocr_l1b %>%
+            group_by(uuid_l2, id, qc) %>%
             summarise()
 
           # Create specific query for each L1bID
-          # As we only update QC, the pair (UUID, ID) is a primary key of the QC column
-          # And now I realize that HOCRL1b does not complies with tidy data principles
-          # a signle observational unit by table. Should a specific table be created for QC data ?
+          # As we only update qc, the pair (uuid_l2, id) is a primary key of the qc column
+          # And now I realize that hocr_l1b does not complies with tidy data principles
+          # a signle observational unit by table. Should a specific table be created for qc data ?
 
           qry <- purrr::pmap_chr(
-            list(..1 = SumQC$UUID, ..2 = SumQC$ID, ..3 = SumQC$QC),
+            list(..1 = SumQC$uuid_l2, ..2 = SumQC$id, ..3 = SumQC$qc),
             .f = ~ glue::glue(
               "
-              UPDATE HOCRL1b
-              SET QC = '", ..3, "'
-              WHERE (UUID || ID = '", glue::glue(..1, ..2), "');
+              UPDATE hocr_l1b
+              SET qc = '", ..3, "'
+              WHERE (uuid_l2 || id = '", glue::glue(..1, ..2), "');
               "
             )
           )
@@ -263,54 +263,54 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           # Have to send each query separately ...
           # Maybe raise an issue to provide support for that ?
 
-          # Result is that we issue query to update QC everywhere, event if it doesn't change ...
+          # Result is that we issue query to update qc everywhere, event if it doesn't change ...
 
           # Execute the statement and return the number of line affected
           HOCRL1bUp <- unlist(purrr::map(qry, ~ DBI::dbExecute(DB$Con(), glue::glue_sql(.x))))
 
           # Update HOCR L2 table
-          HOCRL2 <- Obs$HOCR$L2
+          hocr_l2 <- Obs$HOCR$L2
 
           # Individual CASE WHEN for each variables to change: Rrs, KLu
-          # As the WHERE constraint on UUID is already present on the final query could remove UUID from CASE WHEN
+          # As the WHERE constraint on uuid_l2 is already present on the final query could remove uuid_l2 from CASE WHEN
           qryRrs <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$Rrs),
+            list(..1 = hocr_l2$uuid_l2, ..2 = hocr_l2$wavelength, ..3 = hocr_l2$Rrs),
             .f = ~ glue::glue(
-              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+              "WHEN uuid_l2 = '", ..1, "' AND wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
           qryRrs_loess <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$Rrs_loess),
+            list(..1 = hocr_l2$uuid_l2, ..2 = hocr_l2$wavelength, ..3 = hocr_l2$Rrs_loess),
             .f = ~ glue::glue(
-              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+              "WHEN uuid_l2 = '", ..1, "' AND wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
           qryKLu <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$KLu),
+            list(..1 = hocr_l2$uuid_l2, ..2 = hocr_l2$wavelength, ..3 = hocr_l2$KLu),
             .f = ~ glue::glue(
-              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+              "WHEN uuid_l2 = '", ..1, "' AND wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
           qryKLu_loess <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$KLu_loess),
+            list(..1 = hocr_l2$uuid_l2, ..2 = hocr_l2$wavelength, ..3 = hocr_l2$KLu_loess),
             .f = ~ glue::glue(
-              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+              "WHEN uuid_l2 = '", ..1, "' AND wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
           qryRbI <- glue::glue_sql_collapse(purrr::pmap_chr(
-            list(..1 = HOCRL2$UUID, ..2 = HOCRL2$Wavelength, ..3 = HOCRL2$RbI),
+            list(..1 = hocr_l2$uuid_l2, ..2 = hocr_l2$wavelength, ..3 = hocr_l2$RbI),
             .f = ~ glue::glue(
-              "WHEN UUID = '", ..1, "' AND Wavelength = ", ..2, " THEN ", ..3
+              "WHEN uuid_l2 = '", ..1, "' AND wavelength = ", ..2, " THEN ", ..3
             )
           ), sep = "\n")
 
           # Assemble query
           qry <- glue::glue_sql(
-            "UPDATE HOCRL2
+            "UPDATE hocr_l2
             SET Rrs = CASE
                   ", qryRrs, "
                   ELSE Rrs
@@ -331,7 +331,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
                   ", qryRbI, "
                   ELSE RbI
                   END
-            WHERE UUID = '", Obs$MetadataL2$UUID, "';"
+            WHERE uuid_l2 = '", Obs$metadata_l2$uuid_l2, "';"
           )
 
           # NA value in R are equal to NULL in SQL
@@ -343,22 +343,22 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
 
           # Update SBE19 ------------------------------------------------------------
 
-          SBE19L1bUp <- update_L1b_param_val(L1b = Obs$SBE19$L1b, TableName = "SBE19L1b", Con = DB$Con())
+          SBE19L1bUp <- update_L1b_param_val(L1b = Obs$SBE19$L1b, TableName = "sbe19_l1b", Con = DB$Con())
 
-          SBE19L2Up <- update_L2_param_val(L2 = Obs$SBE19$L2, TableName = "SBE19L2", Con = DB$Con())
+          SBE19L2Up <- update_L2_param_val(L2 = Obs$SBE19$L2, TableName = "sbe19_l2", Con = DB$Con())
 
           # Update SeaOWL ------------------------------------------------------------
 
-          SeaOWLL1bUp <- update_L1b_param_val(L1b = Obs$SeaOWL$L1b, TableName = "SeaOWLL1b", Con = DB$Con())
+          SeaOWLL1bUp <- update_L1b_param_val(L1b = Obs$SeaOWL$L1b, TableName = "seaowl_l1b", Con = DB$Con())
 
-          SeaOWLL2Up <- update_L2_param_val(L2 = Obs$SeaOWL$L2, TableName = "SeaOWLL2", Con = DB$Con())
+          SeaOWLL2Up <- update_L2_param_val(L2 = Obs$SeaOWL$L2, TableName = "seaowl_l2", Con = DB$Con())
 
 
           # Update BBFL2 ------------------------------------------------------------
 
-          BBFL2L1bUp <- update_L1b_param_val(L1b = Obs$BBFL2$L1b, TableName = "BBFL2L1b", Con = DB$Con())
+          BBFL2L1bUp <- update_L1b_param_val(L1b = Obs$BBFL2$L1b, TableName = "bbfl2_l1b", Con = DB$Con())
 
-          BBFL2L2Up <- update_L2_param_val(L2 = Obs$BBFL2$L2, TableName = "BBFL2L2", Con = DB$Con())
+          BBFL2L2Up <- update_L2_param_val(L2 = Obs$BBFL2$L2, TableName = "bbfl2_l2", Con = DB$Con())
 
 
           # Update BioSonic ---------------------------------------------------------
@@ -369,7 +369,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           # Update feedback UI ------------------------------------------------------
 
           # Check that the number of line affected is correct, should probably improve this
-          # MetaUp must be only one line affected, if more means UUID collision
+          # MetaUp must be only one line affected, if more means uuid_l2 collision
           # L1bUp == 3 * 137 wavelengths * bins number
           # L2Up == User input wavelength
           test <- all(MetaUp == 1) # , unique(HOCRL1bUp) == 411, HOCRL2Up == 150)
@@ -379,9 +379,9 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             type = "testmessage",
             message =
               glue::glue(
-                "MetadataL2: ", MetaUp, " entry updated\n",
-                "HOCRL1b: ", sum(HOCRL1bUp), " entry updated\n",
-                "HOCRL2: ", HOCRL2Up, " entry updated\n"
+                "metadata_l2: ", MetaUp, " entry updated\n",
+                "hocr_l1b: ", sum(HOCRL1bUp), " entry updated\n",
+                "hocr_l2: ", HOCRL2Up, " entry updated\n"
               )
           )
 
@@ -395,117 +395,117 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
           #   session = shiny::getDefaultReactiveDomain()
           # )
         } else {
-          # Initial save if UUID doesn't exist --------------------------------------
+          # Initial save if uuid_l2 doesn't exist --------------------------------------
 
-          ObsUUID <- uuid::UUIDgenerate(
+          Obsuuid_l2 <- uuid::UUIDgenerate(
             use.time = T,
             output = "string"
           )
 
-          # Good explanation of the difference between UUID and hash,
+          # Good explanation of the difference between uuid_l2 and hash,
           # This way could create collision as it does not guarantee uniqueness
           # openssl::md5(paste0(as.character(ObsMeta),
-          #                     as.character(HOCRL1b),
+          #                     as.character(hocr_l1b),
           #                     as.character(AOPs),
           #                     collapse = ""))
 
-          MetadataL2 <- Obs$MetadataL2 %>%
+          metadata_l2 <- Obs$metadata_l2 %>%
             mutate(
-              UUID = ObsUUID,
-              ProTime = as.character(as.POSIXlt(Sys.time(), tz = "UTC")),
-              Analyst = "Raphael Mabit",
-              Mail = "raphael.mabit@gmail.com"
+              uuid_l2 = Obsuuid_l2,
+              date_time_processing = as.character(as.POSIXlt(Sys.time(), tz = "utc")),
+              analyst = "Raphael Mabit",
+              mail = "raphael.mabit@gmail.com"
             )
 
-          MetadataL1b <- Obs$MetadataL1b %>%
+          metadata_l1b <- Obs$metadata_l1b %>%
             mutate(
-              UUID = ObsUUID
+              uuid_l2 = Obsuuid_l2
             )
 
-          DBI::dbWriteTable(DB$Con(), "MetadataL2", MetadataL2, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "MetadataL1b", MetadataL1b, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "metadata_l2", metadata_l2, append = TRUE)
+          DBI::dbWriteTable(DB$Con(), "metadata_l1b", metadata_l1b, append = TRUE)
 
           if (nrow(Obs$HOCR$L1b) != 0) {
-            HOCRL1b <- Obs$HOCR$L1b %>%
-              unnest(cols = c(CalData)) %>%
+            hocr_l1b <- Obs$HOCR$L1b %>%
+              unnest(cols = c(cal_data)) %>%
               mutate(
-                UUID = ObsUUID
+                uuid_l2 = Obsuuid_l2
               )
 
-            HOCRL2 <- Obs$HOCR$L2 %>%
-              mutate(UUID = ObsUUID)
+            hocr_l2 <- Obs$HOCR$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
 
-            DBI::dbWriteTable(DB$Con(), "HOCRL1b", HOCRL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "HOCRL2", HOCRL2, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
           }
 
           if (nrow(Obs$SBE19$L1b) != 0) {
-            SBE19L1b <- Obs$SBE19$L1b %>%
+            sbe19_l1b <- Obs$SBE19$L1b %>%
               unnest(c(Data)) %>%
               mutate(
-                UUID = ObsUUID
+                uuid_l2 = Obsuuid_l2
               )
 
-            SBE19L2 <- Obs$SBE19$L2 %>%
-              mutate(UUID = ObsUUID)
+            sbe19_l2 <- Obs$SBE19$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
 
-            DBI::dbWriteTable(DB$Con(), "SBE19L1b", SBE19L1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "SBE19L2", SBE19L2, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "sbe19_l1b", sbe19_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "sbe19_l2", sbe19_l2, append = TRUE)
           }
 
 
           if (nrow(Obs$SeaOWL$L1b) != 0) {
-            SeaOWLL1b <- Obs$SeaOWL$L1b %>%
+            seaowl_l1b <- Obs$SeaOWL$L1b %>%
               unnest(c(Data)) %>%
               mutate(
-                UUID = ObsUUID
+                uuid_l2 = Obsuuid_l2
               )
 
-            SeaOWLL2 <- Obs$SeaOWL$L2 %>%
-              mutate(UUID = ObsUUID)
+            seaowl_l2 <- Obs$SeaOWL$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
 
-            DBI::dbWriteTable(DB$Con(), "SeaOWLL1b", SeaOWLL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "SeaOWLL2", SeaOWLL2, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "seaowl_l1b", seaowl_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "seaowl_l2", seaowl_l2, append = TRUE)
           }
 
           if (nrow(Obs$BBFL2$L1b) != 0) {
-            BBFL2L1b <- Obs$BBFL2$L1b %>%
+            bbfl2_l1b <- Obs$BBFL2$L1b %>%
               unnest(c(Data)) %>%
               mutate(
-                UUID = ObsUUID
+                uuid_l2 = Obsuuid_l2
               )
 
-            BBFL2L2 <- Obs$BBFL2$L2 %>%
-              mutate(UUID = ObsUUID)
+            bbfl2_l2 <- Obs$BBFL2$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
 
-            DBI::dbWriteTable(DB$Con(), "BBFL2L1b", BBFL2L1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "BBFL2L2", BBFL2L2, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "bbfl2_l1b", bbfl2_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "bbfl2_l2", bbfl2_l2, append = TRUE)
           }
 
           if (nrow(Obs$BioSonic$L1b) != 0) {
-            BioSonicL1b <- Obs$BioSonic$L1b %>%
+            biosonic_l1b <- Obs$BioSonic$L1b %>%
               mutate(
-                UUID = ObsUUID
+                uuid_l2 = Obsuuid_l2
               )
 
-            BioSonicL2 <- Obs$BioSonic$L2 %>%
-              mutate(UUID = ObsUUID)
+            biosonic_l2 <- Obs$BioSonic$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
 
-            DBI::dbWriteTable(DB$Con(), "BioSonicL1b", BioSonicL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "BioSonicL2", BioSonicL2, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "biosonic_l1b", biosonic_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "biosonic_l2", biosonic_l2, append = TRUE)
           }
 
           if (nrow(Obs$HydroBall$L1b) != 0) {
-            HydroBallL1b <- Obs$HydroBall$L1b %>%
+            hydroball_l1b <- Obs$HydroBall$L1b %>%
               mutate(
-                UUID = ObsUUID
+                uuid_l2 = Obsuuid_l2
               )
 
-            HydroBallL2 <- Obs$HydroBall$L2 %>%
-              mutate(UUID = ObsUUID)
+            hydroball_l2 <- Obs$HydroBall$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
 
-            DBI::dbWriteTable(DB$Con(), "HydroBallL1b", HydroBallL1b, append = TRUE)
-            DBI::dbWriteTable(DB$Con(), "HydroBallL2", HydroBallL2, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "hydroball_l1b", hydroball_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "hydroball_l2", hydroball_l2, append = TRUE)
           }
 
           # Feedback to the user
@@ -513,17 +513,17 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
             type = "testmessage",
             message = "Saved"
             # glue::glue(
-            #   "MetadataL2: ",MetaUp," entry updated\n",
-            #   "HOCRL1b: ", sum(L1bUp)," entry updated\n",
-            #   "HOCRL2: ",L2Up," entry updated\n")
+            #   "metadata_l2: ",MetaUp," entry updated\n",
+            #   "hocr_l1b: ", sum(L1bUp)," entry updated\n",
+            #   "hocr_l2: ",L2Up," entry updated\n")
           )
 
           # Update the list of observation
-          DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
+          DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM metadata_l2")))
 
-          qry <- glue::glue_sql("SELECT * FROM MetadataL2 WHERE UUID = '", ObsUUID, "';")
+          qry <- glue::glue_sql("SELECT * FROM metadata_l2 WHERE uuid_l2 = '", Obsuuid_l2, "';")
 
-          Obs$MetadataL2 <- tibble(DBI::dbGetQuery(DB$Con(), qry))
+          Obs$metadata_l2 <- tibble(DBI::dbGetQuery(DB$Con(), qry))
         }
       }
     )
@@ -547,7 +547,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     observeEvent(input$ok, {
       removeModal()
 
-      qry <- glue::glue("DELETE FROM MetadataL2 WHERE UUID='", Obs$MetadataL2$UUID, "';")
+      qry <- glue::glue("DELETE FROM metadata_l2 WHERE uuid_l2='", Obs$metadata_l2$uuid_l2, "';")
 
       LineDel <- DBI::dbExecute(DB$Con(), qry)
 
@@ -561,7 +561,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
       )
 
       # Update the list of observation
-      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
+      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM metadata_l2")))
     })
 
     # If user cancel
@@ -572,7 +572,7 @@ mod_manage_obs_server <- function(id, DB, L2, L1aSelect, L2Select, Obs, L2Obs) {
     # Module export -----------------------------------------------------------
     list(
       Save = reactive(input$Save),
-      UUID = UUID
+      uuid_l2 = uuid_l2
     )
   })
 }

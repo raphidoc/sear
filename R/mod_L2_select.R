@@ -1,6 +1,6 @@
 #' L2_select UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -37,23 +37,23 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    SelUUID <- reactiveVal()
+    Seluuid_l2 <- reactiveVal()
 
     observeEvent(
       event_data("plotly_selected", source = "L2map"),
       label = "Click Obs display DB",
       ignoreInit = T,
       {
-        UUID <- as.character(event_data("plotly_selected", source = "L2map")$customdata)
+        uuid_l2 <- as.character(event_data("plotly_selected", source = "L2map")$customdata)
 
-        if (!identical(UUID, character(0)) && any(!uuid::UUIDvalidate(UUID))) {
+        if (!identical(uuid_l2, character(0)) && any(!uuid::UUIDvalidate(uuid_l2))) {
           showModal(modalDialog(
             title = "Invalid selection",
-            "You didn't select an L2Obs feature, no UUID attatched"
+            "You didn't select an L2Obs feature, no uuid_l2 attatched"
           ))
-          invalidateLater(1)
+          invalidatelater(1)
         } else {
-          SelUUID(UUID)
+          Seluuid_l2(uuid_l2)
         }
       }
     )
@@ -61,11 +61,11 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     InstList <- reactiveVal()
 
     observeEvent(
-      nrow(L2Obs$MetadataL2 != 0),
+      nrow(L2Obs$metadata_l2 != 0),
       {
-        Instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
+        instruments <- str_subset(names(L2Obs), "[^(Metadata)]")
 
-        InstList(c("", Instruments))
+        InstList(c("", instruments))
       }
     )
 
@@ -97,7 +97,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     observeEvent(
       req(input$InstX != ""),
       {
-        Variables <- str_subset(names(L2Obs[[input$InstX]]), "[^(UUID)(Wavelength)]")
+        Variables <- str_subset(names(L2Obs[[input$InstX]]), "[^(uuid_l2)(wavelength)]")
 
         VarListX(c("", Variables))
       }
@@ -106,7 +106,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     observeEvent(
       req(input$InstY != ""),
       {
-        Variables <- str_subset(names(L2Obs[[input$InstY]]), "[^(UUID)(Wavelength)]")
+        Variables <- str_subset(names(L2Obs[[input$InstY]]), "[^(uuid_l2)(wavelength)]")
 
         VarListY(c("", Variables))
       }
@@ -153,17 +153,17 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     #     event_data("plotly_hover", source = "plot")
     #   },{
     #
-    #     HovUUID <- event_data("plotly_hover", source = "plot")$customdata
+    #     Hovuuid_l2 <- event_data("plotly_hover", source = "plot")$customdata
     #
-    #     HovMark <- L2Obs$Metadata %>% filter(UUID == HovUUID)
+    #     HovMark <- L2Obs$Metadata %>% filter(uuid_l2 == Hovuuid_l2)
     #
     #
     #     plotlyProxy("Map", session) %>%
     #       plotlyProxyInvoke(
     #         "addTraces",
     #         list(
-    #           lon = list(HovMark$Lon),
-    #           lat = list(HovMark$Lat),
+    #           lon = list(HovMark$lon),
+    #           lat = list(HovMark$lat),
     #           type = list("scattermapbox"),
     #           mode = list("markers"),
     #           marker.color = list("#FF0000")
@@ -179,7 +179,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     # Plot selected variables -------------------------------------------------
 
     output$Plot <- renderPlotly({
-      req(nrow(L2Obs$MetadataL2 != 0))
+      req(nrow(L2Obs$metadata_l2 != 0))
       req(input$VarY)
       validate(need(input$VarY != "", message = "Need x and y variables"))
 
@@ -188,24 +188,24 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
       VarX <- input$VarX
       VarY <- input$VarY
 
-      L2 <- L2Obs$MetadataL2
+      L2 <- L2Obs$metadata_l2
 
       for (i in names(L2Obs)[-1]) {
-        L2 <- left_join(L2, L2Obs[[i]], by = c("UUID"))
+        L2 <- left_join(L2, L2Obs[[i]], by = c("uuid_l2"))
       }
 
       if (InstX != "" && InstY != "") {
         p <- L2 %>%
-          filter(Wavelength %in% c(401, 500, 602, 701)) %>%
+          filter(wavelength %in% c(401, 500, 602, 701)) %>%
           plot_ly(
             source = "plot",
-            text = ~UUID,
-            customdata = ~UUID
+            text = ~uuid_l2,
+            customdata = ~uuid_l2
           ) %>%
           add_markers(
             x = ~ .data[[VarX]],
             y = ~ .data[[VarY]],
-            color = ~ as.character(Wavelength),
+            color = ~ as.character(wavelength),
             showlegend = T
           ) %>%
           event_register("plotly_hover")
@@ -216,10 +216,10 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
         p <- L2 %>%
           plot_ly(
             source = "plot",
-            text = ~UUID,
-            customdata = ~UUID
+            text = ~uuid_l2,
+            customdata = ~uuid_l2
           ) %>%
-          add_lines(x = ~ .data[["Wavelength"]], y = ~ .data[[VarY]], showlegend = F, split = ~UUID) %>%
+          add_lines(x = ~ .data[["wavelength"]], y = ~ .data[[VarY]], showlegend = F, split = ~uuid_l2) %>%
           event_register("plotly_click")
       }
 
@@ -232,7 +232,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
 
     observeEvent(
       event_data("plotly_click", source = "plot"),
-      label = "QC HOCR",
+      label = "qc HOCR",
       ignoreInit = TRUE,
       {
         Selected <- event_data("plotly_click", source = "plot")$customdata
@@ -299,7 +299,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     observeEvent(input$ok, {
       removeModal()
 
-      qry <- glue::glue_sql('DELETE FROM MetadataL2 WHERE UUID IN ("', paste(DelList(), collapse = '","'), '");')
+      qry <- glue::glue_sql('DELETE FROM metadata_l2 WHERE uuid_l2 IN ("', paste(DelList(), collapse = '","'), '");')
 
       LineDel <- DBI::dbExecute(DB$Con(), qry)
 
@@ -313,7 +313,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
       )
 
       # Update the list of observation
-      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM MetadataL2")))
+      DB$ObsMeta(tibble(DBI::dbGetQuery(DB$Con(), "SELECT * FROM metadata_l2")))
 
       # Empty DelList
       DelList(list())
@@ -334,18 +334,18 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
       Center <- reactiveVal()
       Zoom <- reactiveVal()
 
-      ZC <- zoom_center(DB$ObsMeta()$Lat, DB$ObsMeta()$Lon)
+      ZC <- zoom_center(DB$ObsMeta()$lat, DB$ObsMeta()$lon)
       Zoom(ZC[[1]])
       Center(ZC[[2]])
 
-      # # SF read coords as XY not YX aka Lat Lon
-      # ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>% sf::st_transform(2947)
-      # ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$DistanceRun / 2) %>% sf::st_transform(4326)
+      # # SF read coords as XY not YX aka lat lon
+      # ObsMeta <- sf::st_as_sf(DB$ObsMeta(), coords = c("lon", "lat"), crs = 4326) %>% sf::st_transform(2947)
+      # ObsMetaBuffer <- sf::st_buffer(x = ObsMeta, dist = ObsMeta$distance_run / 2) %>% sf::st_transform(4326)
       #
       # # Avoid sfheaders::sf_to_df bug if object empty
       # if (nrow(ObsMetaBuffer) == 0) {
       #   ObsMetaBuffer <- tibble(
-      #     UUID = NA,
+      #     uuid_l2 = NA,
       #     x = NA,
       #     y = NA
       #   )
@@ -361,23 +361,23 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
           #   data = ObsMetaBuffer,
           #   x = ~x,
           #   y = ~y,
-          #   customdata = ~UUID,
+          #   customdata = ~uuid_l2,
           #   line = list(color = "rgb(127, 255, 212)", width = 1),
           #   fillcolor = "rgba(127, 255, 212, 0.2)",
-          #   split = ~UUID,
+          #   split = ~uuid_l2,
           #   legendgroup = "Obs",
           #   showlegend = F
           # ) %>%
           add_markers(
             name = "Obs",
             data = DB$ObsMeta(),
-            x = ~Lon,
-            y = ~Lat,
-            customdata = ~UUID,
+            x = ~lon,
+            y = ~lat,
+            customdata = ~uuid_l2,
             marker = list(color = "rgb(127, 255, 212)"),
             text = ~ paste0(
-              "<b>DateTime</b>: ", DateTime, "<br>",
-              "<b>UUID</b>: ", UUID, "<br>"
+              "<b>date_time</b>: ", date_time, "<br>",
+              "<b>uuid_l2</b>: ", uuid_l2, "<br>"
             ),
             legendgroup = "Obs"
           ) %>%
@@ -412,7 +412,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
       } else {
         # Determine survey area bounding box and crop coastline accordingly
 
-        SurveyArea <- sf::st_as_sf(DB$ObsMeta(), coords = c("Lon", "Lat"), crs = 4326) %>%
+        SurveyArea <- sf::st_as_sf(DB$ObsMeta(), coords = c("lon", "lat"), crs = 4326) %>%
           select(geometry) %>%
           summarise()
 
@@ -445,7 +445,7 @@ mod_L2_select_server <- function(id, DB, ManObs, L2Obs) {
     # Module output -----------------------------------------------------------
 
     list(
-      SelUUID = SelUUID
+      Seluuid_l2 = Seluuid_l2
     )
   })
 }

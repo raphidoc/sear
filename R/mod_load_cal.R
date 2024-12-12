@@ -1,6 +1,6 @@
 #' load_cal_2 UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -22,7 +22,9 @@ mod_load_cal_server <- function(
     SearProj,
     read_cal,
     ReactCal,
-    ParsedCalFiles) {
+    ParsedCalFiles,
+    DB
+    ) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -56,6 +58,17 @@ mod_load_cal_server <- function(
         file.copy(Files$datapath, Files$calpath)
 
         Cal <- read_cal(Files$calpath)
+
+        if (id == "HOCR") {
+          for (cal_type in names(Cal)) {
+
+            temp <- Cal[[cal_type]] %>%
+              unnest(cols = c(cal_type))
+
+            DBI::dbWriteTable(DB$Con(), cal_type, temp, append = TRUE)
+          }
+        }
+
 
         ReactCal(Cal)
       }

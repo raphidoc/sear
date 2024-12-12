@@ -14,7 +14,7 @@ data_synthesis(x, y, tol = 3)
 \item{tol}{allowed time difference (+-)}
 }
 \value{
-A logical vector (T/F),
+a logical vector (T/F),
 }
 \description{
 Create a data synthesis from two time vectors. Give information on which data have been acquired when.

@@ -11,7 +11,7 @@ doc:  |
   HOCR binary files contains all the numerical counts for each radiometric
   channel. The calibration file (.cal) for each instruments preciesely define
   the structure of a binary packet send by that instrument and allow the creation
-  of this parser. All three HOCR on seadoo A and B have the same binary packet
+  of this parser. All three HOCR on seadoo a and b have the same binary packet
   structure but posses different central wavelength and corresponding calibration
   coefficient.
   Could improve the structure of this file by separating DataLogger (MTE), HOCR,
