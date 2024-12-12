@@ -1,6 +1,6 @@
 #' load_cal UI Function
 #'
-#' @description A shiny Module.
+#' @description a shiny Module.
 #'
 #' @param id,input,output,session Internal parameters for {shiny}.
 #'
@@ -22,11 +22,11 @@ mod_parse_cal_ui <- function(id) {
 #' load_cal Server Functions
 #'
 #' @noRd
-mod_parse_cal_server <- function(id, SearProj) {
+mod_parse_cal_server <- function(id, SearProj, DB) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    CalHOCR <- reactiveVal()
+    hocr_cal <- reactiveVal()
     CalSBE19 <- reactiveVal()
     CalSBE18 <- reactiveVal()
     CalSBE43 <- reactiveVal()
@@ -52,8 +52,9 @@ mod_parse_cal_server <- function(id, SearProj) {
       "HOCR",
       SearProj,
       tidy_cal_hocr,
-      CalHOCR,
-      ParsedCalFiles
+      hocr_cal,
+      ParsedCalFiles,
+      DB
     )
 
     mod_load_cal_server(
@@ -98,7 +99,7 @@ mod_parse_cal_server <- function(id, SearProj) {
 
     # Module output -----------------------------------------------------------
     list(
-      CalHOCR = CalHOCR,
+      hocr_cal = hocr_cal,
       CalSBE19 = CalSBE19,
       CalSBE18 = CalSBE18,
       CalSBE43 = CalSBE43,
