@@ -268,7 +268,7 @@ read_bbfl2 <- function(MTELog) {
       into = c(
         "bbfl2_date",
         "bbfl2_time",
-        "ntu_ref", # NTU
+        "ntu_ref", # ntu
         "ntu_channel",
         "pe_ref", # phycoerithrin
         "pe_channel",
@@ -333,7 +333,7 @@ read_sbe19 <- function(MTELog) {
         "conductivity", # S/m, multiply by 10 to get mS/cm
         "pressure", # decibars
         "volt0", # volt0 ? = OXY
-        "Volt2" # Volt2 ? = pH
+        "Volt2" # Volt2 ? = ph
       ),
       convert = T,
       extra = "merge"

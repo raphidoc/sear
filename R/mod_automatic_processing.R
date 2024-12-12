@@ -146,7 +146,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
                   )
                 ) %>%
                 mutate(
-                  pH = cal_sbe18(
+                  ph = cal_sbe18(
                     Volt = Volt2,
                     Tcelsius = temperature,
                     cal_data = cal_data$CalSBE18()
@@ -163,7 +163,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
                   oxygen_solubility,
                   oxygen_solubility,
                   oxygen_concentration,
-                  pH
+                  ph
                 ) %>%
                 mutate(
                   id = seq_along(rownames(sbe19)),
@@ -173,7 +173,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
               Obs$SBE19$L1b <- sbe19 %>%
                 select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
                 pivot_longer(
-                  cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+                  cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "ph")),
                   names_to = "parameter",
                   values_to = "value"
                 ) %>%
@@ -200,7 +200,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
 
           hocr <- L1a$HOCR()[which(ensemble_hocr %in% ensemble)]
 
-          hocr_dark <- L1a$HOCRDark() %>%
+          hocr_dark <- L1a$hocr_dark() %>%
             mutate(
               dark_cal_data = purrr::map(
                 cal_data,
@@ -216,7 +216,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
             Settings$HOCR$WaveStep()
           )
 
-          # UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
+          # update_progress <- function(value = NULL, message = NULL, detail = NULL) {
           #   if (is.null(value)) {
           #     value <- progress$getValue()
           #     value <- value + (progress$getMax() - value) / 5
@@ -229,20 +229,19 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
               hocr_raw = hocr,
               hocr_cal = cal_data$hocr_cal(),
               metadata_l2 = Obs$metadata_l2,
-              UpdateProgress = NULL,
+              update_progress = NULL
             ),
             shiny = T,
             trace_back = TRUE
           )
 
           # Save L1a data to table
-
           Obs$HOCR$L1b <- spsComps::shinyCatch(
             hocr_l1b(
               hocr_l1a = Obs$HOCR$L1a,
-              HOCRDark = hocr_dark,
-              UpdateProgress = NULL,
-              wave_seq
+              hocr_dark = hocr_dark,
+              wave_seq,
+              update_progress = NULL
             ),
             shiny = T,
             trace_back = TRUE
@@ -291,27 +290,29 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
 
             pressure <- Obs$SBE19$L1b$Data[Obs$SBE19$L1b$parameter == "pressure"][[1]]$value
 
+            ctd <- unnest(Obs$SBE19$L1b, cols = Data) %>%
+              pivot_wider(
+                names_from = parameter,
+                values_from = value
+              )
+
             if (any(pressure < 0)) {
               message("CTD in air, taking single z1 from setting")
-              z1 <- tibble(
-                z1_median = Settings$HOCR$Z1Depth(),
-                z1_sd = 0
+              ctd <- tibble(
+                z1 = Settings$HOCR$Z1Depth()
               )
             } else {
-              z1 <- tibble(
-                z = gsw::gsw_z_from_p(p = pressure, latitude = metadata_l2$lat),
-                z1 = z
-              ) %>%
-                summarise(
-                  across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}")
+              ctd <- ctd %>%
+                mutate(
+                  z = gsw::gsw_z_from_p(p = pressure, latitude = metadata_l2$lat),
+                  z1 = z
                 )
             }
 
           } else {
             message("Taking single z1 from setting")
-            z1 <- tibble(
-              z1_median = Settings$HOCR$Z1Depth(),
-              z1_sd = 0
+            ctd <- tibble(
+              z1 = Settings$HOCR$Z1Depth()
             )
           }
 
@@ -320,8 +321,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
           Obs$HOCR$L2 <- tryCatch(
             {
               hocr_l2(
-                Obs$HOCR$L1b, wave_seq, z1, z2z1,
-                T, 0.1, Obs
+                Obs$HOCR$L1b, wave_seq, ctd, z2z1,
+                F, 0.1, Obs
               )
             },
             error = function(e) e
@@ -340,6 +341,11 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
             next
           }
 
+          hocr_l1a <- Obs$HOCR$L1a %>%
+            select(instrument, sn, raw_data) %>%
+            unnest(cols = c(raw_data)) %>%
+            mutate(uuid_l2 = Obsuuid_l2)
+
           hocr_l1b <- Obs$HOCR$L1b %>%
             unnest(cols = c(cal_data)) %>%
             mutate(uuid_l2 = Obsuuid_l2)
@@ -347,6 +353,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
           hocr_l2 <- Obs$HOCR$L2 %>%
             mutate(uuid_l2 = Obsuuid_l2)
 
+          DBI::dbWriteTable(DB$Con(), "hocr_l1a", hocr_l1a, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
           DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
 
@@ -421,7 +428,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
 
               Obs$BBFL2$L1b <- bbfl2_l1b %>%
                 pivot_longer(
-                  cols = any_of(c("NTU", "PE", "PC")),
+                  cols = any_of(c("ntu", "pe", "pc")),
                   names_to = "parameter",
                   values_to = "value"
                 ) %>%
@@ -645,7 +652,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #         # HOCR --------------------------------------------------------------------
     #
     #         if (any(str_detect(L1a$instrumentList(), "HOCR"))) {
-    #           UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
+    #           update_progress <- function(value = NULL, message = NULL, detail = NULL) {
     #             if (is.null(value)) {
     #               value <- progress$getValue()
     #               value <- value + (progress$getMax() - value) / 5
@@ -667,12 +674,12 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #             # Select nearest dark data
     #             Obstime <- int_end(timeInt / 2)
     #
-    #             HOCRDark <- L1a$HOCRDark() %>%
+    #             hocr_dark <- L1a$hocr_dark() %>%
     #               mutate(DarkAproxData = purrr::map(AproxData, ~ .x[which.min(abs(ymd_hms(.x$date_time) - Obstime)), ])) %>%
     #               ungroup() %>%
     #               select(sn, DarkAproxData)
     #
-    #             WaveSeq <- seq(
+    #             wave_seq <- seq(
     #               Settings$HOCR$WaveMin(),
     #               Settings$HOCR$WaveMax(),
     #               Settings$HOCR$WaveStep()
@@ -682,10 +689,10 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #               hocr_l1b(
     #                 hocr_raw = Filthocr_raw,
     #                 hocr_cal = cal_data$hocr_cal(),
-    #                 HOCRDark = HOCRDark,
+    #                 hocr_dark = hocr_dark,
     #                 metadata_l1b = Obs$metadata_l1b,
-    #                 UpdateProgress,
-    #                 WaveSeq
+    #                 update_progress,
+    #                 wave_seq
     #               ),
     #               shiny = T,
     #               trace_back = TRUE
@@ -699,7 +706,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #             Obs$HOCR$L2 <- tryCatch(
     #               {
     #                 hocr_l2(
-    #                   Obs$HOCR$L1b, WaveSeq, Z1Depth, Z1Z2Depth,
+    #                   Obs$HOCR$L1b, wave_seq, Z1Depth, Z1Z2Depth,
     #                   T, 0.1, Obs
     #                 )
     #               },
@@ -765,7 +772,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #                 )
     #               ) %>%
     #               mutate(
-    #                 pH = cal_sbe18(
+    #                 ph = cal_sbe18(
     #                   Volt = Volt2,
     #                   Tcelsius = temperature,
     #                   cal_data = cal_data$CalSBE18()
@@ -782,7 +789,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #                 oxygen_solubility,
     #                 oxygen_solubility,
     #                 oxygen_concentration,
-    #                 pH
+    #                 ph
     #               ) %>%
     #               mutate(
     #                 id = seq_along(rownames(SBE19)),
@@ -792,7 +799,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #             Obs$SBE19$L1b <- SBE19 %>%
     #               select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
     #               pivot_longer(
-    #                 cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+    #                 cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "ph")),
     #                 names_to = "parameter",
     #                 values_to = "value"
     #               ) %>%
@@ -885,7 +892,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #
     #             Obs$BBFL2$L1b <- bbfl2_l1b %>%
     #               pivot_longer(
-    #                 cols = any_of(c("NTU", "PE", "PC")),
+    #                 cols = any_of(c("ntu", "pe", "pc")),
     #                 names_to = "parameter",
     #                 values_to = "value"
     #               ) %>%

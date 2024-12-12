@@ -101,7 +101,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
                 )
               ) %>%
               mutate(
-                pH = cal_sbe18(
+                ph = cal_sbe18(
                   Volt = Volt2,
                   Tcelsius = temperature,
                   cal_data = cal_data$CalSBE18()
@@ -118,7 +118,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
                 oxygen_solubility,
                 oxygen_solubility,
                 oxygen_concentration,
-                pH
+                ph
               ) %>%
               mutate(
                 id = seq_along(rownames(SBE19)),
@@ -128,7 +128,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
             Obs$SBE19$L1b <- SBE19 %>%
               select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
               pivot_longer(
-                cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+                cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "ph")),
                 names_to = "parameter",
                 values_to = "value"
               ) %>%
@@ -146,7 +146,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
           # - If `value` is NULL, it will move the progress bar 1/5 of the remaining
           #   distance. If non-NULL, it will set the progress to that value.
           # - It also accepts optional detail text.
-          UpdateProgress <- function(value = NULL, message = NULL, detail = NULL) {
+          update_progress <- function(value = NULL, message = NULL, detail = NULL) {
             if (is.null(value)) {
               value <- progress$getValue()
               value <- value + (progress$getMax() - value) / 5
@@ -170,12 +170,12 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
             # Select nearest dark data
             Obstime <- int_end(timeInt / 2)
 
-            HOCRDark <- L1a$HOCRDark() %>%
+            hocr_dark <- L1a$hocr_dark() %>%
               mutate(dark_cal_data = purrr::map(cal_data, ~ .x[which.min(abs(ymd_hms(.x$date_time) - Obstime)), ])) %>%
               ungroup() %>%
               select(sn, dark_cal_data)
 
-            WaveSeq <- seq(
+            wave_seq <- seq(
               Settings$HOCR$WaveMin(),
               Settings$HOCR$WaveMax(),
               Settings$HOCR$WaveStep()
@@ -185,10 +185,10 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
               hocr_l1b(
                 hocr_raw = Filthocr_raw,
                 hocr_cal = cal_data$hocr_cal(),
-                HOCRDark = HOCRDark,
+                hocr_dark = hocr_dark,
                 metadata_l2 = Obs$metadata_l2,
-                UpdateProgress,
-                WaveSeq = WaveSeq
+                update_progress,
+                wave_seq = wave_seq
               ),
               shiny = T,
               trace_back = TRUE
@@ -254,7 +254,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
 
             Obs$BBFL2$L1b <- bbfl2_l1b %>%
               pivot_longer(
-                cols = any_of(c("NTU", "PE", "PC")),
+                cols = any_of(c("ntu", "pe", "pc")),
                 names_to = "parameter",
                 values_to = "value"
               ) %>%

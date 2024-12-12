@@ -208,14 +208,14 @@ read_hb_devices <- function(DevFile, date) {
   lon_max <- MainLog$lon[seq(2, length(MainLog$lat), by = 2)]
   timeDiff <- MainLog$timeDiff[seq(2, length(MainLog$lat), by = 2)] # in seconds
 
-  Speed <- purrr::pmap(
+  speed <- purrr::pmap(
     list(lat_min, lon_min, lat_max, lon_max, timeDiff),
     ~ pracma::haversine(c(..1, ..2), c(..3, ..4)) / ..5 * 3600
   ) # in kmh
 
   SpeedApprox <- approx(
     x = MainLog$date_time[seq(2, length(MainLog$lat), by = 2)],
-    y = Speed,
+    y = speed,
     xout = MainLog$date_time
   )[[2]]
 

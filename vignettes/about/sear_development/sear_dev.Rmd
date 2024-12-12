@@ -526,7 +526,7 @@ date_time classe is huge to store as is. As number of second since origin it is 
 
 **MANDATORY**
 
-### Speed
+### speed
 
 **MANDATORY**: can be directly taken from the appropriate (GPVTG) NMEA string, or could be computed from GPGGA ?
 
@@ -601,7 +601,7 @@ SQLDemo <- DBI::dbConnect(
 ```
 
 ```{sql, connection=SQLDemo, output.var = "SQLDemo"}
-SELECT metadata_l1b.date_time, metadata_l1b.lon, metadata_l1b.lat, Speed, sol_zen, sol_azi, boat_raa, roll, pitch, heading, heave, instrument, sn, id, type, wavelength, channel, metadata_l1b.uuid_l2 FROM metadata_l1b
+SELECT metadata_l1b.date_time, metadata_l1b.lon, metadata_l1b.lat, speed, sol_zen, sol_azi, boat_raa, roll, pitch, heading, heave, instrument, sn, id, type, wavelength, channel, metadata_l1b.uuid_l2 FROM metadata_l1b
 LEFT JOIN hocr_l1b ON metadata_l1b.uuid_l2 = hocr_l1b.uuid_l2
 ```
 

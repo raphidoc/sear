@@ -296,7 +296,7 @@ mod_parse_mtelog_server <- function(id, SearProj, cal_data, ParsedFiles) {
     #               )
     #               )
     #
-    #           HOCRDark(test3)
+    #           hocr_dark(test3)
     #
     #         }
     #

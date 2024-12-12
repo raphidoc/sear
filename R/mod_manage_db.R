@@ -32,7 +32,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         lon = numeric(),
         distance_run = numeric(),
         date_time = character(),
-        timeElapsed = character()
+        time_elapsed = character()
       )
     })
 
@@ -55,17 +55,48 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         # Enable foreign keys
         DBI::dbExecute(conn = Con, "PRAGMA foreign_keys=ON")
 
-        # Create DB schema
+        # metadata_l1b
+        DBI::dbSendStatement(
+          Con,
+          "CREATE TABLE IF NOT EXISTS metadata_l1b (
+          ensemble DOUBLE,
+          date_time DOUBLE,
+          speed DOUBLE,
+          lon DOUBLE,
+          lat DOUBLE,
+          altitude DOUBLE,
+          sol_zen DOUBLE,
+          sol_azi DOUBLE,
+          boat_raa DOUBLE,
+          roll DOUBLE,
+          pitch DOUBLE,
+          heading DOUBLE,
+          boat_xx DOUBLE,
+          boat_xy DOUBLE,
+          boat_xz DOUBLE,
+          boat_yx DOUBLE,
+          boat_yy DOUBLE,
+          boat_yz DOUBLE,
+          boat_zx DOUBLE,
+          boat_zy DOUBLE,
+          boat_zz DOUBLE,
+          uuid_l2 TEXT,
+          FOREIGN KEY (uuid_l2)
+            REFERENCES metadata_l2 (uuid_l2)
+            ON DELETE CASCADE
+          );"
+        )
+
         # metadata_l2
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS metadata_l2 (
           ensemble DOUBLE NOT NULL,
           date_time TEXT NOT NULL,
-          date_timeMin TEXT NOT NULL,
-          date_timeMax TEXT NOT NULL,
-          timeElapsed DOUBLE NOT NULL,
-          Speed DOUBLE NOT NULL,
+          date_time_min TEXT NOT NULL,
+          date_time_max TEXT NOT NULL,
+          time_elapsed DOUBLE NOT NULL,
+          speed DOUBLE NOT NULL,
           lon DOUBLE NOT NULL,
           lat DOUBLE NOT NULL,
           lon_min DOUBLE NOT NULL,
@@ -98,36 +129,27 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           );"
         )
 
-        # metadata_l1b
+        # hocr_l1a
         DBI::dbSendStatement(
           Con,
-          "CREATE TABLE IF NOT EXISTS metadata_l1b (
-          ensemble DOUBLE,
-          date_time DOUBLE,
-          Speed DOUBLE,
-          lon DOUBLE,
-          lat DOUBLE,
-          altitude DOUBLE,
-          sol_zen DOUBLE,
-          sol_azi DOUBLE,
-          boat_raa DOUBLE,
-          roll DOUBLE,
-          pitch DOUBLE,
-          heading DOUBLE,
-          boat_xx DOUBLE,
-          boat_xy DOUBLE,
-          boat_xz DOUBLE,
-          boat_yx DOUBLE,
-          boat_yy DOUBLE,
-          boat_yz DOUBLE,
-          boat_zx DOUBLE,
-          boat_zy DOUBLE,
-          boat_zz DOUBLE,
-          uuid_l2 TEXT,
+          "CREATE TABLE IF NOT EXISTS `hocr_l1a` (
+          instrument,
+          sn,
+          time,
+          integration_time,
+          sample_delay,
+          dark_sample,
+          dark_average,
+          spectrometer_temperature,
+          frame,
+          timer,
+          checksum,
+          channel,
+          uuid_l2,
           FOREIGN KEY (uuid_l2)
             REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
-          );"
+          )"
         )
 
         # hocr_l1b
@@ -162,26 +184,30 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS `hocr_l2` (
-          wavelength REAL,
-          rrs_mean REAL,
-          rrs_sd REAL,
-          lw_mean REAL,
-          lw_sd REAL,
-          klu_mean REAL,
-          klu_sd REAL,
-          klu_mean_loess REAL,
-          klu_sd_loess REAL,
-          klu_luz1_rel_unc REAL,
-          klu_luz2_rel_unc REAL,
-          klu_rel_unity REAL,
-          lw_luz1_rel_unc REAL,
-          lw_klu_rel_unc REAL,
-          lw_z1_rel_unc REAL,
-          lw_rel_unity REAL,
-          rrs_lw_rel_unc REAL,
-          rrs_es_rel_unc REAL,
-          rrs_rel_unity REAL,
-          uuid_l2 TEXT,
+          wavelength,
+          rrs_median,
+          rrs_mad,
+          lw_median,
+          lw_mad,
+          klu_median,
+          klu_mad,
+          klu_luz1_rel_unc,
+          klu_luz2_rel_unc,
+          klu_rel_unity,
+          lw_luz1_rel_unc,
+          lw_luz2_rel_unc,
+          lw_z1_rel_unc,
+          lw_temp_rel_unc,
+          lw_sal_rel_unc,
+          lw_rel_unity,
+          rrs_luz1_rel_unc,
+          rrs_luz2_rel_unc,
+          rrs_z1_rel_unc,
+          rrs_temp_rel_unc,
+          rrs_sal_rel_unc,
+          rrs_es_rel_unc,
+          rrs_rel_unity,
+          uuid_l2,
           FOREIGN KEY (uuid_l2)
             REFERENCES metadata_l2 (uuid_l2)
             ON DELETE CASCADE
@@ -295,7 +321,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           "CREATE TABLE IF NOT EXISTS `sbe19_l2` (
           `oxygen_solubility` REAL,
           `oxygen_concentration` REAL,
-          `pH` REAL,
+          `ph` REAL,
           `pressure` REAL,
           `salinity_absolute` REAL,
           `salinity_practical` REAL,
@@ -357,9 +383,9 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS `bbfl2_l2` (
-          `NTU` REAL,
-          `PC` REAL,
-          `PE` REAL,
+          `ntu` REAL,
+          `pc` REAL,
+          `pe` REAL,
           `uuid_l2` TEXT,
           FOREIGN KEY (uuid_l2)
             REFERENCES metadata_l2 (uuid_l2)
@@ -581,7 +607,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         #         "SELECT date_time, lat, lon, wavelength, Rrs FROM Metadata
         #           LEFT JOIN hocr_l2 ON Metadata.uuid_l2 = hocr_l2.uuid_l2;"
         #
-        #         "SELECT Metadata.date_time, Metadata.lat, Metadata.lon, Speed, timeElapsed, altitude, distance_run, boat_raa, qwip_score, wavelength, Rrs, KLu, altitude_mReMsl, bottom_elevation_m, plant_height_m, percent_coverage, oxygen_concentration, pH, salinity_absolute, salinity_practical, temperature, vsf_700, chl, fdom FROM Metadata
+        #         "SELECT Metadata.date_time, Metadata.lat, Metadata.lon, speed, time_elapsed, altitude, distance_run, boat_raa, qwip_score, wavelength, Rrs, KLu, altitude_mReMsl, bottom_elevation_m, plant_height_m, percent_coverage, oxygen_concentration, ph, salinity_absolute, salinity_practical, temperature, vsf_700, chl, fdom FROM Metadata
         # LEFT JOIN hocr_l2 ON Metadata.uuid_l2 = hocr_l2.uuid_l2
         # LEFT JOIN biosonic_l2 ON Metadata.uuid_l2 = biosonic_l2.uuid_l2
         # LEFT JOIN sbe19_l2 ON Metadata.uuid_l2 = sbe19_l2.uuid_l2

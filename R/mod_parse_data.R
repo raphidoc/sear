@@ -67,7 +67,7 @@ mod_parse_data_server <- function(id, SearProj, cal_data, MainLog) {
 
     Apla <- reactiveVal()
     HOCR <- reactiveVal()
-    HOCRDark <- reactiveVal()
+    hocr_dark <- reactiveVal()
     HOCRtimeIndex <- reactiveVal()
     SBE19 <- reactiveVal()
     SeaOWL <- reactiveVal()
@@ -188,7 +188,7 @@ mod_parse_data_server <- function(id, SearProj, cal_data, MainLog) {
               )
             )
 
-          HOCRDark(test3)
+          hocr_dark(test3)
         }
 
         progress$set(value = 0.4, detail = "HOCR time index")
@@ -456,7 +456,7 @@ mod_parse_data_server <- function(id, SearProj, cal_data, MainLog) {
       instrumentList = ToProcess$instrumentList,
       Apla = Apla,
       HOCR = HOCR,
-      HOCRDark = HOCRDark,
+      hocr_dark = hocr_dark,
       HOCRtimeIndex = HOCRtimeIndex,
       SBE19 = SBE19,
       SeaOWL = SeaOWL,

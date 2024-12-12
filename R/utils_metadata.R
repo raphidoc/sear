@@ -113,9 +113,9 @@ make_ensemble <- function(date_time, duration = 10) {
 #' @return a tibble with one row and cols:
 #' \itemize{
 #'  \item{"date_time"}{}
-#'  \item{"date_timeMin"}{}
-#'  \item{"date_timeMax"}{}
-#'  \item{"timeElapsed"}{}
+#'  \item{"date_time_min"}{}
+#'  \item{"date_time_max"}{}
+#'  \item{"time_elapsed"}{}
 #'  \item{"lon"}{}
 #'  \item{"lat"}{}
 #' }
@@ -126,10 +126,10 @@ gen_metadataL2 <- function(metadata, ensemble) {
   metadata_l2 <- tibble(
     ensemble = ensemble,
     date_time = as.character(format(mean(metadata$date_time, na.rm = T), "%Y-%m-%d %H:%M:%S")),
-    date_timeMin = as.character(min(metadata$date_time, na.rm = T)),
-    date_timeMax = as.character(max(metadata$date_time, na.rm = T)),
-    timeElapsed = as.numeric(interval(date_timeMin, date_timeMax)), # in second
-    Speed = as.numeric(mean(metadata$speed_kmh, na.rm = T)), # speed in kmh
+    date_time_min = as.character(min(metadata$date_time, na.rm = T)),
+    date_time_max = as.character(max(metadata$date_time, na.rm = T)),
+    time_elapsed = as.numeric(interval(date_time_min, date_time_max)), # in second
+    speed = as.numeric(mean(metadata$speed_kmh, na.rm = T)), # speed in kmh
     lon = mean(metadata$lon, na.rm = T),
     lat = mean(metadata$lat, na.rm = T),
     lon_min = min_geo(metadata$lon, na.rm = T),
@@ -165,9 +165,9 @@ gen_metadataL2 <- function(metadata, ensemble) {
 #' @return a tibble with one row and cols:
 #' \itemize{
 #'  \item{"date_time"}{}
-#'  \item{"date_timeMin"}{}
-#'  \item{"date_timeMax"}{}
-#'  \item{"timeElapsed"}{}
+#'  \item{"date_time_min"}{}
+#'  \item{"date_time_max"}{}
+#'  \item{"time_elapsed"}{}
 #'  \item{"lon"}{}
 #'  \item{"lat"}{}
 #' }
@@ -178,7 +178,7 @@ gen_metadataL1b <- function(metadata, ensemble) {
   metadata_l1b <- tibble(
     ensemble = ensemble,
     date_time = as.numeric(metadata$date_time),
-    Speed = as.numeric(metadata$speed_kmh), # speed in kmh
+    speed = as.numeric(metadata$speed_kmh), # speed in kmh
     lon = metadata$lon,
     lat = metadata$lat,
     altitude = as.numeric(metadata$altitude),

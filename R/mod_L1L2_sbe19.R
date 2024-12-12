@@ -42,7 +42,7 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
       # SBE19nest <- Obs$SBE19$L1b %>%
       #   select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility")))%>%
       #   pivot_longer(
-      #     cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+      #     cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "ph")),
       #     names_to = "parameter",
       #     values_to = "value"
       #   ) %>%
@@ -148,7 +148,7 @@ mod_L1L2_sbe19_server <- function(id, Obs) {
           selection = "none",
           editable = F
         ) %>%
-          DT::formatRound(c("oxygen_solubility", "oxygen_concentration", "pH", "pressure", "salinity_absolute", "salinity_practical", "temperature"), digits = 3)
+          DT::formatRound(c("oxygen_solubility", "oxygen_concentration", "ph", "pressure", "salinity_absolute", "salinity_practical", "temperature"), digits = 3)
       },
       server = FALSE,
       editable = F

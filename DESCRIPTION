@@ -25,6 +25,7 @@ Imports:
     gsw,
     hms,
     lubridate,
+    MASS,
     methods,
     pkgload,
     plotly,

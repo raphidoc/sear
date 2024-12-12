@@ -859,20 +859,20 @@ L1bAveragelong <- L1bDataWide %>%
     )
   ))
 
-WaveSeq <- seq(353, 800, 3)
+wave_seq <- seq(353, 800, 3)
 
 # Function That takes as input a long spectral dataset with columns:
 # c("date_time", "type", "wavelength", "channel")
 
-approx_wave <- function(., WaveSeq) {
+approx_wave <- function(., wave_seq) {
   tbl <- tibble(
     date_time = unique(.$date_time),
     type = unique(.$type),
-    wavelength = WaveSeq
+    wavelength = wave_seq
   )
 
   for (i in seq_along(colnames(.))[-1:-3]) {
-    coord <- approx(x = .[[3]], y = .[[i]], xout = WaveSeq, method = "linear")
+    coord <- approx(x = .[[3]], y = .[[i]], xout = wave_seq, method = "linear")
 
     tbl <- bind_cols(tbl, x = coord[[2]])
     colnames(tbl)[i] <- colnames(.)[i]
@@ -884,7 +884,7 @@ approx_wave <- function(., WaveSeq) {
 }
 
 l1b_approx_long <- L1bAveragelong %>%
-  mutate(IntData = purrr::map(AproxData, ~ approx_wave(., WaveSeq)))
+  mutate(IntData = purrr::map(AproxData, ~ approx_wave(., wave_seq)))
 ```
 
 ```{r}

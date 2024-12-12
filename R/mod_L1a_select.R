@@ -79,7 +79,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           step = 1
         ),
         sliderInput(ns("sol_aziLimit"), "boat_raa [degree]", value = c(90, 180), min = 0, max = 360),
-        numericInput(ns("SpeedLimit"), "Speed [km/h]", 11, step = 0.1)
+        numericInput(ns("SpeedLimit"), "speed [km/h]", 11, step = 0.1)
       )
     })
 
@@ -316,7 +316,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
             text = ~ paste0(
               "<b>date</b>: ", format(date_time, "%Y-%m-%d"), "<br>",
               "<b>time</b>: ", format(date_time, "%H:%M:%S"), "<br>",
-              "<b>Speed (km/h)</b>: ", speed_kmh, "<br>",
+              "<b>speed (km/h)</b>: ", speed_kmh, "<br>",
               # "<b>Course (TN)</b>: ", course_tn, "<br>",
               "<b>boat_raa (degree)</b>: ", boat_raa, "<br>"
             )

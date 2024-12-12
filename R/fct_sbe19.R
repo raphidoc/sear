@@ -97,9 +97,9 @@ cal_sbe43 <- function(Volt, Tcelsius, pressure, oxygen_solubility, cal_data) {
 
 #' cal_sbe18
 #'
-#' @description compute pH
+#' @description compute ph
 #'
-#' @return pH
+#' @return ph
 #'
 #' @noRd
 
@@ -109,5 +109,5 @@ cal_sbe18 <- function(Volt, Tcelsius, cal_data) {
 
   Tkelvin <- Tcelsius + 273.15
 
-  pH <- 7.0 + (Volt - voffset) / (slope * Tkelvin * 1.98416e-4)
+  ph <- 7.0 + (Volt - voffset) / (slope * Tkelvin * 1.98416e-4)
 }

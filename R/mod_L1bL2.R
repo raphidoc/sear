@@ -97,7 +97,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
           columnDefs = list(
             list(
               visible = FALSE,
-              targets = str_which(colnames(Obs$metadata_l2), "\\b(?!Speed|distance_run|sol_zen|boat_raa|roll|pitch)\\b\\S+") - 1
+              targets = str_which(colnames(Obs$metadata_l2), "\\b(?!speed|distance_run|sol_zen|boat_raa|roll|pitch)\\b\\S+") - 1
             )
           ),
           deferRender = TRUE,
@@ -109,7 +109,7 @@ mod_L1bL2_server <- function(id, Obs, Settings) {
         editable = F
       ) %>%
         DT::formatRound(
-          columns = as.character(na.omit(str_extract(colnames(Obs$metadata_l2), "Speed|distance_run|sol_zen|boat_raa|roll|pitch"))),
+          columns = as.character(na.omit(str_extract(colnames(Obs$metadata_l2), "speed|distance_run|sol_zen|boat_raa|roll|pitch"))),
           digits = 2
         ),
       server = FALSE,

@@ -45,7 +45,7 @@ SBE18cal_data <- sear:::read_sbe18_cal()
 
 ## Calibrate data
 
-SBE19 data consist of temperature pressure and conductivity which can be converted in Practical Salinity Unit (PSU). Additionally the SBE19 can record voltage send by optional instrument such as oxygen_concentration (SBE43) and pH (SBE18, case on the UQAR SeaDoo). To manage different instruments configurations it could be a solution to provide an instrument definition file to determine how the data should parsed.
+SBE19 data consist of temperature pressure and conductivity which can be converted in Practical Salinity Unit (PSU). Additionally the SBE19 can record voltage send by optional instrument such as oxygen_concentration (SBE43) and ph (SBE18, case on the UQAR SeaDoo). To manage different instruments configurations it could be a solution to provide an instrument definition file to determine how the data should parsed.
 
 ```{r}
 Station <- interval(ymd_hms("2022-07-05 12:23:13"), ymd_hms("2022-07-05 12:23:15"))
@@ -171,7 +171,7 @@ SBE19Data <- SBE19Data %>%
   )
 ```
 
-### pH calibration
+### ph calibration
 
 ```{r}
 cal_sbe18 <- function(Volt, Tcelsius, cal_data) {
@@ -180,12 +180,12 @@ cal_sbe18 <- function(Volt, Tcelsius, cal_data) {
 
   Tkelvin <- Tcelsius + 273.15
 
-  pH <- 7.0 + (Volt - voffset) / (slope * Tkelvin * 1.98416e-4)
+  ph <- 7.0 + (Volt - voffset) / (slope * Tkelvin * 1.98416e-4)
 }
 
 SBE19Data <- SBE19Data %>%
   mutate(
-    pH = cal_sbe18(
+    ph = cal_sbe18(
       Volt = Volt2,
       Tcelsius = temperature,
       cal_data = SBE18cal_data
@@ -202,7 +202,7 @@ SBE19Data <- SBE19Data %>%
     oxygen_solubility,
     oxygen_solubility,
     oxygen_concentration,
-    pH
+    ph
   ) %>%
   mutate(
     id = seq_along(rownames(SBE19Data)),
@@ -218,7 +218,7 @@ SBE19Data <- SBE19Data %>%
 SBE19nest <- SBE19Data %>%
   select(!any_of(c("conductivity", "conservative_temperature", "oxygen_solubility"))) %>%
   pivot_longer(
-    cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "pH")),
+    cols = any_of(c("temperature", "pressure", "salinity_practical", "salinity_absolute", "oxygen_solubility", "oxygen_concentration", "ph")),
     names_to = "parameter",
     values_to = "value"
   ) %>%

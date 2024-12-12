@@ -10,7 +10,7 @@
 mod_settings_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    uiOutput(ns("WaveSeq")),
+    uiOutput(ns("wave_seq")),
     uiOutput(ns("PositionHOCR"))
   )
 }
@@ -76,7 +76,7 @@ mod_settings_server <- function(id, SearProj, ActiveMenu) {
       }
     )
 
-    output$WaveSeq <- renderUI({
+    output$wave_seq <- renderUI({
       req(SearProj$History())
 
 

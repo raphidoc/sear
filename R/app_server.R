@@ -56,9 +56,9 @@ app_server <- function(input, output, session) {
   Obs <- reactiveValues(
     metadata_l2 = tibble(
       date_time = character(),
-      date_timeMin = character(),
-      date_timeMax = character(),
-      timeElapsed = numeric(),
+      date_time_min = character(),
+      date_time_max = character(),
+      time_elapsed = numeric(),
       lat = numeric(),
       lon = numeric(),
       lat_min = numeric(),

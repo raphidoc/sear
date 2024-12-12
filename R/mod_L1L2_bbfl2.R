@@ -138,7 +138,7 @@ mod_L1L2_bbfl2_server <- function(id, Obs) {
             selection = "none",
             editable = F
           ) %>%
-          DT::formatRound(c("NTU", "PC", "PE"), digits = 3)
+          DT::formatRound(c("ntu", "pc", "pe"), digits = 3)
       },
       server = FALSE,
       editable = F

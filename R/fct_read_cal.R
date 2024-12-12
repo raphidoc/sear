@@ -59,10 +59,7 @@ read_hocr_cal <- function(CalFiles) {
       names_from = type,
       values_from = id
     ) %>%
-    rename(
-      instrument = INSTRUMENT,
-      sn = SN
-      )
+    rename(instrument = INSTRUMENT, sn = SN)
 
   OPTIC3 <- CalFile %>%
     filter(.data$type %in% c("ES", "LU", "Lu")) %>%
