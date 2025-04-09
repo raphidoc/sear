@@ -491,6 +491,7 @@ hocr_l1a <- function(hocr_raw, hocr_cal, metadata_l2, update_progress) {
   raw_data <- purrr::map_df(hocr_raw, ~ tidy_hocr(., date(metadata_l2$date_time)))
 
   if (length(unique(raw_data$sn)) < 3) {
+    # stop(
     stop(
       paste0("Missing instrument(s), detected only: ",
              paste(unique(raw_data$sn), collapse = ", ")
@@ -570,11 +571,11 @@ hocr_l1b <- function(hocr_l1a, hocr_dark, wave_seq, update_progress) {
 
   # If not 3 instrument HSE|HPL record raise an error
 
-  if (nrow(hocr_long) != 3) {
-    warning("if no HOCR data have been recorded for a long time, there is not even dark and therfore no missing light sn to find ...")
-    missing_sn <- unique(hocr_cal$OPTIC3$sn)[which(!unique(hocr_cal$OPTIC3$sn) %in% hocr_long$sn)]
-    stop(paste("No light record for instrument:", missing_sn))
-  }
+  # if (nrow(hocr_long) != 3) {
+  #   warning("if no HOCR data have been recorded for a long time, there is not even dark and therfore no missing light sn to find ...")
+  #   missing_sn <- unique(hocr_cal$OPTIC3$sn)[which(!unique(hocr_cal$OPTIC3$sn) %in% hocr_long$sn)]
+  #   stop(paste("No light record for instrument:", missing_sn))
+  # }
 
   # Convert to wide format
 
@@ -844,352 +845,6 @@ hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1,
   #   select(data) %>%
   #   unnest(cols = c(data))
 
-  propagate_unc_cov <- function(
-    wavelength,
-    es,
-    luz1,
-    luz2,
-    cov_mat,
-    ctd,
-    n_draws
-  ) {
-
-    set.seed(1234)
-
-    # browser()
-
-    # make.positive.definite(nn, tol=1e-3)
-
-    #With correlation
-    cov_samples <- purrr::pmap(
-      list(
-        ..1 = luz1$channel_median,
-        ..2 = luz2$channel_median,
-        ..3 = ctd$z1_median,
-        ..4 = cov_mat
-      ),
-      ~ MASS::mvrnorm(
-        n_draws, c(..1, ..2, ..3), ..4, tol = 1e10
-      )
-    )
-
-    luz1_samples <- purrr::map(
-      .x = cov_samples,
-      ~ .x[,1]
-    )
-    luz1_samples <- matrix(unlist(luz1_samples), nrow = n_draws, byrow = FALSE)
-
-    luz2_samples <- purrr::map(
-      .x = cov_samples,
-      ~ .x[,2]
-    )
-    luz2_samples <- matrix(unlist(luz2_samples), nrow = n_draws, byrow = FALSE)
-
-    z1_samples <- purrr::map(
-      .x = cov_samples,
-      ~ .x[,3]
-    )
-    z1_samples <- matrix(unlist(z1_samples), nrow = n_draws, byrow = FALSE)
-
-    # browser()
-    #
-    # ply <- plot_ly() %>%
-    # add_histogram(
-    #   x = luz1_samples[,50]
-    # )
-    #
-    # save_image(ply, here("1_chapter/figure/diag/luz1503_samples_hist.png"), width = 700, height = 500, scale = 4)
-    #
-    klu <- compute_klu(wavelength, luz1_samples, luz2_samples)
-    klu_estimates <- klu[[1]]
-    klu_samples <- klu[[2]]
-
-    salinity_samples <- matrix(
-      rep(
-        rnorm(n_draws, ctd$salinity_absolute_median, ctd$salinity_absolute_sd),
-        length(wavelength)
-      ),
-      nrow = n_draws, byrow = F)
-
-    temperature_samples <- matrix(
-      rep(
-        rnorm(n_draws, ctd$temperature_median, ctd$temperature_sd),
-        length(wavelength)
-      ),
-      nrow = n_draws, byrow = F)
-
-    lw <- compute_lw(
-      wavelength,
-      luz1_samples,
-      klu_samples,
-      z1_samples,
-      salinity_samples,
-      temperature_samples
-    )
-
-    lw_estimates <- lw[[1]] %>%
-      left_join(klu_estimates, by = "wavelength")
-    lw_samples <- lw[[2]]
-
-    es_samples <- purrr::map2(
-      .x = es$channel_median,
-      .y = es$channel_sd,
-      ~ rnorm(
-        n_draws, .x, .y
-      )
-    )
-    es_samples <- matrix(unlist(es_samples), nrow = n_draws, byrow = FALSE)
-
-    message("computing rrs")
-
-    rrs <- compute_rrs(
-      wavelength,
-      lw_samples,
-      es_samples
-    ) %>%
-      left_join(lw_estimates, by = "wavelength")
-
-    # Uncertainty breakdown by input
-    # Lu(z1) uncertainty
-    message("Lu(z1) uncertainty")
-
-    luz1_rel_samples <- matrix(rep(luz1$channel_median, n_draws), nrow = n_draws, byrow = T)
-
-    klu_luz1_rel <- compute_klu(
-      wavelength,
-      luz1_rel_samples,
-      luz2_samples
-    )
-
-    klu_luz1_rel_estimates <- klu_luz1_rel[[1]]
-    klu_luz1_rel_samples <- klu_luz1_rel[[2]]
-
-    lw_luz1_rel <- compute_lw(
-      wavelength,
-      luz1_rel_samples,
-      klu_luz1_rel_samples,
-      z1_samples,
-      salinity_samples,
-      temperature_samples
-    )
-
-    lw_luz1_rel_estimates <- lw_luz1_rel[[1]]
-    lw_luz1_rel_samples <- lw_luz1_rel[[2]]
-
-    rrs_luz1_rel <- compute_rrs(
-      wavelength,
-      lw_luz1_rel_samples,
-      es_samples
-    )
-
-    # Lu(z2) uncertainty
-    message("Lu(z2) uncertainty")
-
-    luz2_rel_samples <- matrix(rep(luz2$channel_median, n_draws), nrow = n_draws, byrow = T)
-
-    klu_luz2_rel <- compute_klu(
-      wavelength,
-      luz1_samples,
-      luz2_rel_samples
-    )
-
-    klu_luz2_rel_estimates <- klu_luz2_rel[[1]]
-    klu_luz2_rel_samples <- klu_luz2_rel[[2]]
-
-    lw_luz2_rel <- compute_lw(
-      wavelength,
-      luz1_samples,
-      klu_luz2_rel_samples,
-      z1_samples,
-      salinity_samples,
-      temperature_samples
-    )
-
-    lw_luz2_rel_estimates <- lw_luz2_rel[[1]]
-    lw_luz2_rel_samples <- lw_luz2_rel[[2]]
-
-    rrs_luz2_rel <- compute_rrs(
-      wavelength,
-      lw_luz2_rel_samples,
-      es_samples
-    )
-
-    # Z1 uncertainty
-    message("z1 uncertainty")
-
-    z1_rel_samples <- matrix(
-      rep(rep(ctd$z1_median, length(wavelength)), n_draws),
-      nrow = n_draws, byrow = F)
-
-    lw_z1_rel <- compute_lw(
-      wavelength,
-      luz1_samples,
-      klu_samples,
-      z1_rel_samples,
-      salinity_samples,
-      temperature_samples
-    )
-
-    lw_z1_rel_estimates <- lw_z1_rel[[1]]
-    lw_z1_rel_samples <- lw_z1_rel[[2]]
-
-    rrs_z1_rel <- compute_rrs(
-      wavelength,
-      lw_z1_rel_samples,
-      es_samples
-    )
-
-    # temperature uncertainty
-
-    message("temperature uncertainty")
-
-    temp_rel_samples <- matrix(
-      rep(rep(ctd$temperature_median, length(wavelength)), n_draws),
-      nrow = n_draws, byrow = F)
-
-    lw_temp_rel <- compute_lw(
-      wavelength,
-      luz1_samples,
-      klu_samples,
-      z1_samples,
-      salinity_samples,
-      temp_rel_samples
-    )
-
-    lw_temp_rel_estimates <- lw_temp_rel[[1]]
-    lw_temp_rel_samples <- lw_temp_rel[[2]]
-
-    rrs_temp_rel <- compute_rrs(
-      wavelength,
-      lw_temp_rel_samples,
-      es_samples
-    )
-
-    # salinity uncertainty
-
-    message("salinity uncertainty")
-
-    sal_rel_samples <- matrix(
-      rep(rep(ctd$salinity_absolute_median, length(wavelength)), n_draws),
-      nrow = n_draws, byrow = F)
-
-    lw_sal_rel <- compute_lw(
-      wavelength,
-      luz1_samples,
-      klu_samples,
-      z1_samples,
-      sal_rel_samples,
-      temperature_samples
-    )
-
-    lw_sal_rel_estimates <- lw_sal_rel[[1]]
-    lw_sal_rel_samples <- lw_sal_rel[[2]]
-
-    rrs_sal_rel <- compute_rrs(
-      wavelength,
-      lw_sal_rel_samples,
-      es_samples
-    )
-
-    # Es uncertainty
-    message("Es uncertainty")
-
-    es_rel_samples <- matrix(rep(es$channel_median, n_draws), nrow = n_draws, byrow = T)
-
-    rrs_es_rel <- compute_rrs(
-      wavelength,
-      lw_samples,
-      es_rel_samples
-    )
-
-    # Compute relative uncertainty for each input and check for unity
-
-    rrs <- rrs %>%
-      mutate(
-        klu_luz1_rel_unc = compute_rel_unc(klu_mad, klu_luz1_rel_estimates$klu_mad),
-        klu_luz2_rel_unc = compute_rel_unc(klu_mad, klu_luz2_rel_estimates$klu_mad),
-        klu_rel_unity = klu_luz1_rel_unc + klu_luz2_rel_unc,
-        lw_luz1_rel_unc = compute_rel_unc(lw_mad, lw_luz1_rel_estimates$lw_mad),
-        lw_luz2_rel_unc = compute_rel_unc(lw_mad, lw_luz2_rel_estimates$lw_mad),
-        lw_z1_rel_unc = compute_rel_unc(lw_mad, lw_z1_rel_estimates$lw_mad),
-        lw_temp_rel_unc = compute_rel_unc(lw_mad, lw_temp_rel_estimates$lw_mad),
-        lw_sal_rel_unc = compute_rel_unc(lw_mad, lw_sal_rel_estimates$lw_mad),
-        lw_rel_unity = lw_luz1_rel_unc + lw_luz2_rel_unc + lw_z1_rel_unc + lw_temp_rel_unc + lw_sal_rel_unc,
-        rrs_luz1_rel_unc = compute_rel_unc(rrs_mad, rrs_luz1_rel$rrs_mad),
-        rrs_luz2_rel_unc = compute_rel_unc(rrs_mad, rrs_luz2_rel$rrs_mad),
-        rrs_z1_rel_unc = compute_rel_unc(rrs_mad, rrs_z1_rel$rrs_mad),
-        rrs_temp_rel_unc = compute_rel_unc(rrs_mad, rrs_temp_rel$rrs_mad),
-        rrs_sal_rel_unc = compute_rel_unc(rrs_mad, rrs_sal_rel$rrs_mad),
-        rrs_es_rel_unc = compute_rel_unc(rrs_mad, rrs_es_rel$rrs_mad),
-        rrs_rel_unity = rrs_luz1_rel_unc + rrs_luz2_rel_unc + rrs_z1_rel_unc + rrs_es_rel_unc
-      )
-
-    return(rrs)
-  }
-
-  compute_cov <- function(df, ctd) {
-
-    es <- df  %>%
-      filter(sn == "1396")
-
-    luz1 <- df %>%
-      filter(sn == "1413")
-
-    luz2 <- df %>%
-      filter(sn == "1414")
-
-    wavelength <- unique(df$wavelength)
-
-    time_out <- unique(luz2$date_time)
-
-    luz1 <- luz1 %>%
-      group_by(wavelength) %>%
-      nest() %>%
-      mutate(
-        approx = purrr::map(
-          .x = data,
-          ~ tibble(
-            date_time = time_out,
-            luz1 = approx(.x$date_time, .x$channel, time_out)$y
-          )
-        )
-      ) %>%
-      unnest(cols = c(approx)) %>%
-      select(!data) %>%
-      rename(wavelength = wavelength)
-
-    luz2 <- tibble(
-      date_time = luz2$date_time,
-      wavelength = luz2$wavelength,
-      luz2 = luz2$channel
-    )
-
-    cor_df <- left_join(luz2, luz1, by = c("date_time", "wavelength"))
-
-    z1 <- tibble(
-      date_time = time_out,
-      z1 = abs(approx(as.numeric(ymd_hms(ctd$date_time))+2, ctd$z1, time_out)$y)
-    )
-
-    cor_df <- left_join(cor_df, z1, by = c("date_time"))
-
-    cov_mat <- cor_df %>%
-      select(wavelength, luz1, luz2, z1) %>%
-      na.omit()
-
-    cov_mat <- cov_mat %>%
-      group_by(wavelength) %>%
-      nest() %>%
-      mutate(
-        cov_mat = purrr::map(
-          .x = data,
-          ~ MASS::cov.rob(.x, method = "classical")$cov
-        )
-      )
-
-    return(cov_mat$cov_mat)
-  }
-
   cov_mat <- compute_cov(df, ctd)
 
   # Compute PDF
@@ -1197,25 +852,37 @@ hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1,
     select(sn, type, wavelength, channel) %>%
     group_by(sn, wavelength) %>%
     summarise(
-      across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}"),
+      across(
+        where(is.numeric),
+        list(
+          median = ~ median(.x, na.rm=T),
+          sd = ~ sd(.x, na.rm=T)
+          ),
+        .names= "{.col}_{.fn}"),
       .groups = "drop"
     )
 
   ctd_pdf <- ctd %>%
     select(z1, temperature, salinity_absolute) %>%
     summarise(
-      across(where(is.numeric), list(median = median, sd = ~ sd(.x, na.rm=T)), .names= "{.col}_{.fn}"),
+      across(
+        where(is.numeric),
+        list(
+          median = ~ median(.x, na.rm=T),
+          sd = ~ if_else(length(.x) < 2, 0, sd(.x, na.rm=T))
+          ),
+        .names= "{.col}_{.fn}"),
       .groups = "drop"
     )
 
   es <- df_pdf  %>%
-    filter(sn == "1396")
+    filter(sn %in% c("1396", "1397"))
 
   luz1 <- df_pdf %>%
-    filter(sn == "1413")
+    filter(sn %in% c("1413", "1415"))
 
   luz2 <- df_pdf %>%
-    filter(sn == "1414")
+    filter(sn %in% c("1414", "1416"))
 
   wavelength <- unique(df$wavelength)
 

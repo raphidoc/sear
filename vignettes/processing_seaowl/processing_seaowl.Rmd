@@ -52,7 +52,7 @@ cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
     mutate(
       vsf_700 = SeaOWLCal$vsf_scale_factor * (vsf_700_channel - SeaOWLCal$vsf_dark_count),
       chl = SeaOWLCal$chl_scale_factor * (chl_channel - SeaOWLCal$chl_dark_count),
-      fdom = SeaOWLCal$fdom_scale_factor * (fdom_output - SeaOWLCal$fdom_dark_counts),
+      fdom = SeaOWLCal$fdom_scale_factor * (fdom_output - SeaOWLCal$fdom_dark_count),
       .after = sn
     ) %>%
     select(date_time, sn, vsf_700, chl, fdom)

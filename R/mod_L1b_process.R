@@ -281,7 +281,7 @@ mod_L1b_process_server <- function(id, L1a, L1aSelect, cal_data, Obs, MainLog, S
                 lon,
                 lat,
                 date_time,
-                altitude_mReMsl,
+                altitude_m,
                 bottom_elevation_m,
                 plant_height_m,
                 percent_coverage

@@ -235,7 +235,7 @@ read_sbe43_cal <- function(CalFile) {
       values_from = "value"
     ) %>%
     mutate(
-      oc_cal_date = dmy(oc_cal_date),
+      o_cal_date = dmy(o_cal_date),
       soc = as.numeric(soc),
       voffset = as.numeric(voffset),
       a = as.numeric(a),
@@ -314,7 +314,7 @@ read_seaowl_cal <- function(CalFile) {
       oil_scale_factor = as.numeric(oil_scale_factor),
       oil_dark_count = as.numeric(oil_dark_count),
       fdom_scale_factor = as.numeric(fdom_scale_factor),
-      fdom_dark_counts = as.numeric(fdom_dark_counts)
+      fdom_dark_count = as.numeric(fdom_dark_count)
     )
 }
 

@@ -71,7 +71,14 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
         i = 0
         for (ensemble in ensemble_main) {
           i = i + 1
-          message(paste0("Processing ensemble ", i, " / ", length(ensemble_main)))
+          progress$set(
+            message = paste0(
+              "Processing ensemble ", i, " / ", length(ensemble_main)
+              ),
+            value = i/length(ensemble_main)
+            )
+
+          message()
 
           metadata <- MainLog()[which(ensemble_metadata %in% ensemble), ]
 
@@ -117,9 +124,6 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
           # CTD processing ----------------------------------------------------------
 
           if (any(str_detect(L1a$instrumentList(), "SBE19"))) {
-            progress$set(message = "Processing L1b: ", value = progress$getValue())
-
-            progress$set(value = 0.3, detail = "SBE19")
 
             lon <- mean(metadata$lon)
             lat <- mean(metadata$lat)
@@ -235,7 +239,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
             trace_back = TRUE
           )
 
-          # Save L1a data to table
+          # Save L1b data to table
           Obs$HOCR$L1b <- spsComps::shinyCatch(
             hocr_l1b(
               hocr_l1a = Obs$HOCR$L1a,
@@ -297,9 +301,11 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
               )
 
             if (any(pressure < 0)) {
-              message("CTD in air, taking single z1 from setting")
+              message("CTD in air, taking single z1, temperature and salinity from setting")
               ctd <- tibble(
-                z1 = Settings$HOCR$Z1Depth()
+                z1 = Settings$HOCR$Z1Depth(),
+                temperature = 10,
+                ssalinity_absolute = 30
               )
             } else {
               ctd <- ctd %>%
@@ -310,9 +316,11 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
             }
 
           } else {
-            message("Taking single z1 from setting")
+            message("Taking single z1, temperature and salinity from setting")
             ctd <- tibble(
-              z1 = Settings$HOCR$Z1Depth()
+              z1 = Settings$HOCR$Z1Depth(),
+              temperature = 10,
+              salinity_absolute = 30
             )
           }
 
@@ -334,34 +342,63 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
             #message(Obs$HOCR$L2)
 
             # Delete the outdated metadata initially created
-            #  Necessarry to respect uuid_l2 foreign key rule (present in main table)
+            # Necessarry to respect uuid_l2 foreign key rule (present in main table)
             DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l1b WHERE uuid_l2 = "', Obsuuid_l2, '";'))
             DBI::dbSendQuery(DB$Con(), paste0('DELETE FROM metadata_l2 WHERE uuid_l2 = "', Obsuuid_l2,'";'))
 
             next
+
+            # hocr_l1a <- Obs$HOCR$L1a %>%
+            #   select(instrument, sn, raw_data) %>%
+            #   unnest(cols = c(raw_data)) %>%
+            #   mutate(uuid_l2 = Obsuuid_l2)
+            #
+            # hocr_l1b <- Obs$HOCR$L1b %>%
+            #   unnest(cols = c(cal_data)) %>%
+            #   mutate(uuid_l2 = Obsuuid_l2)
+            #
+            # DBI::dbWriteTable(DB$Con(), "hocr_l1a", hocr_l1a, append = TRUE)
+            # DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
+
+          } else {
+            hocr_l1a <- Obs$HOCR$L1a %>%
+              select(instrument, sn, raw_data) %>%
+              unnest(cols = c(raw_data)) %>%
+              mutate(uuid_l2 = Obsuuid_l2)
+
+            hocr_l1b <- Obs$HOCR$L1b %>%
+              unnest(cols = c(cal_data)) %>%
+              mutate(uuid_l2 = Obsuuid_l2)
+
+            hocr_l2 <- Obs$HOCR$L2 %>%
+              mutate(uuid_l2 = Obsuuid_l2)
+
+            DBI::dbWriteTable(DB$Con(), "hocr_l1a", hocr_l1a, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
+            DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
           }
 
-          hocr_l1a <- Obs$HOCR$L1a %>%
-            select(instrument, sn, raw_data) %>%
-            unnest(cols = c(raw_data)) %>%
-            mutate(uuid_l2 = Obsuuid_l2)
-
-          hocr_l1b <- Obs$HOCR$L1b %>%
-            unnest(cols = c(cal_data)) %>%
-            mutate(uuid_l2 = Obsuuid_l2)
-
-          hocr_l2 <- Obs$HOCR$L2 %>%
-            mutate(uuid_l2 = Obsuuid_l2)
-
-          DBI::dbWriteTable(DB$Con(), "hocr_l1a", hocr_l1a, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
-          DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
+          # hocr_l1a <- Obs$HOCR$L1a %>%
+          #   select(instrument, sn, raw_data) %>%
+          #   unnest(cols = c(raw_data)) %>%
+          #   mutate(uuid_l2 = Obsuuid_l2)
+          #
+          # hocr_l1b <- Obs$HOCR$L1b %>%
+          #   unnest(cols = c(cal_data)) %>%
+          #   mutate(uuid_l2 = Obsuuid_l2)
+          #
+          # hocr_l2 <- Obs$HOCR$L2 %>%
+          #   mutate(uuid_l2 = Obsuuid_l2)
+          #
+          # DBI::dbWriteTable(DB$Con(), "hocr_l1a", hocr_l1a, append = TRUE)
+          # DBI::dbWriteTable(DB$Con(), "hocr_l1b", hocr_l1b, append = TRUE)
+          # DBI::dbWriteTable(DB$Con(), "hocr_l2", hocr_l2, append = TRUE)
 
 
           # SeaOWL L1b --------------------------------------------------------------
 
-          if (any(str_detect(L1a$instrumentList(), "SeaOWL"))) {
-            progress$set(value = 0.4, detail = "SeaOWL")
+          # if (any(str_detect(L1a$instrumentList(), "SeaOWL"))) {
+          if (T) {
 
             SeaOWL <- L1a$SeaOWL()[which(ensemble_seaowl %in% ensemble), ]
 
@@ -406,8 +443,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
 
           # BBFL2 L1b ---------------------------------------------------------------
 
-          if (any(str_detect(L1a$instrumentList(), "BBFL2"))) {
-            progress$set(value = 0.5, detail = "BBFL2")
+          # if (any(str_detect(L1a$instrumentList(), "BBFL2"))) {
+          if (T) {
 
             BBFL2 <- L1a$BBFL2()[which(ensemble_bbfl2 %in% ensemble), ]
 
@@ -451,8 +488,8 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
 
           # BioSonic L1b ---------------------------------------------------------------
 
-          if (any(str_detect(L1a$instrumentList(), "BioSonic"))) {
-            progress$set(value = 0.6, detail = "BioSonic")
+          # if (any(str_detect(L1a$instrumentList(), "BioSonic"))) {
+          if (T) {
 
             biosonic_l1b <- L1a$BioSonic()[which(ensemble_biosonic %in% ensemble), ]
 
@@ -461,13 +498,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
                 paste0("BioSonic data not found at ensemble: ", ensemble)
               )
             } else {
+
               Obs$BioSonic$L1b <- biosonic_l1b %>%
-                rename(lon = longitude_deg, lat = latitude_deg) %>%
                 select(
                   lon,
                   lat,
                   date_time,
-                  altitude_mReMsl,
+                  altitude_m,
                   bottom_elevation_m,
                   plant_height_m,
                   percent_coverage
@@ -478,13 +515,13 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
               # )
 
               test <- Obs$BioSonic$L1b %>% summarise(
-                lon = mean(lon),
-                lat = mean(lat),
-                date_time = mean(date_time),
-                altitude_mReMsl = mean(altitude_mReMsl),
-                bottom_elevation_m = mean(bottom_elevation_m),
-                plant_height_m = mean(plant_height_m),
-                percent_coverage = mean(percent_coverage)
+                lon = mean(lon, na.rm = T),
+                lat = mean(lat, na.rm = T),
+                date_time = mean(date_time, na.rm = T),
+                altitude_m = mean(altitude_m, na.rm = T),
+                bottom_elevation_m = mean(bottom_elevation_m, na.rm = T),
+                plant_height_m = mean(plant_height_m, na.rm = T),
+                percent_coverage = mean(percent_coverage, na.rm = T)
               )
 
               Obs$BioSonic$L2 <- test
@@ -503,7 +540,6 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
           # HydroBall L1b -----------------------------------------------------------
 
           if (any(str_detect(L1a$instrumentList(), "HydroBall"))) {
-            progress$set(value = 0.6, detail = "HydroBall")
 
             hydroball_l1b <- L1a$HBDevices()[which(ensemble_hbdevices %in% ensemble), ]
 
@@ -931,7 +967,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #                 lon,
     #                 lat,
     #                 date_time,
-    #                 altitude_mReMsl,
+    #                 altitude_m,
     #                 bottom_elevation_m,
     #                 plant_height_m,
     #                 percent_coverage
@@ -945,7 +981,7 @@ mod_automatic_processing_server <- function(id, L1a, L1aSelect, cal_data, Obs, S
     #               lon = mean(lon),
     #               lat = mean(lat),
     #               date_time = mean(date_time),
-    #               altitude_mReMsl = mean(altitude_mReMsl),
+    #               altitude_m = mean(altitude_m),
     #               bottom_elevation_m = mean(bottom_elevation_m),
     #               plant_height_m = mean(plant_height_m),
     #               percent_coverage = mean(percent_coverage)

@@ -400,7 +400,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           `lon` REAL,
           `lat` REAL,
           `date_time` REAL,
-          `altitude_mReMsl` REAL,
+          `altitude_m` REAL,
           `bottom_elevation_m` REAL,
           `plant_height_m` REAL,
           `percent_coverage` REAL,
@@ -418,7 +418,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           `lon` REAL,
           `lat` REAL,
           `date_time` REAL,
-          `altitude_mReMsl` REAL,
+          `altitude_m` REAL,
           `bottom_elevation_m` REAL,
           `plant_height_m` REAL,
           `percent_coverage` REAL,
@@ -607,7 +607,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
         #         "SELECT date_time, lat, lon, wavelength, Rrs FROM Metadata
         #           LEFT JOIN hocr_l2 ON Metadata.uuid_l2 = hocr_l2.uuid_l2;"
         #
-        #         "SELECT Metadata.date_time, Metadata.lat, Metadata.lon, speed, time_elapsed, altitude, distance_run, boat_raa, qwip_score, wavelength, Rrs, KLu, altitude_mReMsl, bottom_elevation_m, plant_height_m, percent_coverage, oxygen_concentration, ph, salinity_absolute, salinity_practical, temperature, vsf_700, chl, fdom FROM Metadata
+        #         "SELECT Metadata.date_time, Metadata.lat, Metadata.lon, speed, time_elapsed, altitude, distance_run, boat_raa, qwip_score, wavelength, Rrs, KLu, altitude_m, bottom_elevation_m, plant_height_m, percent_coverage, oxygen_concentration, ph, salinity_absolute, salinity_practical, temperature, vsf_700, chl, fdom FROM Metadata
         # LEFT JOIN hocr_l2 ON Metadata.uuid_l2 = hocr_l2.uuid_l2
         # LEFT JOIN biosonic_l2 ON Metadata.uuid_l2 = biosonic_l2.uuid_l2
         # LEFT JOIN sbe19_l2 ON Metadata.uuid_l2 = sbe19_l2.uuid_l2

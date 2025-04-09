@@ -51,7 +51,7 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
           colors = pal
         ) %>%
         add_lines(
-          y = ~altitude_mReMsl,
+          y = ~altitude_m,
           color = "Watercraft"
         ) %>%
         add_lines(
@@ -82,7 +82,7 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
           lon = mean(lon),
           lat = mean(lat),
           date_time = mean(date_time),
-          altitude_mReMsl = mean(altitude_mReMsl),
+          altitude_m = mean(altitude_m),
           bottom_elevation_m = mean(bottom_elevation_m),
           plant_height_m = mean(plant_height_m),
           percent_coverage = mean(percent_coverage)
@@ -121,7 +121,7 @@ mod_L1L2_biosonic_server <- function(id, Obs) {
           editable = F
         ) %>%
           DT::formatRound(c("lat", "lon"), digits = 6) %>%
-          DT::formatRound(c("altitude_mReMsl", "bottom_elevation_m", "plant_height_m"), digits = 3)
+          DT::formatRound(c("altitude_m", "bottom_elevation_m", "plant_height_m"), digits = 3)
       },
       server = FALSE,
       editable = F

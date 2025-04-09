@@ -78,7 +78,7 @@ mod_L1a_select_server <- function(id, MainLog, DB, Obs, ManObs, L1a) {
           width = NULL,
           step = 1
         ),
-        sliderInput(ns("sol_aziLimit"), "boat_raa [degree]", value = c(90, 180), min = 0, max = 360),
+        sliderInput(ns("sol_aziLimit"), "boat_raa [degree]", value = c(45, 180), min = 0, max = 360),
         numericInput(ns("SpeedLimit"), "speed [km/h]", 11, step = 0.1)
       )
     })
