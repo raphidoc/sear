@@ -104,7 +104,7 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           lat_min DOUBLE NOT NULL,
           lat_max DOUBLE NOT NULL,
           distance_run DOUBLE NOT NULL,
-          altitude DOUBLE NOT NULL,
+          altitude DOUBLE,
           sol_zen DOUBLE,
           sol_azi DOUBLE,
           boat_raa DOUBLE,
@@ -185,28 +185,39 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           Con,
           "CREATE TABLE IF NOT EXISTS `hocr_l2` (
           wavelength,
-          rrs_median,
-          rrs_mad,
-          lw_median,
-          lw_mad,
-          klu_median,
-          klu_mad,
-          klu_luz1_rel_unc,
-          klu_luz2_rel_unc,
-          klu_rel_unity,
-          lw_luz1_rel_unc,
-          lw_luz2_rel_unc,
-          lw_z1_rel_unc,
-          lw_temp_rel_unc,
-          lw_sal_rel_unc,
-          lw_rel_unity,
-          rrs_luz1_rel_unc,
-          rrs_luz2_rel_unc,
-          rrs_z1_rel_unc,
-          rrs_temp_rel_unc,
-          rrs_sal_rel_unc,
-          rrs_es_rel_unc,
-          rrs_rel_unity,
+          `klu_estimate`,
+          `klu_unc`,
+          `lw_estimate`,
+          `lw_unc`,
+          `rrs_estimate`,
+          `rrs_unc`,
+          `klu_shade_unc`,
+          `klu_luz1_unc`,
+          `klu_luz2_unc`,
+          `klu_shade_eta2`,
+          `klu_luz1_eta2`,
+          `klu_luz2_eta2`,
+          `lw_shade_unc`,
+          `lw_luz1_unc`,
+          `lw_luz2_unc`,
+          `lw_z1_unc`,
+          `lw_shade_eta2`,
+          `lw_luz1_eta2`,
+          `lw_luz2_eta2`,
+          `lw_z1_eta2`,
+          `rrs_shade_unc`,
+          `rrs_luz1_unc`,
+          `rrs_luz2_unc`,
+          `rrs_z1_unc`,
+          `rrs_es_unc`,
+          `rrs_shade_eta2`,
+          `rrs_luz1_eta2`,
+          `rrs_luz2_eta2`,
+          `rrs_z1_eta2`,
+          `rrs_es_eta2`,
+          rrs_eta2_sum,
+          lw_eta2_sum,
+          klu_eta2_sum,
           uuid_l2,
           FOREIGN KEY (uuid_l2)
             REFERENCES metadata_l2 (uuid_l2)
@@ -400,9 +411,9 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           `lon` REAL,
           `lat` REAL,
           `date_time` REAL,
-          `altitude_m` REAL,
-          `bottom_elevation_m` REAL,
-          `plant_height_m` REAL,
+          `altitude` REAL,
+          `bottom_elevation` REAL,
+          `plant_height` REAL,
           `percent_coverage` REAL,
           `uuid_l2` TEXT,
           FOREIGN KEY (uuid_l2)
@@ -418,10 +429,14 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           `lon` REAL,
           `lat` REAL,
           `date_time` REAL,
-          `altitude_m` REAL,
-          `bottom_elevation_m` REAL,
-          `plant_height_m` REAL,
-          `percent_coverage` REAL,
+          `altitude_mu` REAL,
+          `altitude_sd` REAL,
+          `bottom_elevation_mu` REAL,
+          `bottom_elevation_sd` REAL,
+          `plant_height_mu` REAL,
+          `plant_height_sd` REAL,
+          `percent_coverage_mu` REAL,
+          `percent_coverage_sd` REAL,
           `uuid_l2` TEXT,
           FOREIGN KEY (uuid_l2)
             REFERENCES metadata_l2 (uuid_l2)
@@ -429,7 +444,6 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           )"
         )
 
-        # BioSonic L1b
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS `hydroball_l1b` (
@@ -445,7 +459,6 @@ mod_manage_db_server <- function(id, SearProj, Obs) {
           )"
         )
 
-        # BioSonic L2
         DBI::dbSendStatement(
           Con,
           "CREATE TABLE IF NOT EXISTS `hydroball_l2` (

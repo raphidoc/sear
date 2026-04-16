@@ -30,9 +30,24 @@ read_mtelog <- function(LogFile) {
   # The error also occur in files: DATA_20230921_202037.txt, DATA_20230921_202053.txt
   # It occur at the precise same time which indicate that it originate from the custom GNSS
 
-  MTELog %>%
+  test <- purrr::map_lgl(MTELog[[1]], function(x) {
+    tryCatch({
+      nchar(x)
+      TRUE
+    }, error = function(e) {
+      FALSE
+    })
+  })
+
+  temp <- MTELog[test,] %>%
     # separate have been superseded
-    separate(Raw, into = c("time", "instrument", "Data"), sep = c(12, 19)) %>%
+    separate(
+      Raw,
+      into = c("time", "instrument", "Data"),
+      sep = c(12, 19)
+      )
+
+  temp <- temp %>%
     mutate(
       date_time = lubridate::ymd_hms(paste(date, time)),
       instrument = str_extract(instrument, "[:alnum:]+")
@@ -64,13 +79,13 @@ read_apla <- function(MTELog) {
     )
 
   RawGGA <- Apla %>%
-    filter(str_detect(Trame, "[:alpha:]{2}GGA")) %>%
+    filter(str_detect(Trame, "[:alpha:]{2}GGA$")) %>%
     pivot_wider(
       names_from = Trame,
       values_from = Data
     ) %>%
     separate(
-      col = contains("GGA"),
+      col = ends_with("GGA"),
       sep = ",",
       into = c(
         "utc",
@@ -118,15 +133,15 @@ read_apla <- function(MTELog) {
 
   # Extract VTG info, course and speed
 
-  if (any(str_detect(Apla$Trame, "[:alpha:]{2}VTG"))) {
+  if (any(str_detect(Apla$Trame, "[:alpha:]{2}VTG$"))) {
     RawVTG <- Apla %>%
-      filter(str_detect(Trame, "[:alpha:]{2}VTG")) %>%
+      filter(str_detect(Trame, "[:alpha:]{2}VTG$")) %>%
       pivot_wider(
         names_from = Trame,
         values_from = Data
       ) %>%
       separate(
-        col = contains("VTG"),
+        col = ends_with("VTG"),
         sep = ",",
         convert = T,
         into = c(
@@ -141,7 +156,7 @@ read_apla <- function(MTELog) {
           "mode_checksum" # a = Autonomous, D = DGPS, e = DR
         )
       ) %>%
-      select(!time) # Avoid duplication in join
+      select(!time & !instrument) # Avoid duplication in join
 
     VTG <- RawVTG %>%
       mutate(
@@ -169,15 +184,15 @@ read_apla <- function(MTELog) {
 
   # Extract pitch and roll from Applanix PASHR data
 
-  if (any(str_detect(Apla$Trame, "PASHR"))) {
+  if (any(str_detect(Apla$Trame, "PASHR$"))) {
     RawPASHR <- Apla %>%
-      filter(str_detect(Trame, "PASHR")) %>%
+      filter(str_detect(Trame, "PASHR$")) %>%
       pivot_wider(
         names_from = Trame,
         values_from = Data
       ) %>%
       separate(
-        col = contains("PASHR"),
+        col = ends_with("PASHR"),
         sep = ",",
         convert = T,
         into = c(
@@ -195,7 +210,7 @@ read_apla <- function(MTELog) {
           "Checksum" # NA: *hh
         )
       ) %>%
-      select(!time) # Avoid duplication in join
+      select(!time & !instrument) # Avoid duplication in join
 
     PASHR <- RawPASHR %>%
       mutate(
@@ -212,9 +227,9 @@ read_apla <- function(MTELog) {
     PASHR <- unique_date_time_second(PASHR)
   } else {
     PASHR <- tibble(
-      date_time = NA,
+      date_time = VTG$date_time,
       utc = NA,
-      heading = NA,
+      heading = VTG$course_tn, # Fix for no PASHR string in 2023
       true = NA,
       roll = NA,
       pitch = NA,
@@ -248,7 +263,7 @@ read_apla <- function(MTELog) {
     mutate(
       sol_azi = (sol_azimuth * 180 / pi) + 180, # convert rad to degree and shift to north reference
       sol_zen = 90 - (sol_altitude * 180 / pi), # shift altitude above the horizon in rad to zenith angle
-      boat_raa = sol_azi - course_tn,
+      boat_raa = sol_azi - heading,
       boat_raa = if_else(boat_raa < 0, boat_raa + 360, boat_raa)
     )
 

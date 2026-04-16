@@ -371,6 +371,10 @@ cal_dark <- function(hocr_raw, hocr_cal, date) {
     group_by(instrument, sn) %>%
     nest(raw_data = !matches("instrument|sn"))
 
+  if (!all(glob_cal$sn %in% hocr_cal$OPTIC3$sn)) {
+    stop("hocr sn mismatch between calibration and data")
+  }
+
   glob_cal <- left_join(glob_cal, hocr_cal$OPTIC3, by = c("instrument", "sn"))
 
   glob_cal <- left_join(glob_cal, hocr_cal$THERM1, by = c("instrument", "sn"))
@@ -809,8 +813,7 @@ hocr_l1b <- function(hocr_l1a, hocr_dark, wave_seq, update_progress) {
 #' @return Tidy long tiblle with Rrs and KLu
 #'
 #' @noRd
-hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1,
-                    Loess, Span, Obs) {
+hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1, Obs) {
 
   # hocr_pdf <- function(df) {
   #
@@ -856,20 +859,7 @@ hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1,
         where(is.numeric),
         list(
           median = ~ median(.x, na.rm=T),
-          sd = ~ sd(.x, na.rm=T)
-          ),
-        .names= "{.col}_{.fn}"),
-      .groups = "drop"
-    )
-
-  ctd_pdf <- ctd %>%
-    select(z1, temperature, salinity_absolute) %>%
-    summarise(
-      across(
-        where(is.numeric),
-        list(
-          median = ~ median(.x, na.rm=T),
-          sd = ~ if_else(length(.x) < 2, 0, sd(.x, na.rm=T))
+          mad = ~ mad(.x, na.rm=T)
           ),
         .names= "{.col}_{.fn}"),
       .groups = "drop"
@@ -884,7 +874,64 @@ hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1,
   luz2 <- df_pdf %>%
     filter(sn %in% c("1414", "1416"))
 
+  ctd_pdf <- ctd %>%
+    select(z1, temperature, salinity_absolute) %>%
+    summarise(
+      across(
+        where(is.numeric),
+        list(
+          median = ~ median(.x, na.rm=T),
+          sd = ~ if_else(length(.x) < 2, 0, sd(.x, na.rm=T))
+        ),
+        .names= "{.col}_{.fn}"),
+      .groups = "drop"
+    )
+
+  meta_temp <- Obs$metadata_l1b %>%
+    select(ensemble, sol_zen, sol_azi) %>%
+    summarise(
+      across(where(is.numeric), list(median = median, mad = mad), .names= "{.col}_{.fn}")
+    )
+
   wavelength <- unique(df$wavelength)
+
+  a_temp <- aw::aw_ioccg_2018 %>%
+    group_by(wavelength) %>%
+    select(wavelength, a = a_w) %>%
+    summarise(
+      across(where(is.numeric), list(median = median, min = min, max = max), .names= "{.col}_{.fn}")
+    )
+
+  a_temp <- tibble(
+    wavelength = wavelength,
+    a_median = approx(a_temp$wavelength, a_temp$a_median, wavelength)$y,
+    a_min = approx(a_temp$wavelength, a_temp$a_min, wavelength)$y,
+    a_max = approx(a_temp$wavelength, a_temp$a_max, wavelength)$y
+  )
+
+  sun_zen <- unique(ir_lut$sol_zen)[which.min(abs(unique(ir_lut$sol_zen) - meta_temp$sol_zen_median))]
+
+  ir_temp <- ir_lut %>%
+    filter(sol_zen == sun_zen) %>%
+    ungroup() %>%
+    select(wavelength, ir_mean, ir_min, ir_max)
+
+  ir_temp <- tibble(
+    wavelength = wavelength,
+    ir_mean = approx(ir_temp$wavelength, ir_temp$ir_mean, wavelength)$y,
+    ir_min = approx(ir_temp$wavelength, ir_temp$ir_min, wavelength)$y,
+    ir_max = approx(ir_temp$wavelength, ir_temp$ir_max, wavelength)$y
+  )
+
+  # rrs <- propagate_unc_cov(
+    # wavelength,
+    # es,
+    # luz1,
+    # luz2,
+    # cov_mat,
+    # ctd_pdf,
+    # n_draws = 1e4
+  # )
 
   rrs <- propagate_unc_cov(
     wavelength,
@@ -893,6 +940,9 @@ hocr_l2 <- function(L1bData, wave_seq, ctd, z2z1,
     luz2,
     cov_mat,
     ctd_pdf,
+    meta_temp,
+    a_temp,
+    ir_temp,
     n_draws = 1e4
   )
 

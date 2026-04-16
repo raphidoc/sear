@@ -236,18 +236,18 @@ mod_L1hocr_l2_server <- function(id, Obs, Settings) {
       rrs_plot <- Obs$HOCR$L2 %>%
         plot_ly(
           x = ~wavelength,
-          y = ~rrs_median
+          y = ~rrs_estimate
           ) %>%
         add_lines(
-          showlegend = T
+          showlegend = F
           ) %>%
         add_ribbons(
           ymin = ~
-           rrs_median -
-            rrs_mad,
+           rrs_estimate -
+            rrs_unc,
           ymax = ~
-           rrs_median +
-            rrs_mad,
+           rrs_estimate +
+            rrs_unc,
           name = "unc_rrs",
           line = list(color = 'rgba(105, 159, 245, 0.2)'),
           fillcolor = 'rgba(105, 159, 245, 0.1)',
@@ -270,97 +270,78 @@ mod_L1hocr_l2_server <- function(id, Obs, Settings) {
           )
       }
 
-
-      if (any(str_detect(names(Obs$HOCR$L2), "Rrs_loess"))) {
-        Rrsplot <- Rrsplot %>%
-          add_trace(
-            x = ~wavelength,
-            y = ~Rrs_loess,
-            type = "scatter",
-            mode = "lines",
-            line = list(dash = "dash", color = "red")
-          )
-      }
+      sel_showlegend <- T
 
       rrs_unc_plot <- Obs$HOCR$L2 %>%
         plot_ly(x = ~ wavelength) %>%
         add_trace(
           type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~ rrs_mad * rrs_luz1_rel_unc ,
-          name = TeX("\\sigma L_\\text{u}(z1)"),
-          line = list(color = 'rgba(105, 159, 245, 0.3)'),
-          fillcolor = 'rgba(105, 159, 245, 0.3)',
-          legendgroup = 1,
-          showlegend = F
-        ) %>%
-        add_trace(
-          type = 'scatter', mode = 'lines', fill = 'tonexty',
           y = ~
-            rrs_mad * rrs_luz1_rel_unc +
-            rrs_mad * rrs_luz2_rel_unc ,
-          name = TeX("\\sigma L_\\text{u}(z2)"),
-          line = list(color = 'rgba(6, 58, 143, 0.3)'),
-          fillcolor = 'rgba(6, 33, 143, 0.3)',
-          legendgroup = 2,
-          showlegend = F
-        ) %>%
-        add_trace(
-          type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~
-            rrs_mad * rrs_luz1_rel_unc +
-            rrs_mad * rrs_luz2_rel_unc +
-            rrs_mad * rrs_z1_rel_unc,
-          name = TeX("\\sigma z1"),
-          line = list(color = 'rgba(74, 176, 100, 0.3)'),
-          fillcolor = 'rgba(74, 176, 100, 0.3)',
-          legendgroup = 3,
-          showlegend = F
-        ) %>%
-        add_trace(
-          type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~
-            rrs_mad * rrs_luz1_rel_unc +
-            rrs_mad * rrs_luz2_rel_unc +
-            rrs_mad * rrs_z1_rel_unc +
-            rrs_mad * rrs_temp_rel_unc,
-          name = TeX("\\sigma \\text{temperature}"),
+            rrs_unc * rrs_shade_unc ,
+          # name = TeX("\\Large{\\sigma shade_{a}"),
+          name = "shade_unc",
           line = list(color = 'rgba(255, 0, 0, 0.3)'),
           fillcolor = 'rgba(255, 0, 0, 0.3)',
+          legendgroup = 1,
+          showlegend = sel_showlegend
+        ) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~
+            rrs_unc * rrs_shade_unc +
+            rrs_unc * rrs_luz1_unc ,
+          # name = TeX("\\Large{\\sigma L_\\text{u}(z1)}"),
+          name = "Luz1_unc",
+          line = list(color = 'rgba(105, 159, 245, 0.3)'),
+          fillcolor = 'rgba(105, 159, 245, 0.3)',
+          legendgroup = 2,
+          showlegend = sel_showlegend
+        ) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~
+            rrs_unc * rrs_shade_unc +
+            rrs_unc * rrs_luz1_unc +
+            rrs_unc * rrs_luz2_unc ,
+          # name = TeX("\\Large{\\sigma L_\\text{u}(z2)}"),
+          name = "Luz2_unc",
+          line = list(color = 'rgba(6, 58, 143, 0.3)'),
+          fillcolor = 'rgba(6, 33, 143, 0.3)',
+          legendgroup = 3,
+          showlegend = sel_showlegend
+        ) %>%
+        add_trace(
+          type = 'scatter', mode = 'lines', fill = 'tonexty',
+          y = ~
+            rrs_unc * rrs_shade_unc +
+            rrs_unc * rrs_luz1_unc +
+            rrs_unc * rrs_luz2_unc +
+            rrs_unc * rrs_z1_unc,
+          # name = TeX("\\Large{\\sigma z1}"),
+          name = "z1_unc",
+          line = list(color = 'rgba(74, 176, 100, 0.3)'),
+          fillcolor = 'rgba(74, 176, 100, 0.3)',
           legendgroup = 4,
-          showlegend = F
+          showlegend = sel_showlegend
         ) %>%
         add_trace(
           type = 'scatter', mode = 'lines', fill = 'tonexty',
           y = ~
-            rrs_mad * rrs_luz1_rel_unc +
-            rrs_mad * rrs_luz2_rel_unc +
-            rrs_mad * rrs_z1_rel_unc +
-            rrs_mad * rrs_temp_rel_unc +
-            rrs_mad * rrs_sal_rel_unc,
-          name = TeX("\\sigma \\text{salinity}"),
-          line = list(color = 'rgba(0, 0, 255, 0.3)'),
-          fillcolor = 'rgba(0, 0, 255, 0.3)',
-          legendgroup = 5,
-          showlegend = F
-        ) %>%
-        add_trace(
-          type = 'scatter', mode = 'lines', fill = 'tonexty',
-          y = ~
-            rrs_mad * rrs_luz1_rel_unc +
-            rrs_mad * rrs_luz2_rel_unc +
-            rrs_mad * rrs_z1_rel_unc +
-            rrs_mad * rrs_temp_rel_unc +
-            rrs_mad * rrs_sal_rel_unc +
-            rrs_mad * rrs_es_rel_unc,
-          name = TeX("\\sigma E_\\text{d}(0^+)"),
+            rrs_unc * rrs_shade_unc +
+            rrs_unc * rrs_luz1_unc +
+            rrs_unc * rrs_luz2_unc +
+            rrs_unc * rrs_z1_unc +
+            rrs_unc * rrs_es_unc,
+          # name = TeX("\\Large{\\sigma E_\\text{d}(0^+)}"),
+          name = "Es_unc",
           line = list(color = 'rgba(169, 74, 176, 0.3)'),
           fillcolor = 'rgba(169, 74, 176, 0.3)',
-          legendgroup = 6,
-          showlegend = F
+          legendgroup = 5,
+          showlegend = sel_showlegend
         ) %>%
         layout(
           xaxis = list(title=TeX("\\text{Wavelength}")),
-          yaxis = list(title=TeX("R_\\text{rs} [\\text{sr}^{-1}]")),
+          yaxis = list(title=TeX("\\sigma R_\\text{rs} [\\text{sr}^{-1}]")),
           shapes=list(BlackSquare)
         ) %>%
         config(mathjax = "cdn", displayModeBar = F)

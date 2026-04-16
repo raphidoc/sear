@@ -10,7 +10,7 @@ cal_seaowl <- function(SeaOWLData, SeaOWLCal) {
   # Should be stop
   sn <- stringr::str_extract(SeaOWLData$sn, "(?<=-).*")
   sn <- unique(sn[!is.na(sn)])
-  if (!SeaOWLCal$SERIALNO == sn) {
+  if (!SeaOWLCal$sn == sn) {
     warning("Calibration and SeaOWL have different serial number")
   }
 

@@ -180,19 +180,19 @@ read_sbe19_cal <- function(CalFile) {
       values_from = "value"
     ) %>%
     mutate(
-      t_cal_date = dmy(t_cal_date),
+      t_cal_date = ymd(t_cal_date),
       t_a0 = as.numeric(t_a0),
       t_a1 = as.numeric(t_a1),
       t_a2 = as.numeric(t_a2),
       t_a3 = as.numeric(t_a3),
-      c_cal_date = dmy(c_cal_date),
+      c_cal_date = ymd(c_cal_date),
       c_g = as.numeric(c_g),
       c_h = as.numeric(c_h),
       c_i = as.numeric(c_i),
       c_j = as.numeric(c_j),
       c_t_cor = as.numeric(c_t_cor),
       c_p_cor = as.numeric(c_p_cor),
-      p_cal_date = dmy(p_cal_date),
+      p_cal_date = ymd(p_cal_date),
       p_a0 = as.numeric(p_a0),
       p_a1 = as.numeric(p_a1),
       p_a2 = as.numeric(p_a2),
@@ -235,7 +235,7 @@ read_sbe43_cal <- function(CalFile) {
       values_from = "value"
     ) %>%
     mutate(
-      o_cal_date = dmy(o_cal_date),
+      o_cal_date = ymd(o_cal_date),
       soc = as.numeric(soc),
       voffset = as.numeric(voffset),
       a = as.numeric(a),
@@ -273,7 +273,7 @@ read_sbe18_cal <- function(CalFile) {
       values_from = "value"
     ) %>%
     mutate(
-      ph_cal_date = dmy(ph_cal_date),
+      ph_cal_date = ymd(ph_cal_date),
       slope = as.numeric(slope),
       offset = as.numeric(offset)
     )
@@ -306,7 +306,7 @@ read_seaowl_cal <- function(CalFile) {
       values_from = "value"
     ) %>%
     mutate(
-      cal_date = dmy(cal_date),
+      cal_date = ymd(cal_date),
       vsf_scale_factor = as.numeric(vsf_scale_factor),
       vsf_dark_count = as.numeric(vsf_dark_count),
       chl_scale_factor = as.numeric(chl_scale_factor),
@@ -345,7 +345,7 @@ read_bbfl2_cal <- function(CalFile) {
       values_from = "value"
     ) %>%
     mutate(
-      cal_date = dmy(cal_date),
+      cal_date = ymd(cal_date),
       ntu_scale_factor = as.numeric(ntu_scale_factor),
       ntu_dark_count = as.numeric(ntu_dark_count),
       pe_scale_factor = as.numeric(pe_scale_factor),

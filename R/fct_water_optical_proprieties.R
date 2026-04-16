@@ -13,8 +13,8 @@ compute_klu <- function(wavelength, luz1, luz2, z2z1 = 0.15) {
   klu_stats <- purrr::map_dfr(
     seq_along(wavelength), ~ {
       tibble(
-        klu_median = median(klu_samples[, .x], na.rm = T),
-        klu_mad = mad(klu_samples[, .x], na.rm = T)
+        klu_estimate = median(klu_samples[, .x], na.rm = T),
+        klu_unc = mad(klu_samples[, .x], na.rm = T)
       )
     })
 
@@ -23,15 +23,17 @@ compute_klu <- function(wavelength, luz1, luz2, z2z1 = 0.15) {
 
 compute_lw <- function(wavelength, luz1, klu, z1, salinity, temperature) {
 
-  tl = water_air_radiance_trans(salinity, temperature, wavelength)
+  wave_matrix <- matrix(rep(wavelength, nrow(luz1)), nrow = nrow(luz1), byrow = T)
+
+  tl = water_air_radiance_trans(salinity, temperature, wave_matrix)
 
   lw_samples <- tl * luz1 * exp(klu * abs(z1))
 
   lw_stats <- purrr::map_dfr(
     seq_along(wavelength), ~ {
       tibble(
-        lw_median = median(lw_samples[, .x], na.rm = T),
-        lw_mad = mad(lw_samples[, .x], na.rm = T)
+        lw_estimate = median(lw_samples[, .x], na.rm = T),
+        lw_unc = mad(lw_samples[, .x], na.rm = T)
       )
     })
 
@@ -45,12 +47,19 @@ compute_rrs <- function(wavelength, lw, es) {
   rrs_stats <- purrr::map_dfr(
     seq_along(wavelength), ~ {
       tibble(
-        rrs_median = median(rrs_samples[, .x], na.rm = T),
-        rrs_mad = mad(rrs_samples[, .x], na.rm = T)
+        rrs_estimate = median(rrs_samples[, .x], na.rm = T),
+        rrs_unc = mad(rrs_samples[, .x], na.rm = T)
       )
     })
 
-  return(tibble(wavelength, rrs_stats))
+  return(list(tibble(wavelength, rrs_stats), rrs_samples))
+}
+
+compute_rel_unc <- function(combined_mad, reduced_mad) {
+  # We compute on variance as it's additive
+  # ((base_sd^2 - perturbed_sd^2) / base_sd^2)
+  rel_unc <- abs(combined_mad - reduced_mad) / combined_mad
+  return(rel_unc)
 }
 
 water_refractive_index <- function(salinity, temperature, wavelength) {
@@ -87,11 +96,4 @@ water_air_radiance_trans <- function(salinity, temperature, wavelength) {
   t_radiance = ((4*na*nw)/(na+nw)^2)*(na/nw)^2
 
   return(t_radiance)
-}
-
-compute_rel_unc <- function(combined_mad, reduced_mad) {
-  # We compute on variance as it's additive
-  # ((base_sd^2 - perturbed_sd^2) / base_sd^2)
-  rel_unc <- abs(combined_mad - reduced_mad) / combined_mad
-  return(rel_unc)
 }

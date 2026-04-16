@@ -14,9 +14,9 @@ read_biosonic <- function(CSVFile) {
       lon = Longitude_deg,
       lat = Latitude_deg,
       date_time = Time,
-      altitude_m = Altitude_mReMsl,
-      bottom_elevation_m = BottomElevation_m,
-      plant_height_m = PlantHeight_m,
+      altitude = Altitude_mReMsl,
+      bottom_elevation = BottomElevation_m,
+      plant_height = PlantHeight_m,
       percent_coverage = PercentCoverage
       ) %>%
     mutate(date_time = as.character(ymd_hms(date_time)))
