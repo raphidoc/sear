@@ -1,6 +1,6 @@
 Package: sear
 Title: Data Management and Processing for Ocean Optics
-Version: 0.4.2
+Version: 0.4.3
 Authors@R: 
     person("Raphael", "Mabit", , "raphael.mabit@gmail.com", role = c("aut", "cre"))
 Description: a modular shiny software to manage and process ocean optics
@@ -64,6 +64,6 @@ Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Depends: 
     R (>= 3.5)

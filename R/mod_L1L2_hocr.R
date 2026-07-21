@@ -316,7 +316,10 @@ mod_L1hocr_l2_server <- function(id, Obs, Settings) {
             rrs_unc * rrs_shade_unc +
             rrs_unc * rrs_luz1_unc +
             rrs_unc * rrs_luz2_unc +
-            rrs_unc * rrs_z1_unc,
+            #rrs_unc * rrs_z1_unc,
+            rrs_unc * if_else(is.na(rrs_z1_unc) | is.infinite(rrs_z1_unc),
+                    0,
+                    rrs_z1_unc),
           # name = TeX("\\Large{\\sigma z1}"),
           name = "z1_unc",
           line = list(color = 'rgba(74, 176, 100, 0.3)'),
@@ -330,7 +333,10 @@ mod_L1hocr_l2_server <- function(id, Obs, Settings) {
             rrs_unc * rrs_shade_unc +
             rrs_unc * rrs_luz1_unc +
             rrs_unc * rrs_luz2_unc +
-            rrs_unc * rrs_z1_unc +
+            #rrs_unc * rrs_z1_unc +
+            rrs_unc * if_else(is.na(rrs_z1_unc) | is.infinite(rrs_z1_unc),
+                              0,
+                              rrs_z1_unc) +
             rrs_unc * rrs_es_unc,
           # name = TeX("\\Large{\\sigma E_\\text{d}(0^+)}"),
           name = "Es_unc",
